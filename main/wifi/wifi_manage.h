@@ -27,7 +27,16 @@ limitations under the License.
 #include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_netif.h>
+#include <lwip/ip4_addr.h>
 #include <nvs_flash.h>
+
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+
+// Include configuration header
+#include "common_config.h"
 
 // Define WiFi state enumeration
 typedef enum
@@ -39,8 +48,17 @@ typedef enum
 // Define WiFi state change callback type
 typedef void (*p_wifi_state_change_callback)(wifi_state_t state);
 
+// Define WiFi scan callback type
+typedef void (*p_wifi_scan_callback)(int num_networks, wifi_ap_record_t *ap_records);
+
 // Initialize WiFi management
 void wifi_manage_init(const char *hostname, p_wifi_state_change_callback callback);
+
+// Start WiFi in Access Point mode
+esp_err_t wifi_manage_ap(const char *hostname);
+
+// Scan for available WiFi networks
+esp_err_t wifi_manage_scan(p_wifi_scan_callback callback);
 
 // Connect to a WiFi network
 void wifi_manage_connect(const char *ssid, const char *password);

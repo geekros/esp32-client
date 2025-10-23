@@ -29,4 +29,11 @@ limitations under the License.
 #define GEEKROS_NVS_NAMESPACE "geekros"
 #define GEEKROS_NVS_HOSTNAME "hostname"
 
+#define GEEKROS_WIFI_AP_PASSWORD "geekros.com"
+#define GEEKROS_WIFI_AP_CHANNEL 5
+#define GEEKROS_WIFI_AP_MAX_CONNECTION 4
+#define GEEKROS_WIFI_AP_IP "192.168.100.1"
+#define GEEKROS_WIFI_AP_GATEWAY "192.168.100.1"
+#define GEEKROS_WIFI_AP_NETMASK "255.255.255.0"
+
 #endif
