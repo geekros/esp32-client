@@ -17,6 +17,10 @@ limitations under the License.
 #ifndef GEEKROS_ESP32S3_BOARD_CONFIG_H
 #define GEEKROS_ESP32S3_BOARD_CONFIG_H
 
-#define BOARD_NAME "ESP32S3 Default DevKit"
+// Board name
+#define BOARD_NAME "ESP32S3 Waveshare Touch LCD 3.5 DevKit"
+
+// Boot button GPIO pin
+#define BOARD_BOOT_GPIO GPIO_NUM_0
 
 #endif

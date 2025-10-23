@@ -14,32 +14,117 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Include standard libraries
 #include <stdio.h>
 #include <esp_log.h>
 
+// Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+// Include drivers
 #include "driver/gpio.h"
 
-#include "config/config.h"
-#include "board/board.h"
+// Include configuration and module headers
+#include "common_config.h"
+#include "board_config.h"
 
-// Tag for logging
-static const char *TAG = "[client:main]";
+// Include package headers
+#include "board/board.h"
+#include "button/button.h"
+#include "device/host_name.h"
+#include "wifi/wifi_manage.h"
+
+// Define log tag
+#define TAG "[client:main]"
+
+// WiFi configuration
+#define CONFIG_WIFI_SSID "GEEKROS"
+#define CONFIG_WIFI_PASSWORD "1234567890"
+
+// Short press handler function
+void button_short_press_handler(int gpio)
+{
+    ESP_LOGI(TAG, "Button short pressed on GPIO %d", gpio);
+}
+
+// Long press handler function
+void button_long_press_handler(int gpio)
+{
+    ESP_LOGI(TAG, "Button long pressed on GPIO %d", gpio);
+}
+
+// Double click handler function
+void button_double_click_handler(int gpio)
+{
+    ESP_LOGI(TAG, "Double click detected on GPIO %d", gpio);
+}
+
+// Get button level handler function
+int get_button_level_handler(int gpio)
+{
+    // Return the GPIO level
+    return gpio_get_level(gpio);
+}
+
+// WiFi state change callback function
+void wifi_state_change_callback(wifi_state_t state)
+{
+    // Handle connection
+    if (state == WIFI_STATE_CONNECTED)
+    {
+        ESP_LOGI(TAG, "WiFi connected");
+    }
+    // Handle disconnection
+    if (state == WIFI_STATE_DISCONNECTED)
+    {
+        ESP_LOGI(TAG, "WiFi disconnected");
+    }
+}
 
 // Entry point for the ESP32 application
 void app_main(void)
 {
+    // Initialize NVS flash
+    ESP_ERROR_CHECK(nvs_flash_init());
+
     // Initialize the board-specific hardware
     board_init();
 
     // Log the GeekROS version
     ESP_LOGI(TAG, "Client Version: %s", GEEKROS_VERSION);
 
+    // Initialize button config
+    button_config_t button_cfg = {
+        .gpio_num = BOARD_BOOT_GPIO,
+        .active_level = 0,
+        .long_press_time = 5000,
+        .double_click_time = 500,
+        .handler_get_level_func = get_button_level_handler,
+        .short_press_callback = button_short_press_handler,
+        .long_press_callback = button_long_press_handler,
+        .double_click_callback = button_double_click_handler,
+    };
+
+    // Initialize button GPIO
+    button_gpio_init(button_cfg.gpio_num, button_cfg.active_level);
+
+    // Register button event
+    button_event_set(&button_cfg);
+
+    // Get device hostname
+    char hostname[32] = {0};
+    get_hostname(hostname, sizeof(hostname));
+
+    // Initialize WiFi management with no state change callback
+    wifi_manage_init(hostname, wifi_state_change_callback);
+    // Connect to WiFi using configured SSID and password
+    wifi_manage_connect(CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD);
+
     // Main application loop
     while (1)
     {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        // Log a heartbeat message every 500 milliseconds
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }

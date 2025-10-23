@@ -14,17 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef GEEKROS_BOARD_H
-#define GEEKROS_BOARD_H
+#ifndef GEEKROS_HOST_NAME_H
+#define GEEKROS_HOST_NAME_H
 
-// Include ESP libraries
-#include <esp_log.h>
+// Include standard libraries
+#include <stdio.h>
+#include <string.h>
+
+// Include ESP-IDF headers
 #include <esp_err.h>
+#include <esp_log.h>
+#include <esp_system.h>
+#include <esp_mac.h>
+#include <nvs.h>
 
-// Include headers
-#include "board_config.h"
+// Include configuration header
+#include "common_config.h"
 
-// Initialize the board-specific hardware.
-void board_init(void);
+// Function to set the device hostname
+esp_err_t get_hostname(char *hostname, size_t len);
+
+// Clear NVS hostname (for testing purposes)
+void clear_hostname(void);
 
 #endif

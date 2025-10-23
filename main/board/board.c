@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include "esp_log.h"
-#include "board_config.h"
+// Include headers
 #include "board.h"
 
 // Tag for logging

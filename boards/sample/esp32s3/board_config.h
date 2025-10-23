@@ -14,15 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef GEEKROS_CONFIG_H
-#define GEEKROS_CONFIG_H
+#ifndef GEEKROS_ESP32S3_BOARD_CONFIG_H
+#define GEEKROS_ESP32S3_BOARD_CONFIG_H
 
-// Define the geekros configuration
-#define GEEKROS_SERVICE "https://platform.geekros.com"
-#define GEEKROS_SERVICE_ARK ""
-#define GEEKROS_SERVICE_GRK ""
+// Board name
+#define BOARD_NAME "ESP32S3 Sample DevKit"
 
-// Define the firmware version
-#define GEEKROS_VERSION "0.0.1"
+// Boot button GPIO pin
+#define BOARD_BOOT_GPIO GPIO_NUM_0
 
 #endif

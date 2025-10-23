@@ -14,17 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef GEEKROS_BOARD_H
-#define GEEKROS_BOARD_H
+#ifndef GEEKROS_ESP32_BOARD_CONFIG_H
+#define GEEKROS_ESP32_BOARD_CONFIG_H
 
-// Include ESP libraries
-#include <esp_log.h>
-#include <esp_err.h>
+// Board name
+#define BOARD_NAME "ESP32 Sample DevKit"
 
-// Include headers
-#include "board_config.h"
-
-// Initialize the board-specific hardware.
-void board_init(void);
+// Boot button GPIO pin
+#define BOARD_BOOT_GPIO GPIO_NUM_0
 
 #endif

@@ -14,6 +14,6 @@
 
 # Register the main component
 idf_component_register(
-    SRCS "main.c" "board/board.c"
-    INCLUDE_DIRS "." "config" "board"
+    SRCS "main.c" "board/board.c" "button/button.c" "device/host_name.c" "wifi/wifi_manage.c"
+    INCLUDE_DIRS "." "config" "board" "button" "device" "wifi"
 )

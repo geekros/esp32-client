@@ -14,17 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef GEEKROS_BOARD_H
-#define GEEKROS_BOARD_H
+#ifndef GEEKROS_COMMON_CONFIG_H
+#define GEEKROS_COMMON_CONFIG_H
 
-// Include ESP libraries
-#include <esp_log.h>
-#include <esp_err.h>
+// Define the geekros configuration
+#define GEEKROS_SERVICE "https://platform.geekros.com"
+#define GEEKROS_SERVICE_ARK ""
+#define GEEKROS_SERVICE_GRK ""
 
-// Include headers
-#include "board_config.h"
+// Define the firmware version
+#define GEEKROS_VERSION "0.0.1"
 
-// Initialize the board-specific hardware.
-void board_init(void);
+// Define NVS namespace
+#define GEEKROS_NVS_NAMESPACE "geekros"
+#define GEEKROS_NVS_HOSTNAME "hostname"
 
 #endif
