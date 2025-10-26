@@ -37,10 +37,6 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:main]"
 
-// WiFi configuration
-#define CONFIG_WIFI_SSID "GEEKROS"
-#define CONFIG_WIFI_PASSWORD "1234567890"
-
 // Short press handler function
 void button_short_press_handler(int gpio)
 {
