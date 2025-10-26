@@ -17,6 +17,7 @@ limitations under the License.
 // Include standard libraries
 #include <stdio.h>
 #include <esp_log.h>
+#include <nvs_flash.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
@@ -32,8 +33,6 @@ limitations under the License.
 // Include package headers
 #include "board/board.h"
 #include "button/button.h"
-#include "device/host_name.h"
-#include "wifi/wifi_manage.h"
 
 // Define log tag
 #define TAG "[client:main]"
@@ -67,21 +66,6 @@ int get_button_level_handler(int gpio)
     return gpio_get_level(gpio);
 }
 
-// WiFi state change callback function
-void wifi_state_change_callback(wifi_state_t state)
-{
-    // Handle connection
-    if (state == WIFI_STATE_CONNECTED)
-    {
-        ESP_LOGI(TAG, "WiFi connected");
-    }
-    // Handle disconnection
-    if (state == WIFI_STATE_DISCONNECTED)
-    {
-        ESP_LOGI(TAG, "WiFi disconnected");
-    }
-}
-
 // Entry point for the ESP32 application
 void app_main(void)
 {
@@ -111,15 +95,6 @@ void app_main(void)
 
     // Register button event
     button_event_set(&button_cfg);
-
-    // Get device hostname
-    char hostname[32] = {0};
-    get_hostname(hostname, sizeof(hostname));
-
-    // Initialize WiFi management with no state change callback
-    wifi_manage_init(hostname, wifi_state_change_callback);
-    // Connect to WiFi using configured SSID and password
-    wifi_manage_connect(CONFIG_WIFI_SSID, CONFIG_WIFI_PASSWORD);
 
     // Main application loop
     while (1)

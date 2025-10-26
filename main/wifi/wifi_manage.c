@@ -18,7 +18,7 @@ limitations under the License.
 #include "wifi_manage.h"
 
 // Define log tag
-#define TAG "[client:wifi]"
+#define TAG "[client:wifi:manage]"
 
 // Maximum WiFi connection retry count
 #define WIFI_CONNECT_MAX_RETRY 5

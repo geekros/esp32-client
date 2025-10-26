@@ -14,6 +14,9 @@
 
 # Register the main component
 idf_component_register(
-    SRCS "main.c" "board/board.c" "button/button.c" "device/host_name.c" "wifi/wifi_manage.c"
-    INCLUDE_DIRS "." "config" "board" "button" "device" "wifi"
+    SRCS "main.c" "board/board.c" "button/button.c" "device/host_name.c" "wifi/wifi_connect.c" "wifi/wifi_manage.c" "server/server.c"
+    INCLUDE_DIRS "." "config" "board" "button" "device" "wifi" "server"
 )
+
+# Create SPIFFS partition image
+spiffs_create_partition_image(html ../asset FLASH_IN_PROJECT)

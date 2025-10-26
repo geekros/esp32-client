@@ -41,8 +41,8 @@ limitations under the License.
 // Define WiFi state enumeration
 typedef enum
 {
-    WIFI_STATE_CONNECTED = 0,
-    WIFI_STATE_DISCONNECTED,
+    WIFI_STATE_CONNECTED = 0, // WiFi connected
+    WIFI_STATE_DISCONNECTED,  // WiFi disconnected
 } wifi_state_t;
 
 // Define WiFi state change callback type
