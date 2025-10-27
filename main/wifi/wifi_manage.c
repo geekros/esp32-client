@@ -196,7 +196,7 @@ esp_err_t wifi_manage_ap(const char *hostname)
     ESP_ERROR_CHECK(esp_wifi_get_mode(&mode));
 
     // If not in AP mode, switch to AP mode
-    if (mode != WIFI_MODE_APSTA)
+    if (mode == WIFI_MODE_APSTA)
     {
         // Return error if unable to switch to APSTA mode
         return ESP_OK;

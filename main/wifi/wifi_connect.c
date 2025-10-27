@@ -20,10 +20,6 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:wifi:connect]"
 
-// Define SPIFFS base path
-#define SPIFFS_BASE_PATH "/spiffs"
-#define SPIFFS_HTML_PATH "/spiffs/html"
-
 // Web page content buffer
 static char *web_page_content = NULL;
 
@@ -31,8 +27,11 @@ static char *web_page_content = NULL;
 static char current_ssid[32];
 static char current_password[64];
 
+// WiFi event group
+static EventGroupHandle_t wifi_event_group;
+
 // Function to get web page buffer
-char *web_page_buffer(void)
+static char *web_page_buffer(void)
 {
     // Configure SPIFFS
     esp_vfs_spiffs_conf_t conf = {
@@ -49,26 +48,26 @@ char *web_page_buffer(void)
     struct stat st;
 
     // Verify HTML path exists
-    if (stat(SPIFFS_HTML_PATH, &st))
+    if (stat(SPIFFS_HTML_FILE_PATH, &st))
     {
         // Return NULL if path does not exist
         return NULL;
     }
 
     // Allocate buffer for file content
-    char *buf = (char *)malloc(st.st_size + 1);
-    memset(buf, 0, st.st_size + 1);
+    char *buffer = (char *)malloc(st.st_size + 1);
+    memset(buffer, 0, st.st_size + 1);
 
     // Open index.html file
-    FILE *file = fopen(SPIFFS_HTML_PATH "/index.html", "r");
+    FILE *file = fopen(SPIFFS_HTML_FILE_PATH, "r");
     if (file)
     {
         // Read file content into buffer
-        if (fread(buf, st.st_size, 1, file) == 0)
+        if (fread(buffer, st.st_size, 1, file) == 0)
         {
             // Close file and free buffer on read error
-            free(buf);
-            buf = NULL;
+            free(buffer);
+            buffer = NULL;
         }
 
         // Close file
@@ -77,24 +76,39 @@ char *web_page_buffer(void)
     else
     {
         // Free buffer if file open fails
-        free(buf);
-        buf = NULL;
+        free(buffer);
+        buffer = NULL;
     }
 
     // Return file content buffer
-    return buf;
+    return buffer;
 }
 
-// WiFi connect AP task
-static void wifi_connect_ap_task(void *param)
+// WiFi connect task
+static void wifi_connect_task(void *param)
 {
+    // Declare event bits variable
+    EventBits_t bits;
 
+    // While loop
     while (1)
     {
+        // Wait for WiFi connect scan done bit
+        bits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECT_SCAN_DONE_BIT, pdTRUE, pdFALSE, pdMS_TO_TICKS(10 * 1000));
+
+        // Check if WiFi connect scan done bit is set
+        if (bits & WIFI_CONNECT_SCAN_DONE_BIT)
+        {
+            // Stop server
+            server_stop();
+
+            // Connect to WiFi with current credentials
+            wifi_manage_connect(current_ssid, current_password);
+        }
     }
 
     // Delete task
-    vTaskDelete(NULL);
+    // vTaskDelete(NULL);
 }
 
 // Function to initialize AP WiFi mode
@@ -110,13 +124,11 @@ void wifi_connect_init(p_wifi_state_change_callback callback)
     // Load web page content
     web_page_content = web_page_buffer();
 
-    // Create WiFi connect AP task
-    xTaskCreatePinnedToCore(wifi_connect_ap_task, "wifi_connect_ap_task", 4096, NULL, 3, NULL, 1);
-}
+    // Create WiFi event group
+    wifi_event_group = xEventGroupCreate();
 
-// Function to connect in AP WiFi mode
-void wifi_connect(void)
-{
+    // Create WiFi connect AP task
+    xTaskCreatePinnedToCore(wifi_connect_task, "wifi_connect_task", 4096, NULL, 3, NULL, 1);
 }
 
 // WiFi scan callback function
@@ -137,14 +149,24 @@ void wifi_scan_handle(int num_networks, wifi_ap_record_t *ap_records)
         // Add SSID and RSSI to WiFi item
         cJSON_AddStringToObject(wifi_item, "ssid", (const char *)ap_records[i].ssid);
         cJSON_AddNumberToObject(wifi_item, "rssi", ap_records[i].rssi);
-        cJSON_AddBoolToObject(wifi_item, "authmode", ap_records[i].authmode);
+        // Determine if network is secure
+        if (ap_records[i].authmode == WIFI_AUTH_OPEN)
+        {
+            // Add secure field as false for open networks
+            cJSON_AddBoolToObject(wifi_item, "secure", false);
+        }
+        else
+        {
+            // Add secure field as true for secured networks
+            cJSON_AddBoolToObject(wifi_item, "secure", true);
+        }
 
         // Add WiFi item to WiFi list array
         cJSON_AddItemToArray(wifi_list, wifi_item);
     }
 
     // Convert JSON object to string
-    char *json_str = cJSON_PrintUnformatted(root);
+    char *json_str = cJSON_Print(root);
 
     // Log JSON string
     ESP_LOGI(TAG, "WiFi Scan Result: %s", json_str);
@@ -163,15 +185,15 @@ void wifi_scan_handle(int num_networks, wifi_ap_record_t *ap_records)
 static void server_receive_handle(uint8_t *payload, int len)
 {
     // Parse received payload as JSON
-    cJSON *jsonStr = cJSON_Parse((const char *)payload);
-    if (jsonStr)
+    cJSON *jsonRoot = cJSON_Parse((const char *)payload);
+    if (jsonRoot)
     {
         // Extract scan item
-        cJSON *scan_item = cJSON_GetObjectItem(jsonStr, "scan");
+        cJSON *scan_item = cJSON_GetObjectItem(jsonRoot, "scan");
         // Extract ssid item
-        cJSON *ssid_item = cJSON_GetObjectItem(jsonStr, "ssid");
+        cJSON *ssid_item = cJSON_GetObjectItem(jsonRoot, "ssid");
         // Extract password item
-        cJSON *password_item = cJSON_GetObjectItem(jsonStr, "password");
+        cJSON *password_item = cJSON_GetObjectItem(jsonRoot, "password");
 
         // Handle scan request
         if (scan_item)
@@ -196,6 +218,9 @@ static void server_receive_handle(uint8_t *payload, int len)
             // Save current credentials
             snprintf(current_ssid, sizeof(current_ssid), "%s", ssid_value);
             snprintf(current_password, sizeof(current_password), "%s", password_value);
+
+            // Set WiFi connect scan done bit
+            xEventGroupSetBits(wifi_event_group, WIFI_CONNECT_SCAN_DONE_BIT);
         }
     }
 }

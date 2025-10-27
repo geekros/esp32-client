@@ -33,6 +33,8 @@ limitations under the License.
 // Include package headers
 #include "board/board.h"
 #include "button/button.h"
+#include "wifi/wifi_connect.h"
+#include "wifi/wifi_manage.h"
 
 // Define log tag
 #define TAG "[client:main]"
@@ -47,6 +49,9 @@ void button_short_press_handler(int gpio)
 void button_long_press_handler(int gpio)
 {
     ESP_LOGI(TAG, "Button long pressed on GPIO %d", gpio);
+
+    // Configure WiFi network
+    wifi_network_configure();
 }
 
 // Double click handler function
@@ -60,6 +65,22 @@ int get_button_level_handler(int gpio)
 {
     // Return the GPIO level
     return gpio_get_level(gpio);
+}
+
+// WiFi state change callback function
+void wifi_state_change_callback(wifi_state_t state)
+{
+    // Handle WiFi state changes
+    if (state == WIFI_STATE_CONNECTED)
+    {
+        ESP_LOGI(TAG, "WiFi connected");
+    }
+
+    // Handle WiFi disconnected state
+    if (state == WIFI_STATE_DISCONNECTED)
+    {
+        ESP_LOGI(TAG, "WiFi disconnected");
+    }
 }
 
 // Entry point for the ESP32 application
@@ -91,6 +112,9 @@ void app_main(void)
 
     // Register button event
     button_event_set(&button_cfg);
+
+    // Initialize WiFi
+    wifi_connect_init(wifi_state_change_callback);
 
     // Main application loop
     while (1)

@@ -28,17 +28,25 @@ limitations under the License.
 #include <esp_err.h>
 #include <esp_spiffs.h>
 
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 // Include configuration header
 #include "common_config.h"
 #include "device/host_name.h"
 #include "wifi_manage.h"
 #include "server.h"
 
+// Define SPIFFS base path
+#define SPIFFS_BASE_PATH "/spiffs"
+#define SPIFFS_HTML_FILE_PATH "/spiffs/index.html"
+
+// Define WiFi connect scan done bit
+#define WIFI_CONNECT_SCAN_DONE_BIT (BIT0)
+
 // Function to initialize AP WiFi mode
 void wifi_connect_init(p_wifi_state_change_callback callback);
-
-// Function to connect in AP WiFi mode
-void wifi_connect(void);
 
 // Function to configure AP WiFi network
 void wifi_network_configure(void);

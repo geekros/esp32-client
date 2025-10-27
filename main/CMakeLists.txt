@@ -19,4 +19,4 @@ idf_component_register(
 )
 
 # Create SPIFFS partition image
-spiffs_create_partition_image(html ../asset FLASH_IN_PROJECT)
+spiffs_create_partition_image(html ../html FLASH_IN_PROJECT)

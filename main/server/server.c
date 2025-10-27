@@ -34,6 +34,12 @@ static int socket_id = -1;
 // HTTP GET handler function
 static esp_err_t http_get_handler(httpd_req_t *req)
 {
+    // Check if HTML content is loaded
+    if (http_html == NULL)
+    {
+        const char *error_msg = "Internal Server Error: html not loaded.";
+        return httpd_resp_send(req, error_msg, HTTPD_RESP_USE_STRLEN);
+    }
     // Return success
     return httpd_resp_send(req, http_html, HTTPD_RESP_USE_STRLEN);
 }
@@ -42,7 +48,7 @@ static esp_err_t http_get_handler(httpd_req_t *req)
 static esp_err_t socket_get_handler(httpd_req_t *req)
 {
     // Check if the request method is GET
-    if (req->method != HTTP_GET)
+    if (req->method == HTTP_GET)
     {
         // Get the socket file descriptor
         socket_id = httpd_req_to_sockfd(req);
@@ -55,7 +61,7 @@ static esp_err_t socket_get_handler(httpd_req_t *req)
     httpd_ws_frame_t socket_pkt;
 
     // Clear the WebSocket frame variable
-    memset(&socket_pkt, 0, sizeof(httpd_ws_frame_t));
+    memset(&socket_pkt, 0, sizeof(socket_pkt));
 
     // Receive WebSocket data
     esp_err_t ret = httpd_ws_recv_frame(req, &socket_pkt, 0);
@@ -176,7 +182,7 @@ esp_err_t server_send(uint8_t *data, int len)
     httpd_ws_frame_t socket_pkt;
 
     // Clear the WebSocket frame variable
-    memset(&socket_pkt, 0, sizeof(httpd_ws_frame_t));
+    memset(&socket_pkt, 0, sizeof(socket_pkt));
 
     // Set the WebSocket frame parameters
     socket_pkt.payload = data;
