@@ -29,6 +29,9 @@ limitations under the License.
 // Include drivers
 #include "driver/gpio.h"
 
+// Include module headers
+#include "board_config.h"
+
 // Button press callback type
 typedef void (*button_press_callback_t)(int gpio);
 
@@ -43,8 +46,8 @@ typedef struct
     int long_press_time;                                // Duration (ms) to trigger a long press
     int double_click_time;                              // Max interval (ms) for detecting a double click
     button_press_callback_t short_press_callback;       // Callback for short press
+    button_press_callback_t double_click_callback;      // Callback for double click press
     button_press_callback_t long_press_callback;        // Callback for long press
-    button_press_callback_t double_click_callback;      // Callback for double click (optional)
     button_get_level_callback_t handler_get_level_func; // Function to get the button GPIO level
 } button_config_t;
 
@@ -70,7 +73,7 @@ typedef struct ButtonInfo
 } button_info_t;
 
 // Initialize GPIO for button input
-void button_gpio_init(int gpio_num, int active_level);
+void button_gpio_init(button_get_level_callback_t get_level_func, button_press_callback_t short_press_handler, button_press_callback_t double_click_handler, button_press_callback_t long_press_handler);
 
 // Register and start button event monitoring
 esp_err_t button_event_set(button_config_t *config);

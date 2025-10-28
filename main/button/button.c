@@ -32,16 +32,34 @@ static bool button_running = false;            // Flag for timer status
 static void button_timer_callback(void *arg);
 
 // Initialize button GPIO
-void button_gpio_init(int gpio_num, int active_level)
+void button_gpio_init(button_get_level_callback_t get_level_func, button_press_callback_t short_press_handler, button_press_callback_t double_click_handler, button_press_callback_t long_press_handler)
 {
+    // Initialize button config
+    button_config_t button_cfg = {
+        .gpio_num = BOARD_BUTTON_GPIO,
+        .active_level = 0,
+        .long_press_time = 5000,
+        .double_click_time = 500,
+        .handler_get_level_func = get_level_func,
+        .short_press_callback = short_press_handler,
+        .long_press_callback = long_press_handler,
+        .double_click_callback = double_click_handler,
+    };
+
+    // Configure GPIO for button input
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT,
-        .pin_bit_mask = (1ULL << gpio_num),
-        .pull_up_en = (active_level == 0) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
-        .pull_down_en = (active_level == 1) ? GPIO_PULLDOWN_ENABLE : GPIO_PULLDOWN_DISABLE,
+        .pin_bit_mask = (1ULL << button_cfg.gpio_num),
+        .pull_up_en = (button_cfg.active_level == 0) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
+        .pull_down_en = (button_cfg.active_level == 1) ? GPIO_PULLDOWN_ENABLE : GPIO_PULLDOWN_DISABLE,
     };
+
+    // Apply GPIO configuration
     gpio_config(&io_conf);
+
+    // Register button event
+    button_event_set(&button_cfg);
 }
 
 // Register button event

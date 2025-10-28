@@ -27,7 +27,7 @@ endif()
 # Set default board if not defined
 if(NOT DEFINED BOARD)
     # Set default board to esp32s3 or your preferred board
-    set(BOARD "esp32s3_touch_lcd_3.5")
+    set(BOARD "esp32s3_touch_lcd_3.5c")
 endif()
 
 # Add board-specific include directory

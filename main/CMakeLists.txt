@@ -12,10 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Define source files and include directories
+set(SOURCES
+    "main.c"
+    "board/board.c"
+    "button/button.c"
+    "device/host_name.c"
+    "wifi/wifi_connect.c"
+    "wifi/wifi_manage.c"
+    "server/server.c"
+)
+
+# Define include directories
+set(INCLUDE_DIRS
+    "."
+    "config"
+    "board"
+    "button"
+    "device"
+    "wifi"
+    "server"
+)
+
 # Register the main component
 idf_component_register(
-    SRCS "main.c" "board/board.c" "button/button.c" "device/host_name.c" "wifi/wifi_connect.c" "wifi/wifi_manage.c" "server/server.c"
-    INCLUDE_DIRS "." "config" "board" "button" "device" "wifi" "server"
+    SRCS ${SOURCES}
+    INCLUDE_DIRS ${INCLUDE_DIRS}
 )
 
 # Create SPIFFS partition image

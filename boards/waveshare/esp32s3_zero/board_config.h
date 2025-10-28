@@ -20,7 +20,18 @@ limitations under the License.
 // Board name
 #define BOARD_NAME "ESP32S3 Waveshare Zero DevKit"
 
-// Boot button GPIO pin
-#define BOARD_BOOT_GPIO GPIO_NUM_0
+// Board button GPIO
+#define BOARD_BUTTON_GPIO GPIO_NUM_0
+
+// Board audio sample configuration
+#define BOARD_AUDIO_INPUT_SAMPLE_RATE 24000
+#define BOARD_AUDIO_OUTPUT_SAMPLE_RATE 24000
+
+// Board I2S GPIO configuration
+#define BOARD_I2S_MCLK_GPIO GPIO_NUM_NC
+#define BOARD_I2S_BCLK_GPIO GPIO_NUM_NC
+#define BOARD_I2S_WS_GPIO GPIO_NUM_NC
+#define BOARD_I2S_DIN_GPIO GPIO_NUM_NC
+#define BOARD_I2S_DOUT_GPIO GPIO_NUM_NC
 
 #endif

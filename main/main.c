@@ -28,7 +28,6 @@ limitations under the License.
 
 // Include configuration and module headers
 #include "common_config.h"
-#include "board_config.h"
 
 // Include package headers
 #include "board/board.h"
@@ -95,23 +94,8 @@ void app_main(void)
     // Log the GeekROS version
     ESP_LOGI(TAG, "Client Version: %s", GEEKROS_VERSION);
 
-    // Initialize button config
-    button_config_t button_cfg = {
-        .gpio_num = BOARD_BOOT_GPIO,
-        .active_level = 0,
-        .long_press_time = 5000,
-        .double_click_time = 500,
-        .handler_get_level_func = get_button_level_handler,
-        .short_press_callback = button_short_press_handler,
-        .long_press_callback = button_long_press_handler,
-        .double_click_callback = button_double_click_handler,
-    };
-
     // Initialize button GPIO
-    button_gpio_init(button_cfg.gpio_num, button_cfg.active_level);
-
-    // Register button event
-    button_event_set(&button_cfg);
+    button_gpio_init(get_button_level_handler, button_short_press_handler, button_double_click_handler, button_long_press_handler);
 
     // Initialize WiFi
     wifi_connect_init(wifi_state_change_callback);

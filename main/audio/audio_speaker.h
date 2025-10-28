@@ -14,24 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef GEEKROS_ESP32_BOARD_CONFIG_H
-#define GEEKROS_ESP32_BOARD_CONFIG_H
+#ifndef AUDIO_SPEAKER_H
+#define AUDIO_SPEAKER_H
 
-// Board name
-#define BOARD_NAME "ESP32 Sample DevKit"
+// Include ESP libraries
+#include <driver/gpio.h>
+#include <driver/i2s_std.h>
 
-// Board button GPIO
-#define BOARD_BUTTON_GPIO GPIO_NUM_0
+// Include module headers
+#include "board_config.h"
 
-// Board audio sample configuration
-#define BOARD_AUDIO_INPUT_SAMPLE_RATE 24000
-#define BOARD_AUDIO_OUTPUT_SAMPLE_RATE 24000
-
-// Board I2S GPIO configuration
-#define BOARD_I2S_MCLK_GPIO GPIO_NUM_NC
-#define BOARD_I2S_BCLK_GPIO GPIO_NUM_NC
-#define BOARD_I2S_WS_GPIO GPIO_NUM_NC
-#define BOARD_I2S_DIN_GPIO GPIO_NUM_NC
-#define BOARD_I2S_DOUT_GPIO GPIO_NUM_NC
+// Function to initialize audio speaker
+void audio_speaker_init(void);
 
 #endif
