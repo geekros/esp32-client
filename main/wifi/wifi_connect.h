@@ -40,7 +40,7 @@ limitations under the License.
 
 // Define SPIFFS base path
 #define SPIFFS_BASE_PATH "/spiffs"
-#define SPIFFS_HTML_FILE_PATH "/spiffs/index.html"
+#define SPIFFS_HTML_FILE_PATH "/spiffs/html/index.html"
 
 // Define WiFi connect scan done bit
 #define WIFI_CONNECT_SCAN_DONE_BIT (BIT0)

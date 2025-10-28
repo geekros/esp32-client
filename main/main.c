@@ -32,6 +32,7 @@ limitations under the License.
 // Include package headers
 #include "board/board.h"
 #include "button/button.h"
+#include "audio/audio.h"
 #include "wifi/wifi_connect.h"
 #include "wifi/wifi_manage.h"
 
@@ -99,6 +100,12 @@ void app_main(void)
 
     // Initialize WiFi
     wifi_connect_init(wifi_state_change_callback);
+
+    // Initialize audio system
+    audio_init();
+
+    // Start audio streaming
+    audio_start_stream();
 
     // Main application loop
     while (1)

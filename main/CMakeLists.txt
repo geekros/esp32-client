@@ -17,6 +17,7 @@ set(SOURCES
     "main.c"
     "board/board.c"
     "button/button.c"
+    "audio/audio.c"
     "device/host_name.c"
     "wifi/wifi_connect.c"
     "wifi/wifi_manage.c"
@@ -26,9 +27,9 @@ set(SOURCES
 # Define include directories
 set(INCLUDE_DIRS
     "."
-    "config"
     "board"
     "button"
+    "audio"
     "device"
     "wifi"
     "server"
@@ -41,4 +42,4 @@ idf_component_register(
 )
 
 # Create SPIFFS partition image
-spiffs_create_partition_image(html ../html FLASH_IN_PROJECT)
+spiffs_create_partition_image(asset ../asset FLASH_IN_PROJECT)

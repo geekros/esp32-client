@@ -36,7 +36,7 @@ static char *web_page_buffer(void)
     // Configure SPIFFS
     esp_vfs_spiffs_conf_t conf = {
         .base_path = SPIFFS_BASE_PATH,
-        .partition_label = NULL,
+        .partition_label = "asset",
         .max_files = 5,
         .format_if_mount_failed = false,
     };
@@ -108,7 +108,7 @@ static void wifi_connect_task(void *param)
     }
 
     // Delete task
-    // vTaskDelete(NULL);
+    vTaskDelete(NULL);
 }
 
 // Function to initialize AP WiFi mode
