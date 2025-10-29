@@ -36,4 +36,8 @@ limitations under the License.
 #define GEEKROS_WIFI_AP_GATEWAY "192.168.100.1"
 #define GEEKROS_WIFI_AP_NETMASK "255.255.255.0"
 
+// Define SPIFFS base path
+#define GEEKROS_SPIFFS_BASE_PATH "/spiffs"
+#define GEEKROS_SPIFFS_HTML_PATH "/spiffs/html"
+
 #endif

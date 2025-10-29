@@ -17,6 +17,10 @@ limitations under the License.
 #ifndef GEEKROS_BOARD_H
 #define GEEKROS_BOARD_H
 
+// Include standard libraries
+#include <stdio.h>
+#include <string.h>
+
 // Include ESP libraries
 #include <esp_log.h>
 #include <esp_err.h>
@@ -24,7 +28,7 @@ limitations under the License.
 // Include headers
 #include "board_config.h"
 
-// Initialize the board-specific hardware.
-void board_init(void);
+// Board initialization function
+void board_init();
 
 #endif

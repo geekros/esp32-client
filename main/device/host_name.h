@@ -21,12 +21,14 @@ limitations under the License.
 #include <stdio.h>
 #include <string.h>
 
-// Include ESP-IDF headers
-#include <esp_err.h>
+// Include ESP libraries
 #include <esp_log.h>
+#include <esp_err.h>
 #include <esp_system.h>
 #include <esp_mac.h>
-#include <nvs.h>
+
+// Include common library
+#include "nvs.h"
 
 // Include configuration header
 #include "common_config.h"

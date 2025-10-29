@@ -21,7 +21,6 @@ limitations under the License.
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <cJSON.h>
 
 // Include ESP libraries
 #include <esp_log.h>
@@ -31,6 +30,9 @@ limitations under the License.
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
+// Include common headers
+#include "cJSON.h"
 
 // Include configuration header
 #include "common_config.h"

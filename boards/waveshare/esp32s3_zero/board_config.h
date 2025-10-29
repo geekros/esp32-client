@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef GEEKROS_ESP32S3_BOARD_CONFIG_H
-#define GEEKROS_ESP32S3_BOARD_CONFIG_H
+#ifndef BOARD_CONFIG_H
+#define BOARD_CONFIG_H
 
 // Board name
 #define BOARD_NAME "ESP32S3 Waveshare Zero DevKit"

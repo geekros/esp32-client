@@ -27,13 +27,15 @@ limitations under the License.
 #include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_netif.h>
-#include <lwip/ip4_addr.h>
-#include <nvs_flash.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+
+// Include common headers
+#include "lwip/ip4_addr.h"
+#include "nvs_flash.h"
 
 // Include configuration header
 #include "common_config.h"

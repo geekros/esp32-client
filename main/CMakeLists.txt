@@ -14,14 +14,14 @@
 
 # Define source files and include directories
 set(SOURCES
-    "main.c"
-    "board/board.c"
-    "button/button.c"
-    "audio/audio.c"
-    "device/host_name.c"
-    "wifi/wifi_connect.c"
-    "wifi/wifi_manage.c"
-    "server/server.c"
+    "main.cpp"
+    "board/board.cpp"
+    "button/button.cpp"
+    "audio/audio_server.cpp"
+    "device/host_name.cpp"
+    "wifi/wifi_connect.cpp"
+    "wifi/wifi_manage.cpp"
+    "server/server.cpp"
 )
 
 # Define include directories

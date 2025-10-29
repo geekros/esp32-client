@@ -26,6 +26,9 @@ limitations under the License.
 #include <esp_err.h>
 #include <esp_http_server.h>
 
+// Include configuration header
+#include "common_config.h"
+
 // Define the server receive callback type
 typedef void (*server_receive_callback_t)(uint8_t *payload, int len);
 
