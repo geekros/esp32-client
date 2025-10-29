@@ -14,31 +14,18 @@
 
 # Define source files directories
 set(SOURCES
-    "main.cc"
-    "button/button.cc"
-    "audio/audio_service.cc"
-    "device/host_name.cc"
-    "wifi/wifi_connect.cc"
-    "wifi/wifi_manage.cc"
-    "server/server.cc"
-    "${CMAKE_SOURCE_DIR}/boards/${BRAND}/${BOARD}/${BOARD}.cc"
+    "src/i2c_device.cc"
 )
 
 # Define include directories
 set(INCLUDE_DIRS
-    "."
-    "button"
-    "audio"
-    "device"
-    "wifi"
-    "server"
+    "src"
 )
 
 # Register the main component
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
+    REQUIRES driver
 )
 
-# Create SPIFFS partition image
-spiffs_create_partition_image(asset ../asset FLASH_IN_PROJECT)

@@ -40,4 +40,13 @@ limitations under the License.
 #define GEEKROS_SPIFFS_BASE_PATH "/spiffs"
 #define GEEKROS_SPIFFS_HTML_PATH "/spiffs/html"
 
+// Define board structure
+typedef struct
+{
+    void (*board_init)(void);
+} board_t;
+
+// Function to get the board structure
+const board_t *board(void);
+
 #endif
