@@ -5,3 +5,4 @@
 .DS_Store
 build
 managed_components
+dependencies.lock
