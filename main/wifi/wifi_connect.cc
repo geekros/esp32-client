@@ -33,21 +33,11 @@ static EventGroupHandle_t wifi_event_group;
 // Function to get web page buffer
 static char *web_page_buffer(void)
 {
-    // Configure SPIFFS
-    esp_vfs_spiffs_conf_t conf = {};
-    conf.base_path = SPIFFS_BASE_PATH;
-    conf.partition_label = "asset";
-    conf.max_files = 10;
-    conf.format_if_mount_failed = false;
-
-    // Initialize SPIFFS
-    ESP_ERROR_CHECK(esp_vfs_spiffs_register(&conf));
-
     // Check if SPIFFS is mounted
     struct stat st;
 
     // Verify HTML path exists
-    if (stat(SPIFFS_HTML_FILE_PATH, &st))
+    if (stat(GEEKROS_SPIFFS_HTML_FILE_PATH, &st))
     {
         // Return NULL if path does not exist
         return NULL;
@@ -58,7 +48,7 @@ static char *web_page_buffer(void)
     memset(buffer, 0, st.st_size + 1);
 
     // Open index.html file
-    FILE *file = fopen(SPIFFS_HTML_FILE_PATH, "r");
+    FILE *file = fopen(GEEKROS_SPIFFS_HTML_FILE_PATH, "r");
     if (file)
     {
         // Read file content into buffer

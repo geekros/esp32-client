@@ -14,39 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef GEEKROS_WIFI_CONNECT_H
-#define GEEKROS_WIFI_CONNECT_H
+#ifndef SYSTEM_H
+#define SYSTEM_H
 
 // Include standard libraries
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
 
 // Include ESP libraries
 #include <esp_log.h>
 #include <esp_err.h>
 #include <esp_spiffs.h>
 
-// Include FreeRTOS headers
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
-// Include common headers
-#include "cJSON.h"
-
 // Include configuration header
 #include "common_config.h"
-#include "device/host_name.h"
-#include "wifi_manage.h"
-#include "server.h"
 
-// Define WiFi connect scan done bit
-#define WIFI_CONNECT_SCAN_DONE_BIT (BIT0)
-
-// Function to initialize AP WiFi mode
-void wifi_connect_init(p_wifi_state_change_callback callback);
-
-// Function to configure AP WiFi network
-void wifi_network_configure(void);
+//  Initialize system components
+void system_init(void);
 
 #endif

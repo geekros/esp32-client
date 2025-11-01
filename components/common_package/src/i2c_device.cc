@@ -24,15 +24,12 @@ i2c_master_dev_handle_t i2c_device;
 void I2cDevice(i2c_master_bus_handle_t i2c_bus, uint8_t addr)
 {
     // Configure the I2C device
-    i2c_device_config_t i2c_device_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = addr,
-        .scl_speed_hz = 400 * 1000,
-        .scl_wait_us = 0,
-        .flags = {
-            .disable_ack_check = 0,
-        },
-    };
+    i2c_device_config_t i2c_device_cfg = {};
+    i2c_device_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+    i2c_device_cfg.device_address = addr;
+    i2c_device_cfg.scl_speed_hz = 400 * 1000;
+    i2c_device_cfg.scl_wait_us = 0;
+    i2c_device_cfg.flags.disable_ack_check = 0;
 
     // Add the I2C device to the bus
     ESP_ERROR_CHECK(i2c_master_bus_add_device(i2c_bus, &i2c_device_cfg, &i2c_device));

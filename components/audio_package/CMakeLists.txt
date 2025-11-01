@@ -12,9 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-dependencies:
-    idf:
-        version: ">=5.4.0"
-    espressif/esp_codec_dev: ~1.5
-    78/esp-opus-encoder: ~2.4.1
-    espressif/esp-sr: ~2.1.5
+# Define source files directories
+set(SOURCES
+    "src/codecs/es8311_audio_codec.cc"
+    "src/audio_service.cc"
+    "src/audio_processor.cc"
+)
+
+# Define include directories
+set(INCLUDE_DIRS
+    "src"
+    "src/codecs"
+)
+
+# Register the main component
+idf_component_register(
+    SRCS ${SOURCES}
+    INCLUDE_DIRS ${INCLUDE_DIRS}
+    REQUIRES driver esp_codec_dev esp-sr
+)
+

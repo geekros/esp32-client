@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 // Include standard libraries
+#include <math.h>
 #include <stdio.h>
 #include <esp_log.h>
 #include <nvs_flash.h>
@@ -29,14 +30,22 @@ limitations under the License.
 // Include configuration and module headers
 #include "common_config.h"
 
+// Include components headers
+#include "board_basic.h"
+
 // Include package headers
 #include "button/button.h"
-#include "audio/audio_service.h"
 #include "wifi/wifi_connect.h"
 #include "wifi/wifi_manage.h"
+#include "audio_service.h"
+#include "audio_processor.h"
 
 // Define log tag
 #define TAG "[client:main]"
+
+static const board_t *board_interface = NULL;
+
+static audio_processor_t *g_audio_processor = NULL;
 
 // Short press handler function
 static void button_short_press_handler(int gpio)
@@ -82,20 +91,59 @@ static void wifi_state_change_callback(wifi_state_t state)
     }
 }
 
-// Audio server callback function
-static void audio_server_callback(void)
+// -----------------------------------------------------------
+// AFE output callback function
+// -----------------------------------------------------------
+// Called by audio_processor when a frame of processed audio is ready
+static void afe_output_callback(const int16_t *data, int samples, void *user_ctx)
 {
+    static int frame_count = 0;
+    frame_count++;
+
+    // Print frame count for debugging
+    ESP_LOGI(TAG, "[AFE] Output frame %d (%d samples)", frame_count, samples);
+
+    // Play processed audio through the board interface
+    if (board_interface && board_interface->play_audio)
+    {
+        board_interface->play_audio(data, samples);
+    }
+}
+
+// -----------------------------------------------------------
+// AFE VAD callback function
+// -----------------------------------------------------------
+// Called by audio_processor when voice activity changes
+static void afe_vad_callback(bool speaking, void *user_ctx)
+{
+    ESP_LOGI(TAG, "[AFE] VAD state: %s", speaking ? "SPEAKING" : "SILENCE");
+}
+
+// Microphone data callback function
+static void audio_microphone_callback(const int16_t *data, int samples)
+{
+
+    audio_processor_feed(g_audio_processor, data);
+
+    // Play audio through board interface
+    // if (board_interface && board_interface->play_audio)
+    // {
+    //     // Push audio data to playback
+    //     board_interface->play_audio(data, samples);
+    // }
 }
 
 // Entry point for the ESP32 application
 extern "C" void app_main(void)
 {
-    // Initialize NVS flash
-    ESP_ERROR_CHECK(nvs_flash_init());
-
-    // Initialize the board-specific hardware
-    const board_t *board_interface = board();
-    board_interface->board_init();
+    // Initialize NVS flash for WiFi configuration
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
 
     // Log the GeekROS version
     ESP_LOGI(TAG, "Client Version: %s", GEEKROS_VERSION);
@@ -106,13 +154,34 @@ extern "C" void app_main(void)
     // Initialize WiFi
     wifi_connect_init(wifi_state_change_callback);
 
-    // Start the audio server
-    audio_server_start(audio_server_callback);
+    // Initialize the board-specific hardware
+    board_interface = board();
+
+    // Call the board initialization function
+    board_interface->board_init(audio_microphone_callback);
+
+    g_audio_processor = audio_processor_create(AUDIO_PROC_MODE_AFE);
+    if (!g_audio_processor)
+    {
+        ESP_LOGE(TAG, "Failed to create audio processor");
+        return;
+    }
+
+    audio_processor_init(g_audio_processor, 1, false, 30, NULL);
+
+    audio_processor_set_output_callback(g_audio_processor, afe_output_callback, NULL);
+    audio_processor_set_vad_callback(g_audio_processor, afe_vad_callback, NULL);
+
+    audio_processor_start(g_audio_processor);
+    ESP_LOGI(TAG, "AFE audio processor started");
 
     // Main application loop
-    while (1)
+    while (true)
     {
         // Log a heartbeat message every 500 milliseconds
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
+
+    audio_processor_destroy(g_audio_processor);
+    g_audio_processor = NULL;
 }

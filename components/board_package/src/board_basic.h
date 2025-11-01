@@ -14,39 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef GEEKROS_WIFI_CONNECT_H
-#define GEEKROS_WIFI_CONNECT_H
+#ifndef BOARD_BASIC_H
+#define BOARD_BASIC_H
 
 // Include standard libraries
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
 
 // Include ESP libraries
 #include <esp_log.h>
 #include <esp_err.h>
-#include <esp_spiffs.h>
 
-// Include FreeRTOS headers
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+// Define microphone data callback type
+typedef void (*microphone_callback)(const int16_t *data, int samples);
 
-// Include common headers
-#include "cJSON.h"
+// Define board structure
+typedef struct
+{
+    void (*board_init)(microphone_callback callback);
+    void (*play_audio)(const int16_t *data, int samples);
+} board_t;
 
-// Include configuration header
-#include "common_config.h"
-#include "device/host_name.h"
-#include "wifi_manage.h"
-#include "server.h"
-
-// Define WiFi connect scan done bit
-#define WIFI_CONNECT_SCAN_DONE_BIT (BIT0)
-
-// Function to initialize AP WiFi mode
-void wifi_connect_init(p_wifi_state_change_callback callback);
-
-// Function to configure AP WiFi network
-void wifi_network_configure(void);
+// Function to get the board structure
+const board_t *board(void);
 
 #endif

@@ -37,16 +37,9 @@ limitations under the License.
 #define GEEKROS_WIFI_AP_NETMASK "255.255.255.0"
 
 // Define SPIFFS base path
+#define GEEKROS_SPIFFS_LABEL "assets"
+#define GEEKROS_SPIFFS_MAX_FILE 20
 #define GEEKROS_SPIFFS_BASE_PATH "/spiffs"
-#define GEEKROS_SPIFFS_HTML_PATH "/spiffs/html"
-
-// Define board structure
-typedef struct
-{
-    void (*board_init)(void);
-} board_t;
-
-// Function to get the board structure
-const board_t *board(void);
+#define GEEKROS_SPIFFS_HTML_FILE_PATH "/spiffs/html/index.html"
 
 #endif
