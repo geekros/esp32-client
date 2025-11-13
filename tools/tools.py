@@ -90,7 +90,7 @@ def ensure_required_settings(config_lines):
             config_lines[config_map[k]] = line
         else:
             config_lines.append(line)
-            print(f"🔧 Added required: {line}")
+            print(f"Added required: {line}")
 
     return config_lines
 
@@ -100,7 +100,7 @@ def write_config(lines, output_path):
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     with io.open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
-    print(f"✅ Generated: {output_path}")
+    print(f"Generated: {output_path}")
     print(f"Total {len(lines)} lines written.")
 
 
@@ -114,9 +114,9 @@ def main():
     base_path = os.path.join(args.project_root, "sdkconfig.defaults")
     target_path = os.path.join(args.project_root, f"sdkconfig.defaults.{args.target}")
 
-    print(f"📦 Merging configs:")
-    print(f"  Base: {base_path}")
-    print(f"  Target: {target_path}")
+    print(f"Merging configs:")
+    print(f"Base: {base_path}")
+    print(f"Target: {target_path}")
 
     base_lines = read_config(base_path)
     target_lines = read_config(target_path)
@@ -126,7 +126,7 @@ def main():
 
     write_config(merged_lines, args.output)
 
-    print("✨ Merge completed successfully.")
+    print("Merge completed successfully.")
 
 
 if __name__ == "__main__":

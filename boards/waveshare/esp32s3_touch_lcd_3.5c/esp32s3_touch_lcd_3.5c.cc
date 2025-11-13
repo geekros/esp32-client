@@ -133,7 +133,7 @@ static void InitializeAudioCodec(void)
         BOARD_I2S_DOUT_GPIO,
         BOARD_I2S_DIN_GPIO,
         BOARD_AUDIO_CODEC_PA_PIN,
-        BOARD_AUDIO_CODEC_ES8311_ADDR, false, false);
+        BOARD_AUDIO_CODEC_ES8311_ADDR, true, false);
 
     // Check if audio codec creation was successful
     if (!audio_codec)

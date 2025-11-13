@@ -37,7 +37,7 @@ static char *web_page_buffer(void)
     struct stat st;
 
     // Verify HTML path exists
-    if (stat(GEEKROS_SPIFFS_HTML_FILE_PATH, &st))
+    if (stat(GEEKROS_SPIFFS_HTML_PATH, &st))
     {
         // Return NULL if path does not exist
         return NULL;
@@ -48,7 +48,7 @@ static char *web_page_buffer(void)
     memset(buffer, 0, st.st_size + 1);
 
     // Open index.html file
-    FILE *file = fopen(GEEKROS_SPIFFS_HTML_FILE_PATH, "r");
+    FILE *file = fopen(GEEKROS_SPIFFS_HTML_PATH, "r");
     if (file)
     {
         // Read file content into buffer

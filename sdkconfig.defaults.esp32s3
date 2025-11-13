@@ -1,27 +1,58 @@
-
+# Flash size set to 16MB
 CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+
+# Use QIO (Quad I/O) flash mode for faster read/write
 CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
 
+# Set default CPU frequency to 240 MHz (maximum for ESP32-S3)
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
 
+# Enable external SPI RAM (PSRAM)
 CONFIG_SPIRAM=y
+
+# Set PSRAM to Octal mode for higher bandwidth
 CONFIG_SPIRAM_MODE_OCT=y
+
+# PSRAM clock speed set to 80 MHz
 CONFIG_SPIRAM_SPEED_80M=y
+
+# Always allocate first 512 bytes in internal RAM
 CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=512
+
+# Reserve 64 KB of internal RAM for critical allocations
 CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=65536
+
+# Disable PSRAM memory test at boot
 CONFIG_SPIRAM_MEMTEST=n
+
+# Allow mbedTLS to use external (PSRAM) memory for allocation
 CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC=y
 
+# Number of static RX buffers for Wi-Fi
 CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=3
+
+# Number of dynamic RX buffers for Wi-Fi
 CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=6
+
+# Wi-Fi Block Ack window size (buffered packets per session)
 CONFIG_ESP_WIFI_RX_BA_WIN=3
+
+# Size of TCP/IP receive message box (affects throughput)
 CONFIG_LWIP_TCPIP_RECVMBOX_SIZE=16
+
+# Allow mbedTLS to free configuration data dynamically
 CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA=y
 
+# Instruction cache size set to 32 KB
 CONFIG_ESP32S3_INSTRUCTION_CACHE_32KB=y
+
+# Data cache line size set to 64 bytes (improves performance)
 CONFIG_ESP32S3_DATA_CACHE_LINE_64B=y
 
+
+# Stack size for system event task (e.g., Wi-Fi events)
 CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
 
-# LVGL Graphics
+
+# LVGL snapshot feature enabled (for capturing screen images)
 CONFIG_LV_USE_SNAPSHOT=y

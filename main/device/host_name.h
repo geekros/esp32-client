@@ -17,11 +17,11 @@ limitations under the License.
 #ifndef GEEKROS_HOST_NAME_H
 #define GEEKROS_HOST_NAME_H
 
-// Include standard libraries
+// Include standard headers
 #include <stdio.h>
 #include <string.h>
 
-// Include ESP libraries
+// Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 #include <esp_system.h>

@@ -20,32 +20,27 @@ limitations under the License.
 #include <esp_log.h>
 #include <nvs_flash.h>
 
-// Include FreeRTOS headers
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
-// Include drivers
-#include "driver/gpio.h"
-
 // Include configuration and module headers
 #include "common_config.h"
 
 // Include components headers
 #include "board_basic.h"
+#include "system_basic.h"
 
-// Include package headers
+// Include main headers
 #include "button/button.h"
 #include "wifi/wifi_connect.h"
 #include "wifi/wifi_manage.h"
-#include "audio_service.h"
-#include "audio_processor.h"
+#include "realtime/realtime.h"
 
 // Define log tag
 #define TAG "[client:main]"
 
+// Board interface pointer
 static const board_t *board_interface = NULL;
 
-static audio_processor_t *g_audio_processor = NULL;
+// Define realtime state variable
+static relatime_t realtime_interface;
 
 // Short press handler function
 static void button_short_press_handler(int gpio)
@@ -82,60 +77,49 @@ static void wifi_state_change_callback(wifi_state_t state)
     if (state == WIFI_STATE_CONNECTED)
     {
         ESP_LOGI(TAG, "WiFi connected");
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+
+        // Start realtime connection
+        realtime_interface.started = true;
     }
 
     // Handle WiFi disconnected state
     if (state == WIFI_STATE_DISCONNECTED)
     {
         ESP_LOGI(TAG, "WiFi disconnected");
+
+        // Stop realtime connection
+        realtime_interface.started = false;
     }
-}
 
-// -----------------------------------------------------------
-// AFE output callback function
-// -----------------------------------------------------------
-// Called by audio_processor when a frame of processed audio is ready
-static void afe_output_callback(const int16_t *data, int samples, void *user_ctx)
-{
-    static int frame_count = 0;
-    frame_count++;
-
-    // Print frame count for debugging
-    ESP_LOGI(TAG, "[AFE] Output frame %d (%d samples)", frame_count, samples);
-
-    // Play processed audio through the board interface
-    if (board_interface && board_interface->play_audio)
+    // Handle WiFi connection failed state
+    if (state == WIFI_STATE_CONNECTION_FAILED)
     {
-        board_interface->play_audio(data, samples);
-    }
-}
+        ESP_LOGI(TAG, "WiFi connection failed");
 
-// -----------------------------------------------------------
-// AFE VAD callback function
-// -----------------------------------------------------------
-// Called by audio_processor when voice activity changes
-static void afe_vad_callback(bool speaking, void *user_ctx)
-{
-    ESP_LOGI(TAG, "[AFE] VAD state: %s", speaking ? "SPEAKING" : "SILENCE");
+        // Stop realtime connection
+        realtime_interface.started = false;
+    }
 }
 
 // Microphone data callback function
 static void audio_microphone_callback(const int16_t *data, int samples)
 {
-
-    audio_processor_feed(g_audio_processor, data);
-
     // Play audio through board interface
-    // if (board_interface && board_interface->play_audio)
-    // {
-    //     // Push audio data to playback
-    //     board_interface->play_audio(data, samples);
-    // }
+    if (board_interface && board_interface->play_audio)
+    {
+        // Push audio data to playback
+        // board_interface->play_audio(data, samples);
+    }
 }
 
 // Entry point for the ESP32 application
 extern "C" void app_main(void)
 {
+    // Create default event loop
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     // Initialize NVS flash for WiFi configuration
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -148,11 +132,11 @@ extern "C" void app_main(void)
     // Log the GeekROS version
     ESP_LOGI(TAG, "Client Version: %s", GEEKROS_VERSION);
 
+    // Initialize system components
+    system_init(GEEKROS_SPIFFS_BASE_PATH, GEEKROS_SPIFFS_LABEL, GEEKROS_SPIFFS_MAX_FILE);
+
     // Initialize button GPIO
     button_gpio_init(get_button_level_handler, button_short_press_handler, button_double_click_handler, button_long_press_handler);
-
-    // Initialize WiFi
-    wifi_connect_init(wifi_state_change_callback);
 
     // Initialize the board-specific hardware
     board_interface = board();
@@ -160,28 +144,22 @@ extern "C" void app_main(void)
     // Call the board initialization function
     board_interface->board_init(audio_microphone_callback);
 
-    g_audio_processor = audio_processor_create(AUDIO_PROC_MODE_AFE);
-    if (!g_audio_processor)
-    {
-        ESP_LOGE(TAG, "Failed to create audio processor");
-        return;
-    }
-
-    audio_processor_init(g_audio_processor, 1, false, 30, NULL);
-
-    audio_processor_set_output_callback(g_audio_processor, afe_output_callback, NULL);
-    audio_processor_set_vad_callback(g_audio_processor, afe_vad_callback, NULL);
-
-    audio_processor_start(g_audio_processor);
-    ESP_LOGI(TAG, "AFE audio processor started");
+    // Initialize WiFi
+    wifi_connect_init(wifi_state_change_callback);
 
     // Main application loop
     while (true)
     {
-        // Log a heartbeat message every 500 milliseconds
-        vTaskDelay(pdMS_TO_TICKS(5000));
-    }
+        if (realtime_interface.started)
+        {
+            // Handle realtime tasks here
+            realtime_connection();
 
-    audio_processor_destroy(g_audio_processor);
-    g_audio_processor = NULL;
+            // For demonstration, stop the realtime after one iteration
+            realtime_interface.started = false;
+        }
+
+        // Log a heartbeat message every 500 milliseconds
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }

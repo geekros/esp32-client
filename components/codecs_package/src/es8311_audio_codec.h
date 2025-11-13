@@ -17,15 +17,15 @@ limitations under the License.
 #ifndef AUDIO_ES8311_AUDIO_CODEC_H
 #define AUDIO_ES8311_AUDIO_CODEC_H
 
-// Include standard libraries
+// Include standard headers
 #include <stdio.h>
 #include <string.h>
 
-// Include ESP libraries
+// Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 
-// Include ESP libraries
+// Include ESP headers
 #include <driver/i2c_master.h>
 #include <driver/i2s_std.h>
 #include <driver/gpio.h>
@@ -36,7 +36,7 @@ limitations under the License.
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-// Include audio package headers
+// Define audio codec DMA descriptor number
 #define AUDIO_CODEC_DMA_DESC_NUM 6
 
 // Define audio codec DMA frame number

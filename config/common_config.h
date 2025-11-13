@@ -19,8 +19,8 @@ limitations under the License.
 
 // Define the geekros configuration
 #define GEEKROS_SERVICE "https://platform.geekros.com"
-#define GEEKROS_SERVICE_ARK ""
-#define GEEKROS_SERVICE_GRK ""
+#define GEEKROS_SERVICE_GRK "grk-DxGZLzQkgRdLNwmYbDxqE9KZjAPpeacWTM3J72ApyXze2Wvn1r5a37J86BGMqwkW"
+#define GEEKROS_SERVICE_PROJECT_TOKEN "nJ3wk2e8A1BKMX4q3S1oqyWQvGz5br69"
 
 // Define the firmware version
 #define GEEKROS_VERSION "0.0.1"
@@ -31,7 +31,7 @@ limitations under the License.
 
 #define GEEKROS_WIFI_AP_PASSWORD "geekros.com"
 #define GEEKROS_WIFI_AP_CHANNEL 5
-#define GEEKROS_WIFI_AP_MAX_CONNECTION 4
+#define GEEKROS_WIFI_AP_MAX_CONNECTION 5
 #define GEEKROS_WIFI_AP_IP "192.168.100.1"
 #define GEEKROS_WIFI_AP_GATEWAY "192.168.100.1"
 #define GEEKROS_WIFI_AP_NETMASK "255.255.255.0"
@@ -40,6 +40,6 @@ limitations under the License.
 #define GEEKROS_SPIFFS_LABEL "assets"
 #define GEEKROS_SPIFFS_MAX_FILE 20
 #define GEEKROS_SPIFFS_BASE_PATH "/spiffs"
-#define GEEKROS_SPIFFS_HTML_FILE_PATH "/spiffs/html/index.html"
+#define GEEKROS_SPIFFS_HTML_PATH "/spiffs/html"
 
 #endif

@@ -17,11 +17,11 @@ limitations under the License.
 #ifndef POWER_AXP2101_H
 #define POWER_AXP2101_H
 
-// Include standard libraries
+// Include standard headers
 #include <stdio.h>
 #include <string.h>
 
-// Include ESP libraries
+// Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 

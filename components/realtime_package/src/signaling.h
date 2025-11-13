@@ -14,5 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Include headers
-#include "audio_service.h"
+#ifndef REALTIME_SIGNALING_H
+#define REALTIME_SIGNALING_H
+
+// Include standard headers
+#include <stdio.h>
+#include <string.h>
+
+// Include ESP headers
+#include <esp_log.h>
+#include <esp_err.h>
+
+// Function to initialize signaling
+void signaling_init(void);
+
+#endif

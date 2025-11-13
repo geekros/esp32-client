@@ -17,12 +17,12 @@ limitations under the License.
 #ifndef GEEKROS_WIFI_CONNECT_H
 #define GEEKROS_WIFI_CONNECT_H
 
-// Include standard libraries
+// Include standard headers
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 
-// Include ESP libraries
+// Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 #include <esp_spiffs.h>

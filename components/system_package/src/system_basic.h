@@ -14,7 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef AUDIO_SERVICE_H
-#define AUDIO_SERVICE_H
+#ifndef SYSTEM_H
+#define SYSTEM_H
+
+// Include standard headers
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
+// Include ESP headers
+#include <esp_log.h>
+#include <esp_err.h>
+#include <esp_spiffs.h>
+#include <esp_mac.h>
+
+//  Initialize system components
+void system_init(const char *base_path, const char *partition_label, size_t max_files);
+
+// Get system chip ID
+void system_chip_id(char *out_str, size_t len);
 
 #endif

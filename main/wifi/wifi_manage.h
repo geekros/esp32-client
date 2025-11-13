@@ -17,11 +17,11 @@ limitations under the License.
 #ifndef GEEKROS_WIFI_MANAGE_H
 #define GEEKROS_WIFI_MANAGE_H
 
-// Include standard libraries
+// Include standard headers
 #include <stdio.h>
 #include <string.h>
 
-// Include ESP libraries
+// Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 #include <esp_wifi.h>
@@ -43,8 +43,9 @@ limitations under the License.
 // Define WiFi state enumeration
 typedef enum
 {
-    WIFI_STATE_CONNECTED = 0, // WiFi connected
-    WIFI_STATE_DISCONNECTED,  // WiFi disconnected
+    WIFI_STATE_CONNECTED = 0,    // WiFi connected
+    WIFI_STATE_DISCONNECTED,     // WiFi disconnected
+    WIFI_STATE_CONNECTION_FAILED // WiFi Connection failed
 } wifi_state_t;
 
 // Define WiFi state change callback type

@@ -75,6 +75,12 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
                 esp_wifi_connect();
                 // Increment retry counter
                 wifi_connect_retry_count++;
+                // Invoke WiFi state change callback if set
+                if (wifi_state_change_callback && wifi_connect_retry_count == WIFI_CONNECT_MAX_RETRY)
+                {
+                    // Notify connected state
+                    wifi_state_change_callback(WIFI_STATE_CONNECTION_FAILED);
+                }
             }
             break;
         default:
@@ -121,7 +127,6 @@ void wifi_manage_init(const char *hostname, p_wifi_state_change_callback callbac
 {
     // Initialize network interface
     ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // Create default WiFi STA interface and store handle
     sta_netif = esp_netif_create_default_wifi_sta();

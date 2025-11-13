@@ -1,0 +1,120 @@
+/*
+Copyright 2025 GEEKROS, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Include the headers
+#include "http_request.h"
+
+// Define log tag
+#define TAG "[client:components:request]"
+
+// HTTP event handler
+static esp_err_t _http_event_handler(esp_http_client_event_t *event)
+{
+    // Get the response structure from user data
+    http_response_t *resp = (http_response_t *)event->user_data;
+
+    // Handle different HTTP events
+    switch (event->event_id)
+    {
+    case HTTP_EVENT_ON_DATA:
+        if (resp && event->data_len > 0)
+        {
+            int copy_len = event->data_len;
+            if (resp->data_offset + copy_len >= resp->buffer_len)
+                copy_len = resp->buffer_len - resp->data_offset - 1;
+
+            if (copy_len > 0)
+            {
+                memcpy(resp->buffer + resp->data_offset, event->data, copy_len);
+                resp->data_offset += copy_len;
+                resp->buffer[resp->data_offset] = '\0';
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    return ESP_OK;
+}
+
+// Function to handle HTTP request
+esp_err_t http_request(const char *url, esp_http_client_method_t method, const char *post_data, char *response_buf, int response_buf_len)
+{
+    // Prepare HTTP response structure
+    http_response_t response = {
+        .buffer = response_buf,
+        .buffer_len = response_buf_len,
+        .data_offset = 0,
+    };
+
+    // Configure HTTP client
+    esp_http_client_config_t config = {};
+    config.url = url;
+    config.crt_bundle_attach = esp_crt_bundle_attach;
+    config.event_handler = _http_event_handler;
+    config.user_data = &response;
+    config.timeout_ms = 10000;
+
+    // Initialize HTTP client
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_http_client_set_method(client, method);
+
+    // Set custom headers
+    char id_str[20];
+    system_chip_id(id_str, sizeof(id_str));
+
+    // Get current time
+    int64_t time_us = esp_timer_get_time();
+    int64_t time_ms = time_us / 1000;
+    char time_str[32];
+
+    // Format time string
+    snprintf(time_str, sizeof(time_str), "%lld", time_ms);
+
+    ESP_LOGI(TAG, "Device ID: %s", id_str);
+    ESP_LOGI(TAG, "Time MS: %s", time_str);
+
+    // Set standard headers
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_header(client, "Content-X-Source", "hardware");
+    esp_http_client_set_header(client, "Content-X-Device", id_str);
+    esp_http_client_set_header(client, "Content-X-Time", time_str);
+    esp_http_client_set_header(client, "Authorization", "Bearer " GEEKROS_SERVICE_GRK);
+
+    // Set headers
+    if (method == HTTP_METHOD_POST && post_data != NULL)
+    {
+        // Set POST data
+        esp_http_client_set_post_field(client, post_data, strlen(post_data));
+    }
+
+    // Perform the HTTP request
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK)
+    {
+        ESP_LOGI(TAG, "HTTP %s Status = %d, content_length = %lld", (method == HTTP_METHOD_GET ? "GET" : "POST"), esp_http_client_get_status_code(client), esp_http_client_get_content_length(client));
+    }
+    else
+    {
+        ESP_LOGE(TAG, "HTTP %s request failed: %s", (method == HTTP_METHOD_GET ? "GET" : "POST"), esp_err_to_name(err));
+    }
+
+    // Cleanup HTTP client
+    esp_http_client_cleanup(client);
+
+    // Return the result
+    return err;
+}

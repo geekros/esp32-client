@@ -14,28 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef BOARD_BASIC_H
-#define BOARD_BASIC_H
+// Include the headers
+#include "signaling.h"
 
-// Include standard headers
-#include <stdio.h>
-#include <string.h>
-
-// Include ESP headers
-#include <esp_log.h>
-#include <esp_err.h>
-
-// Define microphone data callback type
-typedef void (*microphone_callback)(const int16_t *data, int samples);
-
-// Define board structure
-typedef struct
+// Initialize signaling
+void signaling_init(void)
 {
-    void (*board_init)(microphone_callback callback);
-    void (*play_audio)(const int16_t *data, int samples);
-} board_t;
-
-// Function to get the board structure
-const board_t *board(void);
-
-#endif
+}

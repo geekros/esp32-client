@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef COMMON_I2C_DEVICE_H
-#define COMMON_I2C_DEVICE_H
+#ifndef REALTIME_H
+#define REALTIME_H
 
 // Include standard headers
 #include <stdio.h>
@@ -25,22 +25,24 @@ limitations under the License.
 #include <esp_log.h>
 #include <esp_err.h>
 
-// Include ESP headers
-#include <driver/i2c_master.h>
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-// I2C device handle
-extern i2c_master_dev_handle_t i2c_device;
+// Include components headers
+#include "authentication.h"
+#include "signaling.h"
 
-// I2C device constructor
-void I2cDevice(i2c_master_bus_handle_t i2c_bus, uint8_t addr);
+// Define realtime state structure
+typedef struct
+{
+    bool started;
+} relatime_t;
 
-// Function to write a value to a register over I2C
-void WriteReg(uint8_t reg, uint8_t value);
+// Function to initialize realtime
+void realtime_init(relatime_t &realtime);
 
-// Function to read a value from a register over I2C
-uint8_t ReadReg(uint8_t reg);
-
-// Function to read multiple values from a register over I2C
-void ReadRegs(uint8_t reg, uint8_t *buffer, size_t length);
+// Function to start realtime connection
+void realtime_connection(void);
 
 #endif

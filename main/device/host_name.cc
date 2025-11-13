@@ -37,7 +37,7 @@ esp_err_t get_hostname(char *hostname, size_t len)
     err = nvs_open(GEEKROS_NVS_NAMESPACE, NVS_READWRITE, &handle);
     if (err != ESP_OK)
     {
-        snprintf(hostname, len, "geekros-xxxxxx");
+        snprintf(hostname, len, GEEKROS_NVS_NAMESPACE "-xxxxxx");
         return err;
     }
 
@@ -50,7 +50,7 @@ esp_err_t get_hostname(char *hostname, size_t len)
         // Generate new hostname based on MAC address
         uint8_t mac[6];
         esp_read_mac(mac, ESP_MAC_WIFI_STA);
-        snprintf(hostname, len, "geekros-%02x%02x%02x", mac[3], mac[4], mac[5]);
+        snprintf(hostname, len, GEEKROS_NVS_NAMESPACE "-%02x%02x%02x", mac[3], mac[4], mac[5]);
 
         // Save it persistently
         nvs_set_str(handle, GEEKROS_NVS_HOSTNAME, hostname);

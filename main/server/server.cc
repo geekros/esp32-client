@@ -36,7 +36,7 @@ static int socket_id = -1;
 static esp_err_t static_file_handler(httpd_req_t *req)
 {
     char filepath[512];
-    strlcpy(filepath, GEEKROS_SPIFFS_HTML_FILE_PATH, sizeof(filepath));
+    strlcpy(filepath, GEEKROS_SPIFFS_HTML_PATH, sizeof(filepath));
     strlcat(filepath, req->uri, sizeof(filepath));
 
     FILE *file = fopen(filepath, "rb");
@@ -87,7 +87,7 @@ static esp_err_t http_get_handler(httpd_req_t *req)
         }
 
         char filepath[512];
-        strlcpy(filepath, GEEKROS_SPIFFS_HTML_FILE_PATH, sizeof(filepath));
+        strlcpy(filepath, GEEKROS_SPIFFS_HTML_PATH, sizeof(filepath));
         strlcat(filepath, "/index.html", sizeof(filepath));
 
         FILE *file = fopen(filepath, "rb");

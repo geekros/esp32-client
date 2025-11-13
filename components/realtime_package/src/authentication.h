@@ -14,22 +14,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#ifndef REALTIME_AUTHENTICATION_H
+#define REALTIME_AUTHENTICATION_H
 
-// Include standard libraries
+// Include standard headers
 #include <stdio.h>
 #include <string.h>
 
-// Include ESP libraries
+// Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
-#include <esp_spiffs.h>
+#include <esp_http_client.h>
 
-// Include configuration header
+// Include common headers
+#include "cJSON.h"
+
+// Include configuration and module headers
 #include "common_config.h"
 
-//  Initialize system components
-void system_init(void);
+// Include components headers
+#include "http_request.h"
+
+// Define response access token structure
+typedef struct
+{
+    char access_token[128];
+    int expiration;
+} response_access_token_t;
+
+// Function to initialize authentication
+response_access_token_t authentication_request(void);
 
 #endif

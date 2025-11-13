@@ -20,7 +20,7 @@ set(SOURCES
     "wifi/wifi_connect.cc"
     "wifi/wifi_manage.cc"
     "server/server.cc"
-    "system/system.cc"
+    "realtime/realtime.cc"
     "${CMAKE_SOURCE_DIR}/boards/${BRAND}/${BOARD}/${BOARD}.cc"
 )
 
@@ -31,7 +31,7 @@ set(INCLUDE_DIRS
     "device"
     "wifi"
     "server"
-    "system"
+    "realtime"
 )
 
 # Register the component with ESP-IDF
@@ -43,7 +43,7 @@ idf_component_register(
 # ----------------------------------------------------------------------
 # SDK configuration generation
 # ----------------------------------------------------------------------
-set(GENERATE_SDKCONFIG_SCRIPT ${CMAKE_SOURCE_DIR}/tools/generate_sdkconfig.py)
+set(GENERATE_SDKCONFIG_SCRIPT ${CMAKE_SOURCE_DIR}/tools/tools.py)
 set(GENERATED_SDKCONFIG ${CMAKE_SOURCE_DIR}/sdkconfig)
 set(SDKCONFIG_DEFAULTS ${CMAKE_SOURCE_DIR}/sdkconfig.defaults)
 set(SDKCONFIG_BOARD_DEFAULTS ${CMAKE_SOURCE_DIR}/sdkconfig.defaults.${IDF_TARGET})
@@ -80,7 +80,7 @@ if(EXISTS ${GENERATE_SDKCONFIG_SCRIPT})
     message(STATUS "Configured generate_sdkconfig for ${IDF_TARGET}")
 else()
     # Warning if the script is not found
-    message(WARNING "generate_sdkconfig.py not found in tools/. Skipping sdkconfig generation.")
+    message(WARNING "tools.py not found in tools/. Skipping sdkconfig generation.")
 endif()
 
 # ----------------------------------------------------------------------

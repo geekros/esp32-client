@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef COMMON_I2C_DEVICE_H
-#define COMMON_I2C_DEVICE_H
+#ifndef REQUEST_H
+#define REQUEST_H
 
 // Include standard headers
 #include <stdio.h>
@@ -24,23 +24,26 @@ limitations under the License.
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
+#include <esp_mac.h>
+#include <esp_timer.h>
+#include <esp_http_client.h>
+#include <esp_crt_bundle.h>
 
-// Include ESP headers
-#include <driver/i2c_master.h>
+// Include configuration and module headers
+#include "common_config.h"
 
-// I2C device handle
-extern i2c_master_dev_handle_t i2c_device;
+// Include components headers
+#include "system_basic.h"
 
-// I2C device constructor
-void I2cDevice(i2c_master_bus_handle_t i2c_bus, uint8_t addr);
+// Structure to hold HTTP response data
+typedef struct
+{
+    char *buffer;
+    int buffer_len;
+    int data_offset;
+} http_response_t;
 
-// Function to write a value to a register over I2C
-void WriteReg(uint8_t reg, uint8_t value);
-
-// Function to read a value from a register over I2C
-uint8_t ReadReg(uint8_t reg);
-
-// Function to read multiple values from a register over I2C
-void ReadRegs(uint8_t reg, uint8_t *buffer, size_t length);
+// Function to handle HTTP request
+esp_err_t http_request(const char *url, esp_http_client_method_t method, const char *post_data, char *response_buf, int response_buf_len);
 
 #endif
