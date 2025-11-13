@@ -14,24 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef BOARD_BASIC_H
-#define BOARD_BASIC_H
+// Include board configuration header
+#include "board_config.h"
 
-// Include standard headers
-#include <stdio.h>
-#include <string.h>
+// Define log tag
+#define TAG "[client:board]"
 
-// Include ESP headers
-#include <esp_log.h>
-#include <esp_err.h>
-
-// Define board structure
-typedef struct
+// Board initialization function
+static void board_init(void)
 {
-    void (*board_init)(void);
-} board_t;
+    ESP_LOGI(TAG, BOARD_NAME);
+}
 
-// Function to get the board structure
-const board_t *board(void);
+// Define the board interface
+static const board_t board_interface = {
+    .board_init = board_init,
+};
 
-#endif
+// Function to get the board interface
+const board_t *board(void)
+{
+    // Return the board interface
+    return &board_interface;
+}

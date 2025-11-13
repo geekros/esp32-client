@@ -12,33 +12,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ----------------------------------------------------------------------
 # Set the minimum required CMake version
+# ----------------------------------------------------------------------
 set(SOURCES
     "main.cc"
-    "button/button.cc"
-    "device/host_name.cc"
-    "wifi/wifi_connect.cc"
-    "wifi/wifi_manage.cc"
-    "server/server.cc"
-    "realtime/realtime.cc"
-    "${CMAKE_SOURCE_DIR}/boards/${BRAND}/${BOARD}/${BOARD}.cc"
+    "application/application.cc"
 )
 
+# ----------------------------------------------------------------------
 # Include directories
+# ----------------------------------------------------------------------
 set(INCLUDE_DIRS
     "."
-    "button"
-    "device"
-    "wifi"
-    "server"
-    "realtime"
+    "application"
 )
 
+# ----------------------------------------------------------------------
 # Register the component with ESP-IDF
+# ----------------------------------------------------------------------
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
 )
+
+# -------------------------------------------------------
+# Add board-specific code AFTER project() → CONFIG ready
+# -------------------------------------------------------
+set(BOARDS_ROOT "${CMAKE_SOURCE_DIR}/tools/boards")
+
+file(GLOB BRAND_DIRS "${BOARDS_ROOT}/*")
+
+foreach(BRAND_PATH ${BRAND_DIRS})
+    get_filename_component(BRAND_NAME ${BRAND_PATH} NAME)
+
+    if(CONFIG_GEEKROS_BOARD_BRAND_${BRAND_NAME})
+        file(GLOB MODEL_DIRS "${BRAND_PATH}/*")
+
+        foreach(MODEL_PATH ${MODEL_DIRS})
+            get_filename_component(MODEL_NAME ${MODEL_PATH} NAME)
+
+            if(CONFIG_GEEKROS_BOARD_${BRAND_NAME}_${MODEL_NAME})
+
+                set(SELECTED_DIR "${BOARDS_ROOT}/${BRAND_NAME}/${MODEL_NAME}")
+
+                message(STATUS "GEEKROS: Selected board → ${BRAND_NAME}/${MODEL_NAME}")
+
+                # Add include
+                target_include_directories(${COMPONENT_LIB} PRIVATE ${SELECTED_DIR})
+
+                # Add board source files
+                file(GLOB BOARD_SRCS "${SELECTED_DIR}/*.cc")
+                target_sources(${COMPONENT_LIB} PRIVATE ${BOARD_SRCS})
+
+            endif()
+        endforeach()
+    endif()
+endforeach()
 
 # ----------------------------------------------------------------------
 # SDK configuration generation
@@ -48,12 +78,8 @@ set(GENERATED_SDKCONFIG ${CMAKE_SOURCE_DIR}/sdkconfig)
 set(SDKCONFIG_DEFAULTS ${CMAKE_SOURCE_DIR}/sdkconfig.defaults)
 set(SDKCONFIG_BOARD_DEFAULTS ${CMAKE_SOURCE_DIR}/sdkconfig.defaults.${IDF_TARGET})
 
-# Generate sdkconfig file if the script exists
 if(EXISTS ${GENERATE_SDKCONFIG_SCRIPT})
-    # Find Python3 interpreter
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
-
-    # Custom command to generate sdkconfig
     add_custom_command(
         OUTPUT ${GENERATED_SDKCONFIG}
         COMMAND ${CMAKE_COMMAND} -E echo "Generating sdkconfig for target: ${IDF_TARGET}"
@@ -67,52 +93,33 @@ if(EXISTS ${GENERATE_SDKCONFIG_SCRIPT})
         COMMENT "Merging sdkconfig.defaults → sdkconfig"
         VERBATIM
     )
-
-    # Custom target to ensure sdkconfig is generated before build
     add_custom_target(generate_sdkconfig
         DEPENDS ${GENERATED_SDKCONFIG}
     )
-
-    # Make the component depend on the sdkconfig generation
     add_dependencies(${COMPONENT_LIB} generate_sdkconfig)
-
-    # Status message
     message(STATUS "Configured generate_sdkconfig for ${IDF_TARGET}")
 else()
-    # Warning if the script is not found
     message(WARNING "tools.py not found in tools/. Skipping sdkconfig generation.")
 endif()
 
 # ----------------------------------------------------------------------
 # Asset management
 # ----------------------------------------------------------------------
-set(ASSETS_SRC_DIR ${CMAKE_SOURCE_DIR}/assets)
-set(ASSETS_BUILD_DIR ${CMAKE_BINARY_DIR}/assets)
+set(ASSETS_SRC_DIR ${CMAKE_SOURCE_DIR}/tools/assets)
+set(ASSETS_BUILD_DIR ${CMAKE_BINARY_DIR}/tools/assets)
 
-# Custom target to create the assets build directory
 add_custom_target(create_assets_dir
     COMMAND ${CMAKE_COMMAND} -E make_directory ${ASSETS_BUILD_DIR}
     COMMENT "Creating build/assets directory..."
 )
 
-# Custom target to copy static assets to the build directory
 add_custom_target(copy_static_assets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_SRC_DIR} ${ASSETS_BUILD_DIR}
     COMMENT "Copying static assets to build/assets..."
     DEPENDS create_assets_dir
 )
 
+# ----------------------------------------------------------------------
 # Create SPIFFS partition image from the assets directory
+# ----------------------------------------------------------------------
 spiffs_create_partition_image(assets ${ASSETS_BUILD_DIR} FLASH_IN_PROJECT)
-
-# ----------------------------------------------------------------------
-# Speech recognition model
-# ----------------------------------------------------------------------
-set(SR_MODELS_BIN ${CMAKE_BINARY_DIR}/srmodels/srmodels.bin)
-
-# Check if srmodels.bin exists
-if(EXISTS ${SR_MODELS_BIN})
-    message(STATUS "Found srmodels.bin — will flash into 'model' partition when flashing firmware.")
-else()
-    message(WARNING "srmodels.bin not found — skipping model flash.")
-endif()

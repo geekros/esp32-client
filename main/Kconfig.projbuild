@@ -1,0 +1,20 @@
+# ----------------------------------------------------------------------
+# GEEKROS Client Configuration
+# ----------------------------------------------------------------------
+
+menu "GEEKROS Client Configuration"
+
+    # Remote OTA Upgrade
+    menu "Remote OTA Upgrade"
+        config GEEKROS_OTA_URL
+            string "Default OTA URL"
+            default "https://platform.geekros.com/open/ota"
+            help
+                This is the default OTA server URL for GEEKROS remote firmware upgrades. You can change it to your own OTA service if needed.
+    endmenu
+
+    # Development Board Configuration
+    menu "Development board configuration"
+        source "../Kconfig.board.auto"
+    endmenu
+endmenu

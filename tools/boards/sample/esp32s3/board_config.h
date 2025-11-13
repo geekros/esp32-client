@@ -14,36 +14,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef REQUEST_H
-#define REQUEST_H
+#ifndef BOARD_CONFIG_H
+#define BOARD_CONFIG_H
 
-// Include standard headers
+// Include standard libraries
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
-// Include ESP headers
+// Include ESP libraries
 #include <esp_log.h>
 #include <esp_err.h>
-#include <esp_mac.h>
-#include <esp_timer.h>
-#include <esp_http_client.h>
-#include <esp_crt_bundle.h>
 
-// Include configuration and module headers
-#include "client_config.h"
+// Include board basic header
+#include "board_basic.h"
 
-// Include components headers
-#include "system_basic.h"
+// Board name
+#define BOARD_NAME "ESP32S3 Sample DevKit"
 
-// Structure to hold HTTP response data
-typedef struct
-{
-    char *buffer;
-    int buffer_len;
-    int data_offset;
-} http_response_t;
+// Board button GPIO
+#define BOARD_BUTTON_GPIO GPIO_NUM_0
 
-// Function to handle HTTP request
-esp_err_t http_request(const char *url, esp_http_client_method_t method, const char *post_data, char *response_buf, int response_buf_len);
+// Board audio sample configuration
+#define BOARD_AUDIO_INPUT_SAMPLE_RATE 24000
+#define BOARD_AUDIO_OUTPUT_SAMPLE_RATE 24000
+
+// Board I2S GPIO configuration
+#define BOARD_I2S_MCLK_GPIO GPIO_NUM_NC
+#define BOARD_I2S_BCLK_GPIO GPIO_NUM_NC
+#define BOARD_I2S_WS_GPIO GPIO_NUM_NC
+#define BOARD_I2S_DIN_GPIO GPIO_NUM_NC
+#define BOARD_I2S_DOUT_GPIO GPIO_NUM_NC
 
 #endif

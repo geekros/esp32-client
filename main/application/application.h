@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef BOARD_BASIC_H
-#define BOARD_BASIC_H
+#ifndef APPLICATION_H
+#define APPLICATION_H
 
 // Include standard headers
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -25,13 +26,21 @@ limitations under the License.
 #include <esp_log.h>
 #include <esp_err.h>
 
-// Define board structure
-typedef struct
-{
-    void (*board_init)(void);
-} board_t;
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-// Function to get the board structure
-const board_t *board(void);
+// Include project-specific headers
+#include "client_config.h"
+
+// Include components headers
+#include "board_basic.h"
+#include "system_basic.h"
+
+// Application main function
+void application_main(void);
+
+// Application loop function
+void application_loop(void);
 
 #endif

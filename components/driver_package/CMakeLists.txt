@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-dependencies:
-    idf:
-        version: ">=5.4.0"
+# Define source files directories
+set(SOURCES
+    "src"
+)
+
+# Define include directories
+set(INCLUDE_DIRS
+    "src"
+)
+
+# Register the main component
+idf_component_register(
+    SRCS ${SOURCES}
+    INCLUDE_DIRS ${INCLUDE_DIRS}
+    REQUIRES driver device_package
+)
+
