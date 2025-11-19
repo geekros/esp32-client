@@ -87,19 +87,9 @@ void wifi_configuration_start(void)
 
     wifi_configuration_t *cfg = wifi_configuration_get_instance();
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT,
-        ESP_EVENT_ANY_ID,
-        &wifi_configuration_wifi_event_handler,
-        cfg,
-        &cfg->instance_any_id));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_configuration_wifi_event_handler, cfg, &cfg->instance_any_id));
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        IP_EVENT,
-        IP_EVENT_STA_GOT_IP,
-        &wifi_configuration_ip_event_handler,
-        cfg,
-        &cfg->instance_got_ip));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_configuration_ip_event_handler, cfg, &cfg->instance_got_ip));
 
     wifi_configuration_start_ap(cfg);
 
@@ -342,13 +332,11 @@ bool wifi_configuration_connect_test(const char *ssid, const char *password)
 
     if (!ssid || strlen(ssid) == 0 || strlen(ssid) > 32)
     {
-        ESP_LOGW(TAG, "Invalid SSID");
         return false;
     }
 
     if (password && strlen(password) > 64)
     {
-        ESP_LOGW(TAG, "Invalid password length");
         return false;
     }
 
@@ -366,8 +354,6 @@ bool wifi_configuration_connect_test(const char *ssid, const char *password)
     esp_err_t err = esp_wifi_get_mode(&mode);
     if (err != ESP_OK || mode == WIFI_MODE_NULL)
     {
-        ESP_LOGE(TAG, "Invalid WiFi mode, cannot connect_test (err=%s, mode=%d)",
-                 esp_err_to_name(err), mode);
         cfg->is_connecting = false;
         if (cfg->scan_timer)
         {
@@ -391,7 +377,6 @@ bool wifi_configuration_connect_test(const char *ssid, const char *password)
     err = esp_wifi_set_config(WIFI_IF_STA, &sta_cfg);
     if (err != ESP_OK)
     {
-        ESP_LOGE(TAG, "esp_wifi_set_config failed: %s", esp_err_to_name(err));
         cfg->is_connecting = false;
         if (cfg->scan_timer)
         {
@@ -403,7 +388,6 @@ bool wifi_configuration_connect_test(const char *ssid, const char *password)
     err = esp_wifi_connect();
     if (err != ESP_OK)
     {
-        ESP_LOGE(TAG, "esp_wifi_connect failed: %s", esp_err_to_name(err));
         cfg->is_connecting = false;
         if (cfg->scan_timer)
         {
@@ -414,12 +398,7 @@ bool wifi_configuration_connect_test(const char *ssid, const char *password)
 
     ESP_LOGI(TAG, "Connecting to SSID: %s", ssid);
 
-    EventBits_t bits = xEventGroupWaitBits(
-        cfg->event_group,
-        WIFI_CONFIG_CONNECTED_BIT | WIFI_CONFIG_FAIL_BIT,
-        pdTRUE,
-        pdFALSE,
-        pdMS_TO_TICKS(10000));
+    EventBits_t bits = xEventGroupWaitBits(cfg->event_group, WIFI_CONFIG_CONNECTED_BIT | WIFI_CONFIG_FAIL_BIT, pdTRUE, pdFALSE, pdMS_TO_TICKS(10000));
 
     cfg->is_connecting = false;
 
@@ -427,14 +406,12 @@ bool wifi_configuration_connect_test(const char *ssid, const char *password)
 
     if (bits & WIFI_CONFIG_CONNECTED_BIT)
     {
-        ESP_LOGI(TAG, "WiFi connect test success");
         vTaskDelay(pdMS_TO_TICKS(100));
         esp_wifi_disconnect();
         success = true;
     }
     else
     {
-        ESP_LOGW(TAG, "WiFi connect test failed");
         success = false;
     }
 

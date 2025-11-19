@@ -183,6 +183,16 @@ static esp_err_t scan_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+// Exit configuration task function
+static void wifi_exit_config(void *pvParameters)
+{
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    wifi_server_stop();
+    wifi_configuration_stop();
+    wifi_station_start();
+    vTaskDelete(NULL);
+}
+
 // Submit handler function
 static esp_err_t submit_handler(httpd_req_t *req)
 {
@@ -222,6 +232,9 @@ static esp_err_t submit_handler(httpd_req_t *req)
     {
         wifi_configuration_save(ssid, pass);
         httpd_resp_sendstr(req, "{\"success\":true}");
+
+        xTaskCreate(wifi_exit_config, "wifi_exit_config", 4096, NULL, 5, NULL);
+
         ESP_LOGI(TAG, "WiFi credentials saved.");
     }
     else
@@ -231,18 +244,6 @@ static esp_err_t submit_handler(httpd_req_t *req)
     }
 
     cJSON_Delete(json);
-
-    return ESP_OK;
-}
-
-// Reboot handler function
-static esp_err_t roboot_handler(httpd_req_t *req)
-{
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_set_hdr(req, "Connection", "close");
-    httpd_resp_sendstr(req, "{\"success\":true}");
-
-    xTaskCreate(system_reboot, "reboot_task", 4096, NULL, 5, NULL);
 
     return ESP_OK;
 }
@@ -418,12 +419,6 @@ esp_err_t wifi_server_start(void)
     config_submit_http.method = HTTP_POST;
     config_submit_http.handler = config_submit_handler;
     ESP_ERROR_CHECK(httpd_register_uri_handler(server_handle, &config_submit_http));
-
-    httpd_uri_t reboot_http = {};
-    reboot_http.uri = "/reboot";
-    reboot_http.method = HTTP_GET;
-    reboot_http.handler = roboot_handler;
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server_handle, &reboot_http));
 
     // Register captive portal URIs
     const char *captive_urls[] = {

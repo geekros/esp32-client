@@ -3,7 +3,8 @@
         "tips": {
             "request_failed": "Request failed",
             "wifi_connected_successfully": "WIFI connected successfully",
-            "wifi_connected_failed": "WIFI connection failed"
+            "wifi_connected_failed": "WIFI connection failed",
+            "wifi_configuring_network": "Configuring network..."
         }
     },
     "form": {

@@ -47,6 +47,7 @@ limitations under the License.
 
 // Include headers
 #include "wifi_manager.h"
+#include "wifi_station.h"
 #include "wifi_server.h"
 #include "wifi_server_dns.h"
 

@@ -18,7 +18,7 @@ import { useLanguage } from "@/hooks/context/language";
 import { useRequest } from "@/libs/request";
 import { Loading } from "@/components/base/loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/base/tabs";
-import { CpuIcon, LoaderIcon, LockKeyholeIcon, LockKeyholeOpen, RefreshCw, WifiIcon } from "lucide-react";
+import { CircleCheckIcon, CpuIcon, LoaderIcon, LockKeyholeIcon, LockKeyholeOpen, RefreshCw, WifiIcon } from "lucide-react";
 import { Button } from "@/components/base/button";
 import { Input } from "@/components/base/input";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/base/drawer";
@@ -58,6 +58,7 @@ export function PageIndex() {
             password: "",
             button_loading: false,
         },
+        complete: false,
     };
 
     // Initialize the docs state.
@@ -116,6 +117,7 @@ export function PageIndex() {
         request("POST", "/submit", {}, { ssid: data.form.ssid, password: data.form.password }).then((request: any) => {
             if (request.status === 200) {
                 if (request.data.success) {
+                    data.complete = true;
                     data.form.button_loading = false;
                     updateData(data);
                     toast.success(lang("common.tips.wifi_connected_successfully"));
@@ -165,115 +167,126 @@ export function PageIndex() {
                         <img src="/images/logo.png" />
                     </header>
                     <div className="w-[80%] m-auto">
-                        <div className="w-full">
-                            <Tabs className="w-full" defaultValue={data.tabs.current}>
-                                <TabsList className="w-full h-auto p-2">
-                                    <TabsTrigger value="wifi">
-                                        <div className="w-full pb-2">
-                                            <div className="w-9 h-9 m-auto flex items-center justify-center">
-                                                <WifiIcon className="size-6" />
+                        {data.complete ? (
+                            <div className="w-full">
+                                <div className="w-full col-span-3 py-10 bg-muted/20 rounded-md">
+                                    <div className="w-10 mx-auto">
+                                        <CircleCheckIcon className="size-10 text-lime-500" />
+                                    </div>
+                                    <div className="w-full leading-20 text-center text-sm">{lang("common.tips.wifi_configuring_network")}</div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="w-full">
+                                <Tabs className="w-full" defaultValue={data.tabs.current}>
+                                    <TabsList className="w-full h-auto p-2">
+                                        <TabsTrigger value="wifi">
+                                            <div className="w-full pb-2">
+                                                <div className="w-9 h-9 m-auto flex items-center justify-center">
+                                                    <WifiIcon className="size-6" />
+                                                </div>
+                                                <div className="w-full text-xs">{lang("form.wifi")}</div>
                                             </div>
-                                            <div className="w-full text-xs">{lang("form.wifi")}</div>
-                                        </div>
-                                    </TabsTrigger>
-                                    <TabsTrigger value="manage">
-                                        <div className="w-full pb-2">
-                                            <div className="w-9 h-9 m-auto flex items-center justify-center">
-                                                <CpuIcon className="size-6" />
+                                        </TabsTrigger>
+                                        <TabsTrigger value="manage">
+                                            <div className="w-full pb-2">
+                                                <div className="w-9 h-9 m-auto flex items-center justify-center">
+                                                    <CpuIcon className="size-6" />
+                                                </div>
+                                                <div className="w-full text-xs">{lang("form.device")}</div>
                                             </div>
-                                            <div className="w-full text-xs">{lang("form.device")}</div>
-                                        </div>
-                                    </TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="wifi">
-                                    <div className="w-full pt-5 space-y-6">
-                                        <div className="w-full flex items-center gap-2">
-                                            <Drawer
-                                                open={data.scan.drawer.open}
-                                                onOpenChange={(open: boolean) => {
-                                                    data.scan.drawer.open = open;
-                                                    updateData(data);
-                                                }}
-                                            >
-                                                <DrawerTrigger asChild>
-                                                    <Button className="w-full h-12 flex-5" variant="outline">
-                                                        {data.form.ssid === "" ? (
-                                                            <span className="text-muted-foreground line-clamp-1">{lang("form.select_wifi_placeholder")}</span>
-                                                        ) : (
-                                                            <span className="text-muted-foreground line-clamp-1">{data.form.ssid}</span>
-                                                        )}
-                                                    </Button>
-                                                </DrawerTrigger>
-                                                <DrawerContent className="w-full">
-                                                    <DrawerHeader className="hidden">
-                                                        <DrawerTitle></DrawerTitle>
-                                                        <DrawerDescription></DrawerDescription>
-                                                    </DrawerHeader>
-                                                    <div className="w-full py-5 px-5 space-y-2">
-                                                        <div className="w-full h-[380px] overflow-y-auto no-scrollbar space-y-2">
-                                                            {data.scan.items.length === 0 ? (
-                                                                <div className="w-full py-20 bg-muted/20 rounded-md">
-                                                                    <Empty />
-                                                                </div>
+                                        </TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="wifi">
+                                        <div className="w-full pt-5 space-y-6">
+                                            <div className="w-full flex items-center gap-2">
+                                                <Drawer
+                                                    open={data.scan.drawer.open}
+                                                    onOpenChange={(open: boolean) => {
+                                                        data.scan.drawer.open = open;
+                                                        updateData(data);
+                                                    }}
+                                                >
+                                                    <DrawerTrigger asChild>
+                                                        <Button className="w-full h-12 flex-5" variant="outline">
+                                                            {data.form.ssid === "" ? (
+                                                                <span className="text-muted-foreground line-clamp-1">{lang("form.select_wifi_placeholder")}</span>
                                                             ) : (
-                                                                <div className="w-full">
-                                                                    {data.scan.items.map((item: any, index: number) => (
-                                                                        <div
-                                                                            onClick={() => {
-                                                                                OnChoice(item);
-                                                                            }}
-                                                                            key={index}
-                                                                            className="w-full h-12 flex items-center"
-                                                                        >
-                                                                            <div className="w-9 h-9 flex items-center justify-center">
-                                                                                {item.authmode === 0 && <LockKeyholeOpen className="w-4 h-4" />}
-                                                                                {item.authmode !== 0 && <LockKeyholeIcon className="w-4 h-4" />}
-                                                                            </div>
-                                                                            <div className="w-full line-clamp-1">{item.ssid}</div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
+                                                                <span className="text-muted-foreground line-clamp-1">{data.form.ssid}</span>
                                                             )}
+                                                        </Button>
+                                                    </DrawerTrigger>
+                                                    <DrawerContent className="w-full">
+                                                        <DrawerHeader className="hidden">
+                                                            <DrawerTitle></DrawerTitle>
+                                                            <DrawerDescription></DrawerDescription>
+                                                        </DrawerHeader>
+                                                        <div className="w-full py-5 px-5 space-y-2">
+                                                            <div className="w-full h-[380px] overflow-y-auto no-scrollbar space-y-2">
+                                                                {data.scan.items.length === 0 ? (
+                                                                    <div className="w-full py-20 bg-muted/20 rounded-md">
+                                                                        <Empty />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="w-full">
+                                                                        {data.scan.items.map((item: any, index: number) => (
+                                                                            <div
+                                                                                onClick={() => {
+                                                                                    OnChoice(item);
+                                                                                }}
+                                                                                key={index}
+                                                                                className="w-full h-12 flex items-center"
+                                                                            >
+                                                                                <div className="w-9 h-9 flex items-center justify-center">
+                                                                                    {item.authmode === 0 && <LockKeyholeOpen className="w-4 h-4" />}
+                                                                                    {item.authmode !== 0 && <LockKeyholeIcon className="w-4 h-4" />}
+                                                                                </div>
+                                                                                <div className="w-full line-clamp-1">{item.ssid}</div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <DrawerFooter>
-                                                        <DrawerClose asChild></DrawerClose>
-                                                    </DrawerFooter>
-                                                </DrawerContent>
-                                            </Drawer>
-                                            <Button onClick={OnScan} disabled={data.scan.button_loading} className="w-full h-12 flex-1" variant="secondary" size="icon" aria-label="Submit">
-                                                {!data.scan.button_loading ? <RefreshCw /> : <RefreshCw className="animate-spin" />}
-                                            </Button>
+                                                        <DrawerFooter>
+                                                            <DrawerClose asChild></DrawerClose>
+                                                        </DrawerFooter>
+                                                    </DrawerContent>
+                                                </Drawer>
+                                                <Button onClick={OnScan} disabled={data.scan.button_loading} className="w-full h-12 flex-1" variant="secondary" size="icon" aria-label="Submit">
+                                                    {!data.scan.button_loading ? <RefreshCw /> : <RefreshCw className="animate-spin" />}
+                                                </Button>
+                                            </div>
+                                            <div className="w-full">
+                                                <Input
+                                                    type="password"
+                                                    defaultValue={data.form.password}
+                                                    onChange={(e) => {
+                                                        data.form.password = e.target.value;
+                                                        updateData(data);
+                                                    }}
+                                                    className="w-full h-12 placeholder:text-sm"
+                                                    placeholder={lang("form.select_wifi_password_placeholder")}
+                                                />
+                                            </div>
+                                            <div className="w-full">
+                                                <Button onClick={OnSubmit} disabled={data.form.button_loading} className="w-full h-12 text-xs">
+                                                    {!data.form.button_loading ? null : <LoaderIcon className="size-4 mr-2 animate-spin inline-block" />}
+                                                    <span>{lang("form.button.connect")}</span>
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <div className="w-full">
-                                            <Input
-                                                type="password"
-                                                defaultValue={data.form.password}
-                                                onChange={(e) => {
-                                                    data.form.password = e.target.value;
-                                                    updateData(data);
-                                                }}
-                                                className="w-full h-12 placeholder:text-sm"
-                                                placeholder={lang("form.select_wifi_password_placeholder")}
-                                            />
+                                    </TabsContent>
+                                    <TabsContent value="manage">
+                                        <div className="w-full grid grid-cols-3 gap-3 pt-5">
+                                            <div className="col-span-3 py-20 bg-muted/20 rounded-md">
+                                                <Empty />
+                                            </div>
                                         </div>
-                                        <div className="w-full">
-                                            <Button onClick={OnSubmit} disabled={data.form.button_loading} className="w-full h-12 text-xs">
-                                                {!data.form.button_loading ? null : <LoaderIcon className="size-4 mr-2 animate-spin inline-block" />}
-                                                <span>{lang("form.button.connect")}</span>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </TabsContent>
-                                <TabsContent value="manage">
-                                    <div className="w-full grid grid-cols-3 gap-3 pt-5">
-                                        <div className="col-span-3 py-20 bg-muted/20 rounded-md">
-                                            <Empty />
-                                        </div>
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
-                        </div>
+                                    </TabsContent>
+                                </Tabs>
+                            </div>
+                        )}
                     </div>
                 </div>
             ) : (

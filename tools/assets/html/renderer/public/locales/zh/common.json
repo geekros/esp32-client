@@ -3,7 +3,8 @@
         "tips": {
             "request_failed": "请求失败",
             "wifi_connected_successfully": "WIFI连接成功",
-            "wifi_connected_failed": "WIFI连接失败"
+            "wifi_connected_failed": "WIFI连接失败",
+            "wifi_configuring_network": "正在配网..."
         }
     },
     "form": {
