@@ -26,6 +26,6 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES system_package esp_http_client esp-tls mbedtls json
+    REQUIRES driver system_package esp_http_client esp-tls mbedtls json
 )
 

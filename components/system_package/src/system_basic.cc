@@ -16,6 +16,9 @@ limitations under the License.
 // Include headers
 #include "system_basic.h"
 
+// Define log tag
+#define TAG "[client:components:system:basic]"
+
 // Initialize system components
 void system_init(const char *base_path, const char *partition_label, size_t max_files)
 {

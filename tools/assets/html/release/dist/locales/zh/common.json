@@ -1,0 +1,18 @@
+{
+    "common": {
+        "tips": {
+            "request_failed": "请求失败",
+            "wifi_connected_successfully": "WIFI连接成功",
+            "wifi_connected_failed": "WIFI连接失败"
+        }
+    },
+    "form": {
+        "wifi": "WIFI配置",
+        "device": "设备管理",
+        "select_wifi_placeholder": "选择要连接的WIFI",
+        "select_wifi_password_placeholder": "输入WIFI密码",
+        "button": {
+            "connect": "连接WIFI"
+        }
+    }
+}

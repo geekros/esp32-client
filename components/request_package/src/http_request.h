@@ -18,7 +18,9 @@ limitations under the License.
 #define REQUEST_H
 
 // Include standard headers
+#include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // Include ESP headers

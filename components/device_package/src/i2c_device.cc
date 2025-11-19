@@ -17,6 +17,9 @@ limitations under the License.
 // Include headers
 #include "i2c_device.h"
 
+// Define log tag
+#define TAG "[client:components:device:i2c]"
+
 // I2C device handle
 i2c_master_dev_handle_t i2c_device;
 

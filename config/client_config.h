@@ -20,18 +20,16 @@ limitations under the License.
 // Define the firmware version
 #define GEEKROS_VERSION "0.0.1"
 
-#define GEEKROS_BOARD_BRAND "waveshare"
-#define GEEKROS_BOARD_NAME "esp32s3_touch_lcd_3.5c"
-
 // Define the geekros configuration
 #define GEEKROS_SERVICE "https://platform.geekros.com"
-#define GEEKROS_SERVICE_GRK "grk-DxGZLzQkgRdLNwmYbDxqE9KZjAPpeacWTM3J72ApyXze2Wvn1r5a37J86BGMqwkW"
-#define GEEKROS_SERVICE_PROJECT_TOKEN "nJ3wk2e8A1BKMX4q3S1oqyWQvGz5br69"
+#define GEEKROS_SERVICE_GRK CONFIG_GEEKROS_SERVICE_GRK
+#define GEEKROS_SERVICE_PROJECT_TOKEN CONFIG_GEEKROS_SERVICE_PROJECT_TOKEN
 
 // Define NVS namespace
 #define GEEKROS_NVS_NAMESPACE "geekros"
 #define GEEKROS_NVS_HOSTNAME "hostname"
 
+#define GEEKROS_WIFI_NVS_NAMESPACE "wifi"
 #define GEEKROS_WIFI_AP_PASSWORD "geekros.com"
 #define GEEKROS_WIFI_AP_CHANNEL 5
 #define GEEKROS_WIFI_AP_MAX_CONNECTION 5
@@ -44,5 +42,7 @@ limitations under the License.
 #define GEEKROS_SPIFFS_MAX_FILE 20
 #define GEEKROS_SPIFFS_BASE_PATH "/spiffs"
 #define GEEKROS_SPIFFS_HTML_PATH "/spiffs/html"
+#define GEEKROS_SPIFFS_LANGUAGE_PATH "/spiffs/language"
+#define GEEKROS_SPIFFS_MODEL_PATH "/spiffs/model"
 
 #endif

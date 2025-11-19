@@ -97,29 +97,120 @@ if(EXISTS ${GENERATE_SDKCONFIG_SCRIPT})
         DEPENDS ${GENERATED_SDKCONFIG}
     )
     add_dependencies(${COMPONENT_LIB} generate_sdkconfig)
-    message(STATUS "Configured generate_sdkconfig for ${IDF_TARGET}")
+    message(STATUS "GEEKROS: Configured generate_sdkconfig for ${IDF_TARGET}")
 else()
-    message(WARNING "tools.py not found in tools/. Skipping sdkconfig generation.")
+    message(WARNING "GEEKROS: tools.py not found in tools/. Skipping sdkconfig generation.")
 endif()
 
 # ----------------------------------------------------------------------
-# Asset management
+# Asset html management
 # ----------------------------------------------------------------------
-set(ASSETS_SRC_DIR ${CMAKE_SOURCE_DIR}/tools/assets)
-set(ASSETS_BUILD_DIR ${CMAKE_BINARY_DIR}/tools/assets)
+set(ASSETS_SRC_DIR ${CMAKE_SOURCE_DIR}/tools/assets/html/release/dist)
+set(ASSETS_BUILD_DIR ${CMAKE_BINARY_DIR}/assets/html)
 
-add_custom_target(create_assets_dir
+add_custom_target(copy_static_assets_html ALL
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${ASSETS_BUILD_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${ASSETS_BUILD_DIR}
-    COMMENT "Creating build/assets directory..."
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_SRC_DIR} ${ASSETS_BUILD_DIR}
+    COMMENT "Copying static assets to build/assets/html..."
+    VERBATIM
 )
 
-add_custom_target(copy_static_assets ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_SRC_DIR} ${ASSETS_BUILD_DIR}
-    COMMENT "Copying static assets to build/assets..."
-    DEPENDS create_assets_dir
+# ----------------------------------------------------------------------
+# Asset locale&language management
+# ----------------------------------------------------------------------
+set(LANG_SRC_DIR ${CMAKE_SOURCE_DIR}/tools/assets/locale)
+set(LANG_BUILD_DIR ${CMAKE_BINARY_DIR}/assets/language)
+
+add_custom_target(create_assets_language_dir
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${LANG_BUILD_DIR}
+    COMMENT "Creating build/assets/language directory..."
 )
+
+if(CONFIG_GEEKROS_SYSTEM_LANGUAGE_EN_US)
+    set(SELECTED_LANG "EN_US")
+elseif(CONFIG_GEEKROS_SYSTEM_LANGUAGE_ZH_CN)
+    set(SELECTED_LANG "ZH_CN")
+elseif(CONFIG_GEEKROS_SYSTEM_LANGUAGE_ZH_TW)
+    set(SELECTED_LANG "ZH_TW")
+endif()
+
+add_custom_target(copy_static_assets_language ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${LANG_SRC_DIR}/${SELECTED_LANG} ${LANG_BUILD_DIR}
+    COMMENT "Copying language assets: ${SELECTED_LANG}"
+    DEPENDS create_assets_language_dir
+)
+
+# ==========================================================================================
+# GEEKROS: ESP-SR model packer (calling movemodel.py from esp-sr component)
+# ==========================================================================================
+idf_build_get_property(build_components BUILD_COMPONENTS)
+
+function(find_component_by_pattern PATTERN COMPONENT_VAR PATH_VAR)
+    foreach(COMPONENT ${build_components})
+        if(COMPONENT MATCHES "${PATTERN}")
+            set(${COMPONENT_VAR} ${COMPONENT} PARENT_SCOPE)
+            idf_component_get_property(COMPONENT_PATH ${COMPONENT} COMPONENT_DIR)
+            set(${PATH_VAR} "${COMPONENT_PATH}" PARENT_SCOPE)
+            break()
+        endif()
+    endforeach()
+endfunction()
+
+find_component_by_pattern("espressif__esp-sr" ESP_SR_COMPONENT ESP_SR_COMPONENT_PATH)
+if(ESP_SR_COMPONENT_PATH)
+    message(STATUS "GEEKROS: ESP-SR found at ${ESP_SR_COMPONENT_PATH}")
+
+    set(ESP_SR_MODEL_PATH "${ESP_SR_COMPONENT_PATH}/model")
+    set(MOVEMODEL_SCRIPT "${ESP_SR_MODEL_PATH}/movemodel.py")
+
+    set(SDKCONFIG_PATH "${PROJECT_DIR}/sdkconfig")
+
+    set(SR_BUILD_DIR "${CMAKE_BINARY_DIR}/srmodels")
+    set(SR_MODELS_BIN "${SR_BUILD_DIR}/srmodels.bin")
+
+    add_custom_target(create_srmodels_dir
+        COMMAND ${CMAKE_COMMAND} -E echo "GEEKROS: Creating build/srmodels directory..."
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${SR_BUILD_DIR}
+        COMMENT "Creating build/srmodels directory..."
+    )
+
+    add_custom_command(
+        OUTPUT ${SR_MODELS_BIN}
+        COMMAND ${CMAKE_COMMAND} -E echo "GEEKROS: Packing SR models via movemodel.py..."
+        COMMAND ${Python3_EXECUTABLE} ${MOVEMODEL_SCRIPT}
+                -d1 ${SDKCONFIG_PATH}
+                -d2 ${ESP_SR_COMPONENT_PATH}
+                -d3 ${CMAKE_BINARY_DIR}
+        DEPENDS ${SDKCONFIG_PATH} create_srmodels_dir
+        VERBATIM
+    )
+
+    add_custom_target(gen_srmodels ALL DEPENDS ${SR_MODELS_BIN})
+
+    set(MODEL_BUILD_DIR ${CMAKE_BINARY_DIR}/assets/model)
+
+    add_custom_target(create_assets_model_dir
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${MODEL_BUILD_DIR}
+        COMMENT "Creating build/assets/model directory..."
+    )
+
+    add_custom_target(copy_static_assets_model ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying model bin to build/assets/model..."
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${SR_MODELS_BIN}
+                ${MODEL_BUILD_DIR}/srmodels.bin
+        DEPENDS create_assets_model_dir gen_srmodels
+        COMMENT "Copying model assets: srmodels.bin"
+    )
+else()
+    message(WARNING "GEEKROS: ESP-SR component not found. Skipping model packing.")
+endif()
 
 # ----------------------------------------------------------------------
 # Create SPIFFS partition image from the assets directory
 # ----------------------------------------------------------------------
-spiffs_create_partition_image(assets ${ASSETS_BUILD_DIR} FLASH_IN_PROJECT)
+spiffs_create_partition_image(assets ${CMAKE_BINARY_DIR}/assets
+    FLASH_IN_PROJECT
+    DEPENDS copy_static_assets_html copy_static_assets_language copy_static_assets_model
+)

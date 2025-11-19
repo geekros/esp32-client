@@ -4,8 +4,9 @@
 .vscode
 .DS_Store
 build
+node_modules
 managed_components
-Kconfig.board.auto
 dependencies.lock
 sdkconfig
 sdkconfig.old
+yarn.lock

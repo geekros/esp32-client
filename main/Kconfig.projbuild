@@ -4,17 +4,44 @@
 
 menu "GEEKROS Client Configuration"
 
-    # Remote OTA Upgrade
-    menu "Remote OTA Upgrade"
+    # Basic Configuration
+    menu "Basic Configuration"
+        # GEEKROS OTA URL
         config GEEKROS_OTA_URL
             string "Default OTA URL"
             default "https://platform.geekros.com/open/ota"
             help
                 This is the default OTA server URL for GEEKROS remote firmware upgrades. You can change it to your own OTA service if needed.
+        
+        # GEEKROS Authorization Configuration
+        config GEEKROS_SERVICE_GRK
+            string "Authorization GRK"
+            default ""
+            help
+                This is the authorization GRK for GEEKROS Client to access GEEKROS Platform services. You need to set it before using GEEKROS services.
+        config GEEKROS_SERVICE_PROJECT_TOKEN
+            string "Authorization Project Token"
+            default ""
+            help
+                This is the authorization Project Token for GEEKROS Client to access GEEKROS Platform services. You need to set it before using GEEKROS services.
+        
+        # System Language
+        choice GEEKROS_SYSTEM_LANGUAGE
+            prompt "System Language"
+            default GEEKROS_SYSTEM_LANGUAGE_ZH_CN
+            help
+                Select the system language for GEEKROS Client.
+            config GEEKROS_SYSTEM_LANGUAGE_EN_US
+                bool "English"
+            config GEEKROS_SYSTEM_LANGUAGE_ZH_CN
+                bool "Chinese"
+            config GEEKROS_SYSTEM_LANGUAGE_ZH_TW
+                bool "Chinese Traditional"
+        endchoice
     endmenu
 
     # Development Board Configuration
     menu "Development board configuration"
-        source "../Kconfig.board.auto"
+        source "../build/Kconfig.board.auto"
     endmenu
 endmenu

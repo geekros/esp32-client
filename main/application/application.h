@@ -26,6 +26,8 @@ limitations under the License.
 #include <esp_log.h>
 #include <esp_err.h>
 
+#include <esp_afe_sr_models.h>
+
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -36,6 +38,11 @@ limitations under the License.
 // Include components headers
 #include "board_basic.h"
 #include "system_basic.h"
+#include "language_basic.h"
+#include "model_basic.h"
+#include "wifi_manager.h"
+#include "wifi_station.h"
+#include "wifi_configuration.h"
 
 // Application main function
 void application_main(void);

@@ -14,7 +14,7 @@
 
 # Define source files directories
 set(SOURCES
-    "src"
+    "src/i2c_device.cc"
 )
 
 # Define include directories

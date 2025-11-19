@@ -18,9 +18,14 @@
 cmake_minimum_required(VERSION 3.16)
 
 # ----------------------------------------------------------------------
+# Add compiler options to suppress specific warnings
+# ----------------------------------------------------------------------
+add_compile_options(-Wno-missing-field-initializers)
+
+# ----------------------------------------------------------------------
 # Board Auto Generation
 # ----------------------------------------------------------------------
-set(GEN_KCONFIG "${CMAKE_SOURCE_DIR}/Kconfig.board.auto")
+set(GEN_KCONFIG "${CMAKE_SOURCE_DIR}/build/Kconfig.board.auto")
 
 file(WRITE ${GEN_KCONFIG}
 "# ----------------------------------------------------------------------\n"

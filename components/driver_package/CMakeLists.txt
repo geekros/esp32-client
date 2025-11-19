@@ -14,7 +14,7 @@
 
 # Define source files directories
 set(SOURCES
-    "src"
+    "src/axp2101_driver.cc"
 )
 
 # Define include directories

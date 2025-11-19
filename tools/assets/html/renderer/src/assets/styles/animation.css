@@ -1,0 +1,61 @@
+@charset "utf-8";
+
+.animate-scroll {
+    animation: scroll linear infinite;
+    animation-duration: 40s;
+    will-change: transform;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes gradient-animation {
+    0% {
+        background-position: 0 2%;
+    }
+    50% {
+        background-position: 100% 99%;
+    }
+    to {
+        background-position: 0 2%;
+    }
+}
+
+@keyframes floating-animation {
+    0% {
+        transform: translateY(-5px);
+    }
+    50% {
+        transform: translateY(5px);
+    }
+    to {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes rotate-animation {
+    0% {
+        filter: drop-shadow(0 0 45px rgba(255, 255, 255, 0.5));
+    }
+    to {
+        filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+    }
+}
+
+@keyframes flash-animation {
+    0%,
+    50% {
+        background-color: hsl(var(--muted) / 0.7);
+    }
+    50%,
+    100% {
+        background-color: white;
+    }
+}

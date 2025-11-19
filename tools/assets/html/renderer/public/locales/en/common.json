@@ -1,0 +1,18 @@
+{
+    "common": {
+        "tips": {
+            "request_failed": "Request failed",
+            "wifi_connected_successfully": "WIFI connected successfully",
+            "wifi_connected_failed": "WIFI connection failed"
+        }
+    },
+    "form": {
+        "wifi": "Wifi",
+        "device": "Device",
+        "select_wifi_placeholder": "Select the WIFI to connect",
+        "select_wifi_password_placeholder": "Enter WIFI password",
+        "button": {
+            "connect": "Connect to WIFI"
+        }
+    }
+}

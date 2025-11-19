@@ -1,0 +1,12 @@
+.vscode
+.idea
+.DS*
+.git
+extension/**
+renderer/**
+tools/**
+.gitignore
+tsconfig.json
+tsconfig.app.json
+tsconfig.node.json
+yarn.lock

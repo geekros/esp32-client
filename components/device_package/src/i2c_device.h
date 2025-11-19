@@ -14,18 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef COMMON_I2C_DEVICE_H
-#define COMMON_I2C_DEVICE_H
+#ifndef I2C_DEVICE_H
+#define I2C_DEVICE_H
 
 // Include standard headers
+#include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 
-// Include ESP headers
+// Include driver headers
 #include <driver/i2c_master.h>
 
 // I2C device handle

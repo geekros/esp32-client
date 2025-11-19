@@ -15,6 +15,8 @@
 # Define source files directories
 set(SOURCES
     "src/system_basic.cc"
+    "src/system_hostname.cc"
+    "src/system_reboot.cc"
 )
 
 # Define include directories
@@ -26,6 +28,6 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES spiffs
+    REQUIRES driver spiffs nvs_flash
 )
 
