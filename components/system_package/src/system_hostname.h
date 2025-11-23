@@ -18,10 +18,7 @@ limitations under the License.
 #define SYSTEM_HOSTNAME_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -29,16 +26,42 @@ limitations under the License.
 #include <esp_system.h>
 #include <esp_mac.h>
 
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+
 // Include NVS header
 #include "nvs_flash.h"
 
 // Include client configuration header
 #include "client_config.h"
 
-// Function to set the device hostname
-const char *get_hostname();
+// SystemHostname class definition
+class SystemHostname
+{
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
 
-// Clear NVS hostname (for testing purposes)
-void clear_hostname(void);
+public:
+    // Constructor and Destructor
+    SystemHostname();
+    ~SystemHostname();
+
+    // Get the singleton instance of the SystemHostname class
+    static SystemHostname &Instance()
+    {
+        static SystemHostname instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    SystemHostname(const SystemHostname &) = delete;
+    SystemHostname &operator=(const SystemHostname &) = delete;
+
+    // Get the device hostname
+    std::string Get();
+};
 
 #endif

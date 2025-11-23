@@ -18,14 +18,16 @@ limitations under the License.
 #define LANGUAGE_BASIC_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
 
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
+
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
 
 // Include cJSON header
 #include "cJSON.h"
@@ -33,16 +35,39 @@ limitations under the License.
 // Include client configuration header
 #include "client_config.h"
 
-// Initialization function for language package
-void language_init(void);
+class LanguageBasic
+{
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
 
-// Function to get the current locale/language code
-const char *get_language(void);
+public:
+    // Constructor and Destructor
+    LanguageBasic();
+    ~LanguageBasic();
 
-// Function to get localized string by key
-const char *get_language_content(const char *key);
+    // Get the singleton instance of the LanguageBasic class
+    static LanguageBasic &Instance()
+    {
+        static LanguageBasic instance;
+        return instance;
+    }
 
-// Function to get localized music string by key
-const char *get_language_audio_path(const char *key);
+    // Delete copy constructor and assignment operator
+    LanguageBasic(const LanguageBasic &) = delete;
+    LanguageBasic &operator=(const LanguageBasic &) = delete;
+
+    // Initialization function for language package
+    void Init();
+
+    // Function to load language configuration
+    void LoadConfig();
+
+    // Function to get the current locale/language code
+    std::string *GetLanguage();
+
+    // Function to get localized string by key
+    std::string *Language(const std::string &key);
+};
 
 #endif

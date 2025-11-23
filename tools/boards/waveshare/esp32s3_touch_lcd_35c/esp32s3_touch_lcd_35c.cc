@@ -14,8 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Include standard libraries
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+// Include ESP libraries
+#include <esp_log.h>
+#include <esp_err.h>
+
 // Include board configuration header
 #include "board_config.h"
+
+// Include driver headers
+#include "driver/i2c_master.h"
+
+// Include component headers
+#include "i2c_device.h"
+#include "axp2101_driver.h"
+#include "es8311_audio_codec.h"
 
 // Define log tag
 #define TAG "[client:board]"
@@ -23,7 +40,6 @@ limitations under the License.
 // Board initialization function
 static void board_init(void)
 {
-    ESP_LOGI(TAG, BOARD_NAME);
 }
 
 // Define the board interface

@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef SRMODEL_LOAD_H
-#define SRMODEL_LOAD_H
+#ifndef UTILS_BASIC_H
+#define UTILS_BASIC_H
 
 // Include standard headers
 #include <string>
@@ -23,43 +23,38 @@ limitations under the License.
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
-#include <esp_heap_caps.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include project-specific headers
-#include "client_config.h"
-
-// Include headers
-#include "model_path.h"
-
-class ModelBasic
+// UtilsBasic class definition
+class UtilsBasic
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
 public:
-    // Constructor and destructor
-    ModelBasic();
-    ~ModelBasic();
+    // Constructor and Destructor
+    UtilsBasic();
+    ~UtilsBasic();
 
-    // Get the singleton instance of the ModelBasic class
-    static ModelBasic &Instance()
+    // Get the singleton instance of the UtilsBasic class
+    static UtilsBasic &Instance()
     {
-        static ModelBasic instance;
+        static UtilsBasic instance;
         return instance;
     }
 
     // Delete copy constructor and assignment operator
-    ModelBasic(const ModelBasic &) = delete;
-    ModelBasic &operator=(const ModelBasic &) = delete;
+    UtilsBasic(const UtilsBasic &) = delete;
+    UtilsBasic &operator=(const UtilsBasic &) = delete;
 
-    // Load model
-    srmodel_list_t *Load(void);
+    // Functions
+    static const char *GetMimeType(const char *uri);
+    static const char *const *GetCaptiveUrls(size_t &count);
 };
 
 #endif

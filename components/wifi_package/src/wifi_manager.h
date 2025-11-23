@@ -18,10 +18,9 @@ limitations under the License.
 #define WIFI_MANAGER_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <vector>
+#include <algorithm>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -31,46 +30,61 @@ limitations under the License.
 #include <nvs_flash.h>
 #include <nvs.h>
 
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+
 // Include client configuration header
 #include "client_config.h"
 
-#define WIFI_SSID_MAX_LEN 32
-#define WIFI_PASSWORD_MAX_LEN 64
-#define WIFI_MAX_WIFI_SSID_COUNT 10
+// Maximum number of stored WiFi SSIDs
+#define MAX_WIFI_SSID_COUNT 10
 
-// Define SSID item structure
-typedef struct
+// WifiManagerItem structure
+struct WifiManagerItem
 {
-    char ssid[WIFI_SSID_MAX_LEN + 1];
-    char password[WIFI_PASSWORD_MAX_LEN + 1];
-} wifi_ssid_item_t;
+    std::string ssid;
+    std::string password;
+};
 
-// Define SSID manager structure
-typedef struct
+// WifiManager class definition
+class WifiManager
 {
-    wifi_ssid_item_t items[WIFI_MAX_WIFI_SSID_COUNT];
-    int count;
-} wifi_ssid_manager_t;
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
 
-// Function to get SSID manager instance
-wifi_ssid_manager_t *wifi_ssid_manager_get_instance(void);
+    // Load and save configuration
+    void Load();
+    void Save();
 
-// Functions to load and save SSID manager data
-void wifi_ssid_manager_load(wifi_ssid_manager_t *mgr);
-void wifi_ssid_manager_save(wifi_ssid_manager_t *mgr);
+    // Current connected SSID
+    std::vector<WifiManagerItem> ssid_list;
 
-// Function to clear SSID manager data
-void wifi_ssid_manager_clear(wifi_ssid_manager_t *mgr);
+public:
+    // Constructor and destructor
+    WifiManager();
+    ~WifiManager();
 
-// Functions to manipulate SSID items
-void wifi_ssid_manager_add(wifi_ssid_manager_t *mgr, const char *ssid, const char *password);
-void wifi_ssid_manager_remove(wifi_ssid_manager_t *mgr, int index);
-void wifi_ssid_manager_set_default(wifi_ssid_manager_t *mgr, int index);
+    // Get the singleton instance of the WifiManager class
+    static WifiManager &Instance()
+    {
+        static WifiManager instance;
+        return instance;
+    }
 
-// Function to get SSID item list
-const wifi_ssid_item_t *wifi_ssid_manager_get_list(wifi_ssid_manager_t *mgr);
+    // Delete copy constructor and assignment operator
+    WifiManager(const WifiManager &) = delete;
+    WifiManager &operator=(const WifiManager &) = delete;
 
-// Function to get SSID item count
-int wifi_ssid_manager_get_count(wifi_ssid_manager_t *mgr);
+    // SSID management functions
+    void Add(const std::string &ssid, const std::string &password);
+    void Remove(int index);
+    void SetDefault(int index);
+    void Clear();
+
+    const std::vector<WifiManagerItem> &GetSsidList() const { return ssid_list; }
+};
 
 #endif

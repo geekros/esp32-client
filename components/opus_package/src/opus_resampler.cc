@@ -20,89 +20,49 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:opus:resampler]"
 
-// Function to create and initialize an Opus resampler
-opus_resampler_t *opus_resampler_create(void)
+// Constructor
+OpusResampler::OpusResampler()
 {
-    // Allocate memory for the resampler
-    opus_resampler_t *r = (opus_resampler_t *)calloc(1, sizeof(opus_resampler_t));
-    if (!r)
-    {
-        return NULL;
-    }
-
-    // Return the created resampler
-    return r;
 }
 
-// Function to configure the Opus resampler with input and output sample rates
-bool opus_resampler_configure(opus_resampler_t *res, int input_sample_rate, int output_sample_rate)
+// Destructor
+OpusResampler::~OpusResampler()
 {
-    // Check for null pointer
-    if (!res)
-    {
-        return false;
-    }
+}
 
-    // Initialize the Silk resampler state
+// Configure resampler
+void OpusResampler::Configure(int input_sample_rate, int output_sample_rate)
+{
+    // Check for valid sample rates
     int encode = input_sample_rate > output_sample_rate ? 1 : 0;
 
     // Initialize Silk resampler
-    int ret = silk_resampler_init(&res->state, input_sample_rate, output_sample_rate, encode);
+    auto ret = silk_resampler_init(&resampler_state, input_sample_rate, output_sample_rate, encode);
     if (ret != 0)
     {
-        return false;
-    }
-
-    // Set sample rates
-    res->input_sample_rate = input_sample_rate;
-    res->output_sample_rate = output_sample_rate;
-
-    // Return success
-    return true;
-}
-
-// Function to process audio samples through the Opus resampler
-bool opus_resampler_process(opus_resampler_t *res, const int16_t *input, int input_samples, int16_t *output)
-{
-    // Check for null pointer
-    if (!res)
-    {
-        return false;
-    }
-
-    // Perform resampling
-    int ret = silk_resampler(&res->state, output, input, input_samples);
-    if (ret != 0)
-    {
-        return false;
-    }
-
-    // Return success
-    return true;
-}
-
-// Function to get the number of output samples for given input samples
-int opus_resampler_get_output_samples(opus_resampler_t *res, int input_samples)
-{
-    // Check for null pointer
-    if (!res || res->input_sample_rate == 0)
-    {
-        return 0;
-    }
-
-    // Calculate and return output samples
-    return (input_samples * res->output_sample_rate) / res->input_sample_rate;
-}
-
-// Function to destroy and free an Opus resampler
-void opus_resampler_destroy(opus_resampler_t *res)
-{
-    // Check for null pointer
-    if (!res)
-    {
+        ESP_LOGE(TAG, "Failed to initialize resampler");
         return;
     }
 
-    // Free the resampler structure
-    free(res);
+    // Save sample rates
+    input_sample_rate = input_sample_rate;
+
+    // Save output sample rate
+    output_sample_rate = output_sample_rate;
+}
+
+// Process resampling
+void OpusResampler::Process(const int16_t *input, int input_samples, int16_t *output)
+{
+    auto ret = silk_resampler(&resampler_state, output, input, input_samples);
+    if (ret != 0)
+    {
+        ESP_LOGE(TAG, "Failed to process resampler");
+    }
+}
+
+// Get output samples count
+int OpusResampler::GetOutputSamples(int input_samples) const
+{
+    return input_samples * output_sample_rate / input_sample_rate;
 }

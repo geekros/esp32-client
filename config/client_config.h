@@ -39,7 +39,7 @@ limitations under the License.
 
 // Define SPIFFS base path
 #define GEEKROS_SPIFFS_LABEL "assets"
-#define GEEKROS_SPIFFS_MAX_FILE 20
+#define GEEKROS_SPIFFS_MAX_FILE 50
 #define GEEKROS_SPIFFS_BASE_PATH "/spiffs"
 #define GEEKROS_SPIFFS_HTML_PATH "/spiffs/html"
 #define GEEKROS_SPIFFS_LANGUAGE_PATH "/spiffs/language"

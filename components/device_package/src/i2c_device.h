@@ -30,19 +30,21 @@ limitations under the License.
 // Include driver headers
 #include <driver/i2c_master.h>
 
-// I2C device handle
-extern i2c_master_dev_handle_t i2c_device;
+// Define I2C device class
+class I2CDevice
+{
+protected:
+    // Define I2C device handle
+    i2c_master_dev_handle_t i2c_device_;
 
-// I2C device constructor
-void I2cDevice(i2c_master_bus_handle_t i2c_bus, uint8_t addr);
+    // Private methods
+    void WriteReg(uint8_t reg, uint8_t value);
+    uint8_t ReadReg(uint8_t reg);
+    void ReadRegs(uint8_t reg, uint8_t *buffer, size_t length);
 
-// Function to write a value to a register over I2C
-void WriteReg(uint8_t reg, uint8_t value);
-
-// Function to read a value from a register over I2C
-uint8_t ReadReg(uint8_t reg);
-
-// Function to read multiple values from a register over I2C
-void ReadRegs(uint8_t reg, uint8_t *buffer, size_t length);
+public:
+    // Public methods
+    I2CDevice(i2c_master_bus_handle_t i2c_bus, uint8_t addr);
+};
 
 #endif

@@ -18,10 +18,8 @@ limitations under the License.
 #define ES8311_CODEC_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <mutex>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -42,55 +40,39 @@ limitations under the License.
 // Include headers
 #include "audio_codec.h"
 
-// Define ES8311 audio codec structure
-typedef struct
+// ES8311AudioCodec class definition
+class ES8311AudioCodec : public AudioCodec
 {
-    audio_codec_t base;
+private:
+    // Define private members
+    const audio_codec_data_if_t *data_if_t = nullptr;
+    const audio_codec_ctrl_if_t *ctrl_if_t = nullptr;
+    const audio_codec_if_t *codec_if_t = nullptr;
+    const audio_codec_gpio_if_t *gpio_if_t = nullptr;
 
-    const audio_codec_data_if_t *data_if;
-    const audio_codec_ctrl_if_t *ctrl_if;
-    const audio_codec_if_t *codec_if;
-    const audio_codec_gpio_if_t *gpio_if;
+    // Device handle and GPIO settings
+    esp_codec_dev_handle_t dev = nullptr;
+    gpio_num_t pa_pin = GPIO_NUM_NC;
+    bool pa_inverted = false;
+    std::mutex data_if_mutex;
 
-    esp_codec_dev_handle_t dev;
+    // Define private methods
+    void CreateDuplexChannels(gpio_num_t mclk, gpio_num_t bclk, gpio_num_t ws, gpio_num_t dout, gpio_num_t din);
+    void UpdateDeviceState();
 
-    gpio_num_t pa_pin;
-    bool pa_inverted;
+    // Override AudioCodec methods
+    virtual int Read(int16_t *dest, int samples) override;
+    virtual int Write(const int16_t *data, int samples) override;
 
-    SemaphoreHandle_t data_if_mutex;
-} es8311_audio_codec_t;
+public:
+    // Constructor and destructor
+    ES8311AudioCodec(void *i2c_master_handle, i2c_port_t i2c_port, int input_sample_rate, int output_sample_rate, gpio_num_t mclk, gpio_num_t bclk, gpio_num_t ws, gpio_num_t dout, gpio_num_t din, gpio_num_t pa_pin, uint8_t es8311_addr, bool use_mclk = true, bool pa_inverted = false);
+    virtual ~ES8311AudioCodec();
 
-// Function to create ES8311 audio codec instance
-void es8311_create(es8311_audio_codec_t *codec, void *i2c_master_handle, i2c_port_t i2c_port, int input_sample_rate, int output_sample_rate, gpio_num_t mclk, gpio_num_t bclk, gpio_num_t ws, gpio_num_t dout, gpio_num_t din, gpio_num_t pa_pin, uint8_t es8311_addr, bool use_mclk, bool pa_inverted);
-
-// Function to update ES8311 audio codec device state
-void es8311_update_device_state(es8311_audio_codec_t *codec);
-
-// Function to create duplex I2S channels for ES8311 audio codec
-void es8311_create_duplex_channels(es8311_audio_codec_t *codec, gpio_num_t mclk, gpio_num_t bclk, gpio_num_t ws, gpio_num_t dout, gpio_num_t din);
-
-// Function to set output volume for ES8311 audio codec
-void es8311_set_output_volume(audio_codec_t *base, int volume);
-
-// Function to set input gain for ES8311 audio codec
-void es8311_set_input_gain(audio_codec_t *base, float gain);
-
-// Function to set input gain for ES8311 audio codec
-void es8311_enable_input(audio_codec_t *base, bool enable);
-
-// Function to enable output for ES8311 audio codec
-void es8311_enable_output(audio_codec_t *base, bool enable);
-
-// Function to write data to ES8311 audio codec
-int es8311_read(audio_codec_t *base, int16_t *dest, int samples);
-
-// Function to read data from ES8311 audio codec
-int es8311_write(audio_codec_t *base, const int16_t *data, int samples);
-
-// Function to destroy ES8311 audio codec instance
-void es8311_destroy(es8311_audio_codec_t *codec);
-
-// Function to get ES8311 audio codec function implementations
-const audio_codec_func_t *es8311_audio_codec_func(void);
+    // Override AudioCodec public methods
+    virtual void SetOutputVolume(int volume) override;
+    virtual void EnableInput(bool enable) override;
+    virtual void EnableOutput(bool enable) override;
+};
 
 #endif

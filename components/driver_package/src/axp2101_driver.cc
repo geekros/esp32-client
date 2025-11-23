@@ -20,79 +20,52 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:driver:axp2101]"
 
-// Include ESP libraries
-static bool axp2101_initialized = false;
-
-// AXP2101 initialization function
-void Axp2101Init(i2c_master_bus_handle_t i2c_bus)
+// Constructor
+AXP2101Driver::AXP2101Driver(i2c_master_bus_handle_t i2c_bus, uint8_t addr) : I2CDevice(i2c_bus, addr)
 {
-    // Check if already initialized
-    if (axp2101_initialized)
-    {
-        return;
-    }
-
-    // Initialize the I2C device with AXP2101 address 0x34
-    I2cDevice(i2c_bus, 0x34);
-
-    // Update initialization flag
-    axp2101_initialized = true;
 }
 
-// Function to get battery current direction
-int GetBatteryCurrentDirection()
+// Private method to read battery current direction
+int AXP2101Driver::GetBatteryCurrentDirection()
 {
-    // Read the battery current direction from register 0x01
     return (ReadReg(0x01) & 0b01100000) >> 5;
 }
 
-// Function to check if the battery is charging
-bool IsCharging()
+// Public method to check if the battery is charging
+bool AXP2101Driver::IsCharging()
 {
-    // Return true if the battery current direction indicates charging
     return GetBatteryCurrentDirection() == 1;
 }
 
-// Function to check if the battery is discharging
-bool IsDischarging()
+// Public method to check if the battery is discharging
+bool AXP2101Driver::IsDischarging()
 {
-    // Return true if the battery current direction indicates discharging
     return GetBatteryCurrentDirection() == 2;
 }
 
-// Function to check if charging is done
-bool IsChargingDone()
+// Public method to check if charging is done
+bool AXP2101Driver::IsChargingDone()
 {
-    // Read the charging status from register 0x01
     uint8_t value = ReadReg(0x01);
-
-    // Return true if charging is done
     return (value & 0b00000111) == 0b00000100;
 }
 
-// Function to get battery level percentage
-int GetBatteryLevel()
+// Public method to get battery level
+int AXP2101Driver::GetBatteryLevel()
 {
-    // Read and return the battery level from register 0xA4
     return ReadReg(0xA4);
 }
 
-// Function to get temperature
-float GetTemperature()
+// Public method to get temperature
+float AXP2101Driver::GetTemperature()
 {
-    // Read and return the temperature from register 0xA5
     return ReadReg(0xA5);
 }
 
-// Function to power off the device
-void PowerOff()
+// Public method to power off the device
+void AXP2101Driver::PowerOff()
 {
-    // Set the power off bit in register 0x10
     uint8_t value = ReadReg(0x10);
-
-    // Set bit 0 to 1 to power off
     value = value | 0x01;
-
-    // Write back the modified value to register 0x10
     WriteReg(0x10, value);
 }

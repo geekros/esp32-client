@@ -20,8 +20,24 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:request]"
 
+// Constructor
+HttpRequest::HttpRequest()
+{
+    event_group = xEventGroupCreate();
+}
+
+// Destructor
+HttpRequest::~HttpRequest()
+{
+    if (event_group)
+    {
+        vEventGroupDelete(event_group);
+        event_group = NULL;
+    }
+}
+
 // HTTP event handler
-static esp_err_t _http_event_handler(esp_http_client_event_t *event)
+esp_err_t HttpRequest::EventHandler(esp_http_client_event_t *event)
 {
     // Get the response structure from user data
     http_response_t *resp = (http_response_t *)event->user_data;
@@ -51,20 +67,23 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *event)
 }
 
 // Function to handle HTTP request
-esp_err_t http_request(const char *url, esp_http_client_method_t method, const char *post_data, char *response_buf, int response_buf_len)
+esp_err_t HttpRequest::Request(const std::string &url, esp_http_client_method_t method, const std::string &post_data, std::string &response_buf, int response_buf_len)
 {
     // Prepare HTTP response structure
     http_response_t response = {
-        .buffer = response_buf,
+        .buffer = response_buf.data(),
         .buffer_len = response_buf_len,
         .data_offset = 0,
     };
 
     // Configure HTTP client
     esp_http_client_config_t config = {};
-    config.url = url;
+    config.url = url.c_str();
     config.crt_bundle_attach = esp_crt_bundle_attach;
-    config.event_handler = _http_event_handler;
+    config.event_handler = [](esp_http_client_event_t *event)
+    {
+        return HttpRequest::Instance().EventHandler(event);
+    };
     config.user_data = &response;
     config.timeout_ms = 10000;
 
@@ -72,9 +91,8 @@ esp_err_t http_request(const char *url, esp_http_client_method_t method, const c
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_http_client_set_method(client, method);
 
-    // Set custom headers
-    char id_str[20];
-    system_chip_id(id_str, sizeof(id_str));
+    // get system chip ID
+    std::string chip_id = SystemBasic::Instance().GetChipID();
 
     // Get current time
     int64_t time_us = esp_timer_get_time();
@@ -84,21 +102,21 @@ esp_err_t http_request(const char *url, esp_http_client_method_t method, const c
     // Format time string
     snprintf(time_str, sizeof(time_str), "%lld", time_ms);
 
-    ESP_LOGI(TAG, "Device ID: %s", id_str);
+    ESP_LOGI(TAG, "Device ID: %s", chip_id.c_str());
     ESP_LOGI(TAG, "Time MS: %s", time_str);
 
     // Set standard headers
     esp_http_client_set_header(client, "Content-Type", "application/json");
     esp_http_client_set_header(client, "Content-X-Source", "hardware");
-    esp_http_client_set_header(client, "Content-X-Device", id_str);
+    esp_http_client_set_header(client, "Content-X-Device", chip_id.c_str());
     esp_http_client_set_header(client, "Content-X-Time", time_str);
     esp_http_client_set_header(client, "Authorization", "Bearer " GEEKROS_SERVICE_GRK);
 
     // Set headers
-    if (method == HTTP_METHOD_POST && post_data != NULL)
+    if (method == HTTP_METHOD_POST && !post_data.empty())
     {
         // Set POST data
-        esp_http_client_set_post_field(client, post_data, strlen(post_data));
+        esp_http_client_set_post_field(client, post_data.c_str(), post_data.length());
     }
 
     // Perform the HTTP request

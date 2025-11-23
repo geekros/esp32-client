@@ -18,10 +18,9 @@ limitations under the License.
 #define AUDIO_CODEC_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <vector>
+#include <functional>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -30,55 +29,70 @@ limitations under the License.
 // Include driver headers
 #include <driver/i2s_std.h>
 
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+
 // Define audio codec DMA descriptor number
 #define AUDIO_CODEC_DMA_DESC_NUM 6
 
 // Define audio codec DMA frame number
 #define AUDIO_CODEC_DMA_FRAME_NUM 240
 
-// Forward declaration of AudioCodec structure
-typedef struct audio_codec_t audio_codec_t;
-
-// Define AudioCodecFunc structure
-typedef struct
+// AudioCodec class definition
+class AudioCodec
 {
-    int (*Read)(struct audio_codec_t *codec, int16_t *dest, int samples);
-    int (*Write)(struct audio_codec_t *codec, const int16_t *data, int samples);
+protected:
+    // I2S channel handles
+    i2s_chan_handle_t tx_handle = nullptr;
+    i2s_chan_handle_t rx_handle = nullptr;
 
-    void (*SetOutputVolume)(struct audio_codec_t *codec, int volume);
-    void (*SetInputGain)(struct audio_codec_t *codec, float gain);
-    void (*EnableInput)(struct audio_codec_t *codec, bool enable);
-    void (*EnableOutput)(struct audio_codec_t *codec, bool enable);
+    // Audio codec state variables
+    bool duplex = false;
+    bool input_reference = false;
+    bool input_enabled = false;
+    bool output_enabled = false;
+    int input_sample_rate = 0;
+    int output_sample_rate = 0;
+    int input_channels = 1;
+    int output_channels = 1;
+    int output_volume = 95;
+    float input_gain = 0.0;
 
-    void (*OutputData)(struct audio_codec_t *codec, int16_t *data, int samples);
-    bool (*InputData)(struct audio_codec_t *codec, int16_t *data, int samples);
-    void (*Start)(struct audio_codec_t *codec);
-} audio_codec_func_t;
+    // Pure virtual methods for reading and writing audio data
+    virtual int Read(int16_t *dest, int samples) = 0;
+    virtual int Write(const int16_t *data, int samples) = 0;
 
-// Define AudioCodec structure
-struct audio_codec_t
-{
-    const audio_codec_func_t *func;
+public:
+    //
+    AudioCodec();
+    virtual ~AudioCodec();
 
-    i2s_chan_handle_t tx_handle;
-    i2s_chan_handle_t rx_handle;
+    // Define public methods
+    virtual void SetOutputVolume(int volume);
+    virtual void SetInputGain(float gain);
+    virtual void EnableInput(bool enable);
+    virtual void EnableOutput(bool enable);
 
-    bool duplex;
-    bool input_reference;
-    bool input_enabled;
-    bool output_enabled;
-    int input_sample_rate;
-    int output_sample_rate;
-    int input_channels;
-    int output_channels;
-    int output_volume;
-    float input_gain;
+    // Define data input/output methods
+    virtual void OutputData(std::vector<int16_t> &data);
+    virtual bool InputData(std::vector<int16_t> &data);
+
+    // Define start method
+    virtual void Start();
+
+    // Define getter methods
+    inline bool Duplex() const { return duplex; }
+    inline bool InputReference() const { return input_reference; }
+    inline int InputSampleRate() const { return input_sample_rate; }
+    inline int OutputSampleRate() const { return output_sample_rate; }
+    inline int InputChannels() const { return input_channels; }
+    inline int OutputChannels() const { return output_channels; }
+    inline int OutputVolume() const { return output_volume; }
+    inline float InputGain() const { return input_gain; }
+    inline bool InputEnabled() const { return input_enabled; }
+    inline bool OutputEnabled() const { return output_enabled; }
 };
-
-// Function to initialize audio codec
-void audio_codec_init(audio_codec_t *codec, const audio_codec_func_t *func);
-
-// External declaration of audio codec function implementations
-extern const audio_codec_func_t audio_codec_func;
 
 #endif

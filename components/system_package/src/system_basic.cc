@@ -19,13 +19,29 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:system:basic]"
 
+// Constructor
+SystemBasic::SystemBasic()
+{
+    event_group = xEventGroupCreate();
+}
+
+// Destructor
+SystemBasic::~SystemBasic()
+{
+    if (event_group)
+    {
+        vEventGroupDelete(event_group);
+        event_group = NULL;
+    }
+}
+
 // Initialize system components
-void system_init(const char *base_path, const char *partition_label, size_t max_files)
+void SystemBasic::Init(const std::string &base_path, const std::string &partition_label, size_t max_files)
 {
     // Configure SPIFFS
     esp_vfs_spiffs_conf_t conf = {};
-    conf.base_path = base_path;
-    conf.partition_label = partition_label;
+    conf.base_path = base_path.c_str();
+    conf.partition_label = partition_label.c_str();
     conf.max_files = max_files;
     conf.format_if_mount_failed = false;
 
@@ -34,23 +50,18 @@ void system_init(const char *base_path, const char *partition_label, size_t max_
 }
 
 // Get system chip ID
-void system_chip_id(char *out_str, size_t len)
+std::string SystemBasic::GetChipID()
 {
-    // Check length
-    if (len < 13)
-    {
-        len = 13;
-    }
-
-    // Get MAC address as chip ID
     uint8_t mac[6] = {0};
+
     esp_err_t ret = esp_efuse_mac_get_default(mac);
     if (ret != ESP_OK)
     {
-        snprintf(out_str, len, "UNKNOWN");
-        return;
+        return "UNKNOWN";
     }
 
-    // Format chip ID as hexadecimal string
-    snprintf(out_str, len, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    char chip_id[13] = {0};
+    snprintf(chip_id, sizeof(chip_id), "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    return std::string(chip_id);
 }

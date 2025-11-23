@@ -20,193 +20,185 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:wifi:manager]"
 
-// Define static instance of SSID manager
-static wifi_ssid_manager_t wifi_instance;
-
-// Function to get SSID manager instance
-wifi_ssid_manager_t *wifi_ssid_manager_get_instance(void)
+// Constructor
+WifiManager::WifiManager()
 {
-    return &wifi_instance;
+    // Create event group
+    event_group = xEventGroupCreate();
+
+    // Load configuration
+    Load();
 }
 
-// Function to clear SSID manager data
-void wifi_ssid_manager_clear(wifi_ssid_manager_t *mgr)
+// Destructor
+WifiManager::~WifiManager()
 {
-    mgr->count = 0;
-    wifi_ssid_manager_save(mgr);
+    if (event_group)
+    {
+        vEventGroupDelete(event_group);
+        event_group = NULL;
+    }
 }
 
-// Function to load SSID manager data
-void wifi_ssid_manager_load(wifi_ssid_manager_t *mgr)
+// Remove SSID from the manager
+void WifiManager::Load()
 {
-    mgr->count = 0;
+    // Clear the SSID list
+    ssid_list.clear();
 
-    nvs_handle_t nvs;
-    esp_err_t err = nvs_open(GEEKROS_WIFI_NVS_NAMESPACE, NVS_READONLY, &nvs);
-    if (err != ESP_OK)
+    // Load from NVS
+    nvs_handle_t nvs_handle;
+    auto ret = nvs_open(GEEKROS_WIFI_NVS_NAMESPACE, NVS_READONLY, &nvs_handle);
+    if (ret != ESP_OK)
     {
         return;
     }
 
-    for (int i = 0; i < WIFI_MAX_WIFI_SSID_COUNT; i++)
+    // Load SSIDs
+    for (int i = 0; i < MAX_WIFI_SSID_COUNT; i++)
     {
-        char key_ssid[16];
-        char key_pwd[16];
-
-        if (i == 0)
+        std::string ssid_key = "ssid";
+        if (i > 0)
         {
-            strcpy(key_ssid, "ssid");
-            strcpy(key_pwd, "password");
+            ssid_key += std::to_string(i);
         }
-        else
+        std::string password_key = "password";
+        if (i > 0)
         {
-            sprintf(key_ssid, "ssid%d", i);
-            sprintf(key_pwd, "password%d", i);
+            password_key += std::to_string(i);
         }
 
-        char ssid_buf[WIFI_SSID_MAX_LEN + 1];
-        char pwd_buf[WIFI_PASSWORD_MAX_LEN + 1];
-
-        size_t len = sizeof(ssid_buf);
-        if (nvs_get_str(nvs, key_ssid, ssid_buf, &len) != ESP_OK)
+        char ssid[33];
+        char password[65];
+        size_t length = sizeof(ssid);
+        if (nvs_get_str(nvs_handle, ssid_key.c_str(), ssid, &length) != ESP_OK)
         {
             continue;
         }
-
-        len = sizeof(pwd_buf);
-        if (nvs_get_str(nvs, key_pwd, pwd_buf, &len) != ESP_OK)
+        length = sizeof(password);
+        if (nvs_get_str(nvs_handle, password_key.c_str(), password, &length) != ESP_OK)
         {
             continue;
         }
-
-        strncpy(mgr->items[mgr->count].ssid, ssid_buf, WIFI_SSID_MAX_LEN);
-        strncpy(mgr->items[mgr->count].password, pwd_buf, WIFI_PASSWORD_MAX_LEN);
-        mgr->count++;
+        ssid_list.push_back({ssid, password});
     }
 
-    nvs_close(nvs);
+    // Close NVS handle
+    nvs_close(nvs_handle);
 }
 
-// Function to save SSID manager data
-void wifi_ssid_manager_save(wifi_ssid_manager_t *mgr)
+// Save SSID list to NVS
+void WifiManager::Save()
 {
-    nvs_handle_t nvs;
-    ESP_ERROR_CHECK(nvs_open(GEEKROS_WIFI_NVS_NAMESPACE, NVS_READWRITE, &nvs));
+    // Open NVS handle
+    nvs_handle_t nvs_handle;
 
-    for (int i = 0; i < WIFI_MAX_WIFI_SSID_COUNT; i++)
+    // Open NVS namespace
+    ESP_ERROR_CHECK(nvs_open(GEEKROS_WIFI_NVS_NAMESPACE, NVS_READWRITE, &nvs_handle));
+    for (int i = 0; i < MAX_WIFI_SSID_COUNT; i++)
     {
-        char key_ssid[16];
-        char key_pwd[16];
-
-        if (i == 0)
+        std::string ssid_key = "ssid";
+        if (i > 0)
         {
-            strcpy(key_ssid, "ssid");
-            strcpy(key_pwd, "password");
+            ssid_key += std::to_string(i);
+        }
+        std::string password_key = "password";
+        if (i > 0)
+        {
+            password_key += std::to_string(i);
+        }
+
+        if (i < ssid_list.size())
+        {
+            nvs_set_str(nvs_handle, ssid_key.c_str(), ssid_list[i].ssid.c_str());
+            nvs_set_str(nvs_handle, password_key.c_str(), ssid_list[i].password.c_str());
         }
         else
         {
-            sprintf(key_ssid, "ssid%d", i);
-            sprintf(key_pwd, "password%d", i);
-        }
-
-        if (i < mgr->count)
-        {
-            nvs_set_str(nvs, key_ssid, mgr->items[i].ssid);
-            nvs_set_str(nvs, key_pwd, mgr->items[i].password);
-        }
-        else
-        {
-            nvs_erase_key(nvs, key_ssid);
-            nvs_erase_key(nvs, key_pwd);
+            nvs_erase_key(nvs_handle, ssid_key.c_str());
+            nvs_erase_key(nvs_handle, password_key.c_str());
         }
     }
 
-    nvs_commit(nvs);
-    nvs_close(nvs);
+    // Commit changes and close NVS handle
+    nvs_commit(nvs_handle);
+    nvs_close(nvs_handle);
 }
 
-// Function to add SSID item
-void wifi_ssid_manager_add(wifi_ssid_manager_t *mgr, const char *ssid, const char *password)
+// Add SSID to the manager
+void WifiManager::Add(const std::string &ssid, const std::string &password)
 {
-    for (int i = 0; i < mgr->count; i++)
+    // Check if the SSID already exists
+    for (auto &item : ssid_list)
     {
-        if (strcmp(mgr->items[i].ssid, ssid) == 0)
+        if (item.ssid == ssid)
         {
-            ESP_LOGW(TAG, "SSID %s exists, overwrite", ssid);
-            strncpy(mgr->items[i].password, password, WIFI_PASSWORD_MAX_LEN);
-            wifi_ssid_manager_save(mgr);
+            // Update password
+            item.password = password;
+
+            // Save to NVS
+            Save();
+
+            // Return
             return;
         }
     }
 
-    if (mgr->count >= WIFI_MAX_WIFI_SSID_COUNT)
+    // If the list is full, remove the last one
+    if (ssid_list.size() >= MAX_WIFI_SSID_COUNT)
     {
-        for (int i = WIFI_MAX_WIFI_SSID_COUNT - 1; i > 0; i--)
-        {
-            mgr->items[i] = mgr->items[i - 1];
-        }
-
-        mgr->count = WIFI_MAX_WIFI_SSID_COUNT - 1;
+        ssid_list.pop_back();
     }
 
-    for (int i = mgr->count; i > 0; i--)
-    {
-        mgr->items[i] = mgr->items[i - 1];
-    }
+    // Add the new ssid to the front of the list
+    ssid_list.insert(ssid_list.begin(), {ssid, password});
 
-    strncpy(mgr->items[0].ssid, ssid, WIFI_SSID_MAX_LEN);
-    strncpy(mgr->items[0].password, password, WIFI_PASSWORD_MAX_LEN);
-
-    mgr->count++;
-
-    wifi_ssid_manager_save(mgr);
+    // Save to NVS
+    Save();
 }
 
-// Function to set default SSID item
-void wifi_ssid_manager_remove(wifi_ssid_manager_t *mgr, int index)
+// Remove SSID from the manager
+void WifiManager::Remove(int index)
 {
-    if (index < 0 || index >= mgr->count)
-    {
-        return;
-    }
-
-    for (int i = index; i < mgr->count - 1; i++)
-        mgr->items[i] = mgr->items[i + 1];
-
-    mgr->count--;
-
-    wifi_ssid_manager_save(mgr);
-}
-
-// Function to get SSID item list
-void wifi_ssid_manager_set_default(wifi_ssid_manager_t *mgr, int index)
-{
-    if (index < 0 || index >= mgr->count)
+    // Check index
+    if (index < 0 || index >= ssid_list.size())
     {
         ESP_LOGW(TAG, "Invalid index %d", index);
         return;
     }
 
-    wifi_ssid_item_t temp = mgr->items[index];
+    // Remove the ssid at index
+    ssid_list.erase(ssid_list.begin() + index);
 
-    for (int i = index; i > 0; i--)
+    // Save to NVS
+    Save();
+}
+
+// Set default SSID
+void WifiManager::SetDefault(int index)
+{
+    // Check index
+    if (index < 0 || index >= ssid_list.size())
     {
-        mgr->items[i] = mgr->items[i - 1];
+        ESP_LOGW(TAG, "Invalid index %d", index);
+        return;
     }
 
-    mgr->items[0] = temp;
+    // Move the ssid at index to the front of the list
+    auto item = ssid_list[index];
+    ssid_list.erase(ssid_list.begin() + index);
+    ssid_list.insert(ssid_list.begin(), item);
 
-    wifi_ssid_manager_save(mgr);
+    // Save to NVS
+    Save();
 }
 
-// Function to get SSID item list
-const wifi_ssid_item_t *wifi_ssid_manager_get_list(wifi_ssid_manager_t *mgr)
+// Remove SSID from the manager
+void WifiManager::Clear()
 {
-    return mgr->items;
-}
+    // Clear the SSID list
+    ssid_list.clear();
 
-// Function to get SSID item count
-int wifi_ssid_manager_get_count(wifi_ssid_manager_t *mgr)
-{
-    return mgr->count;
+    // Save to NVS
+    Save();
 }

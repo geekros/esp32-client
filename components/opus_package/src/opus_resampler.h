@@ -18,10 +18,8 @@ limitations under the License.
 #define OPUS_RESAMPLER_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <cstdint>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -32,27 +30,28 @@ limitations under the License.
 #include "resampler_structs.h"
 #include "resampler_silk.h"
 
-// Include Silk resampler headers
-typedef struct opus_resampler
+// Opus Resampler Class
+class OpusResampler
 {
-    silk_resampler_state_struct state;
+private:
+    // Member variables
+    silk_resampler_state_struct resampler_state;
     int input_sample_rate;
     int output_sample_rate;
-} opus_resampler_t;
 
-// Function to create and initialize an Opus resampler
-opus_resampler_t *opus_resampler_create(void);
+public:
+    // Constructor and Destructor
+    OpusResampler();
+    ~OpusResampler();
 
-// Function to destroy and free an Opus resampler
-void opus_resampler_destroy(opus_resampler_t *res);
+    // Configure resampler
+    void Configure(int input_sample_rate, int output_sample_rate);
+    void Process(const int16_t *input, int input_samples, int16_t *output);
+    int GetOutputSamples(int input_samples) const;
 
-// Function to configure the Opus resampler with input and output sample rates
-bool opus_resampler_configure(opus_resampler_t *res, int input_sample_rate, int output_sample_rate);
-
-// Function to process audio data through the Opus resampler
-bool opus_resampler_process(opus_resampler_t *res, const int16_t *input, int input_samples, int16_t *output);
-
-// Function to get the number of output samples for a given number of input samples
-int opus_resampler_get_output_samples(opus_resampler_t *res, int input_samples);
+    // Getters for sample rates
+    int InputSampleRate() const { return input_sample_rate; }
+    int OutputSampleRate() const { return output_sample_rate; }
+};
 
 #endif

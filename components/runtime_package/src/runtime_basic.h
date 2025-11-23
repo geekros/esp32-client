@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef SRMODEL_LOAD_H
-#define SRMODEL_LOAD_H
+#ifndef RUNTIME_BASIC_H
+#define RUNTIME_BASIC_H
 
 // Include standard headers
 #include <string>
@@ -23,20 +23,14 @@ limitations under the License.
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
-#include <esp_heap_caps.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include project-specific headers
-#include "client_config.h"
-
-// Include headers
-#include "model_path.h"
-
-class ModelBasic
+// RuntimeBasic class definition
+class RuntimeBasic
 {
 private:
     // Event group handle
@@ -44,22 +38,22 @@ private:
 
 public:
     // Constructor and destructor
-    ModelBasic();
-    ~ModelBasic();
+    RuntimeBasic();
+    ~RuntimeBasic();
 
-    // Get the singleton instance of the ModelBasic class
-    static ModelBasic &Instance()
+    // Get the singleton instance of the RuntimeBasic class
+    static RuntimeBasic &Instance()
     {
-        static ModelBasic instance;
+        static RuntimeBasic instance;
         return instance;
     }
 
     // Delete copy constructor and assignment operator
-    ModelBasic(const ModelBasic &) = delete;
-    ModelBasic &operator=(const ModelBasic &) = delete;
+    RuntimeBasic(const RuntimeBasic &) = delete;
+    RuntimeBasic &operator=(const RuntimeBasic &) = delete;
 
-    // Load model
-    srmodel_list_t *Load(void);
+    // Initialize basic runtime components
+    void Init(void);
 };
 
 #endif

@@ -18,36 +18,63 @@ limitations under the License.
 #define APPLICATION_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
+#include <string>
 
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 
-#include <esp_afe_sr_models.h>
-
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 
 // Include project-specific headers
 #include "client_config.h"
 
 // Include components headers
+#include "runtime_basic.h"
 #include "board_basic.h"
 #include "system_basic.h"
 #include "language_basic.h"
+#include "language_sound.h"
 #include "model_basic.h"
+#include "audio_service.h"
 #include "wifi_manager.h"
 #include "wifi_station.h"
-#include "wifi_configuration.h"
+#include "wifi_access_point.h"
 
-// Application main function
-void application_main(void);
+// Application class definition
+class Application
+{
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
 
-// Application loop function
-void application_loop(void);
+    // Audio service instance
+    AudioService audio_service;
+
+public:
+    // Constructor and destructor
+    Application();
+    ~Application();
+
+    // Get the singleton instance of the Application class
+    static Application &Instance()
+    {
+        static Application instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    Application(const Application &) = delete;
+    Application &operator=(const Application &) = delete;
+
+    // Main application entry point
+    void Main();
+
+    // Main application loop
+    void Loop();
+};
 
 #endif

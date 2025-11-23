@@ -18,11 +18,7 @@ limitations under the License.
 #define SYSTEM_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <string>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -30,10 +26,39 @@ limitations under the License.
 #include <esp_spiffs.h>
 #include <esp_mac.h>
 
-//  Initialize system components
-void system_init(const char *base_path, const char *partition_label, size_t max_files);
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
 
-// Get system chip ID
-void system_chip_id(char *out_str, size_t len);
+// SystemBasic class definition
+class SystemBasic
+{
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
+
+public:
+    // Constructor and Destructor
+    SystemBasic();
+    ~SystemBasic();
+
+    // Get the singleton instance of the SystemBasic class
+    static SystemBasic &Instance()
+    {
+        static SystemBasic instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    SystemBasic(const SystemBasic &) = delete;
+    SystemBasic &operator=(const SystemBasic &) = delete;
+
+    // Initialize system components
+    void Init(const std::string &base_path, const std::string &partition_label, size_t max_files);
+
+    // Get system chip ID
+    static std::string GetChipID();
+};
 
 #endif

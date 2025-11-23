@@ -30,28 +30,24 @@ limitations under the License.
 // Include headers
 #include "i2c_device.h"
 
-// AXP2101 initialization function
-void Axp2101Init(i2c_master_bus_handle_t i2c_bus);
+// Define AXP2101 driver class
+class AXP2101Driver : public I2CDevice
+{
+private:
+    // Private method to read battery current direction
+    int GetBatteryCurrentDirection();
 
-// Function to get battery current direction
-int GetBatteryCurrentDirection();
+public:
+    // Constructor and Destructor
+    AXP2101Driver(i2c_master_bus_handle_t i2c_bus, uint8_t addr);
 
-// Function to check if the battery is charging
-bool IsCharging();
-
-// Function to check if the battery is discharging
-bool IsDischarging();
-
-// Function to check if charging is done
-bool IsChargingDone();
-
-// Function to get battery level percentage
-int GetBatteryLevel();
-
-// Function to get temperature
-float GetTemperature();
-
-// Function to power off the device
-void PowerOff();
+    // Public methods
+    bool IsCharging();
+    bool IsDischarging();
+    bool IsChargingDone();
+    int GetBatteryLevel();
+    float GetTemperature();
+    void PowerOff();
+};
 
 #endif

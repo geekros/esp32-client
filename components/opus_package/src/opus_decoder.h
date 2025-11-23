@@ -18,10 +18,11 @@ limitations under the License.
 #define OPUS_DECODER_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <vector>
+#include <cstdint>
+#include <mutex>
+#include <functional>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -30,26 +31,37 @@ limitations under the License.
 // Include Opus headers
 #include "opus.h"
 
-// Define the opus_decoder_wrapper structure
-typedef struct
+// OpusDecoderWrapper class
+class OpusDecoderWrapper
 {
-    OpusDecoder *dec;
+private:
+    // Member variables
+    std::mutex mutex;
+    struct OpusDecoder *audio_decoder = nullptr;
     int frame_size;
     int sample_rate;
-    int channels;
     int duration_ms;
-} opus_decoder_wrapper_t;
 
-// Function to create and initialize an Opus decoder wrapper
-opus_decoder_wrapper_t *opus_decoder_wrapper_create(int sample_rate, int channels, int duration_ms);
+public:
+    // Constructor and Destructor
+    OpusDecoderWrapper(int sample_rate, int channels, int duration_ms = 60);
+    ~OpusDecoderWrapper();
 
-// Function to destroy and free an Opus decoder wrapper
-void opus_decoder_wrapper_destroy(opus_decoder_wrapper_t *wrapper);
+    // Member functions
+    bool Decode(std::vector<uint8_t> &&opus, std::vector<int16_t> &pcm);
+    void ResetState();
 
-// Function to decode Opus data into PCM format
-int opus_decoder_wrapper_decode(opus_decoder_wrapper_t *wrapper, const uint8_t *opus_data, size_t opus_len, int16_t *output_pcm, size_t max_pcm_samples);
+    // Sample Rate
+    inline int SampleRate() const
+    {
+        return sample_rate;
+    }
 
-// Function to reset the Opus decoder state
-void opus_decoder_wrapper_reset(opus_decoder_wrapper_t *wrapper);
+    // Duration in milliseconds
+    inline int DurationMS() const
+    {
+        return duration_ms;
+    }
+};
 
 #endif

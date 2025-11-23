@@ -20,224 +20,154 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:opus:encoder]"
 
-// Function to reserve PCM buffer capacity
-static bool reserve_pcm_buffer(opus_encoder_wrapper_t *wrapper, size_t capacity)
-{
-    // Check if current capacity is sufficient
-    if (wrapper->in_buffer_capacity >= capacity)
-    {
-        return true;
-    }
-
-    // Calculate new capacity
-    size_t new_cap = wrapper->in_buffer_capacity == 0 ? capacity : wrapper->in_buffer_capacity * 2;
-    if (new_cap < capacity)
-    {
-        new_cap = capacity;
-    }
-
-    // Reallocate input buffer
-    int16_t *new_buf = (int16_t *)realloc(wrapper->in_buffer, new_cap * sizeof(int16_t));
-    if (!new_buf)
-    {
-        return false;
-    }
-
-    // Update wrapper with new buffer
-    wrapper->in_buffer = new_buf;
-    wrapper->in_buffer_capacity = new_cap;
-
-    // Return success
-    return true;
-}
-
-// Function to create and initialize an Opus encoder wrapper
-opus_encoder_wrapper_t *opus_encoder_wrapper_create(int sample_rate, int channels, int duration_ms)
+// Constructor
+OpusEncoderWrapper::OpusEncoderWrapper(int sample_rate, int channels, int duration_ms) : sample_rate(sample_rate), duration_ms(duration_ms)
 {
     // Declare error variable
     int error;
 
-    // Allocate memory for the wrapper
-    opus_encoder_wrapper_t *wrapper = (opus_encoder_wrapper_t *)calloc(1, sizeof(opus_encoder_wrapper_t));
-    if (!wrapper)
+    // Create Opus encoder
+    audio_encoder = opus_encoder_create(sample_rate, channels, OPUS_APPLICATION_VOIP, &error);
+    if (audio_encoder == nullptr)
     {
-        return NULL;
+        return;
     }
 
-    // Create the Opus encoder
-    wrapper->enc = opus_encoder_create(sample_rate, channels, OPUS_APPLICATION_VOIP, &error);
-    if (!wrapper->enc || error != OPUS_OK)
-    {
-        free(wrapper);
-        return NULL;
-    }
-
-    // Initialize wrapper fields
-    wrapper->sample_rate = sample_rate;
-    wrapper->channels = channels;
-    wrapper->duration_ms = duration_ms;
+    // Default DTX enabled
+    SetDtx(true);
+    // Complexity 5 almost uses up all CPU of ESP32C3 while complexity 0 uses the least
+    SetComplexity(0);
 
     // Calculate frame size
-    wrapper->frame_size = (sample_rate / 1000) * duration_ms * channels;
-
-    // Ctrl settings for DTX and complexity
-    opus_encoder_ctl(wrapper->enc, OPUS_SET_DTX(1));
-    opus_encoder_ctl(wrapper->enc, OPUS_SET_COMPLEXITY(0));
-
-    // Return the initialized wrapper
-    return wrapper;
+    frame_size = sample_rate / 1000 * channels * duration_ms;
 }
 
-// Function to set the DTX (Discontinuous Transmission) option
-void opus_encoder_wrapper_set_dtx(opus_encoder_wrapper_t *wrapper, bool enable)
+// Destructor
+OpusEncoderWrapper::~OpusEncoderWrapper()
 {
-    // Check for null pointer
-    if (!wrapper || !wrapper->enc)
+    // Lock mutex
+    std::lock_guard<std::mutex> lock(mutex);
+
+    // Destroy Opus encoder
+    if (audio_encoder != nullptr)
+    {
+        opus_encoder_destroy(audio_encoder);
+    }
+}
+
+// Encode function (synchronous)
+void OpusEncoderWrapper::Encode(std::vector<int16_t> &&pcm, std::function<void(std::vector<uint8_t> &&opus)> handler)
+{
+    // Lock mutex
+    std::lock_guard<std::mutex> lock(mutex);
+
+    // Check if encoder is initialized
+    if (audio_encoder == nullptr)
     {
         return;
     }
 
-    // Set the DTX option
-    opus_encoder_ctl(wrapper->enc, OPUS_SET_DTX(enable ? 1 : 0));
-}
-
-// Function to set the complexity of the Opus encoder
-void opus_encoder_wrapper_set_complexity(opus_encoder_wrapper_t *wrapper, int complexity)
-{
-    // Check for null pointer
-    if (!wrapper || !wrapper->enc)
+    // Append incoming PCM data to internal buffer
+    if (in_buffer.empty())
     {
-        return;
+        in_buffer = std::move(pcm);
+    }
+    else
+    {
+        in_buffer.reserve(in_buffer.size() + pcm.size());
+        in_buffer.insert(in_buffer.end(), pcm.begin(), pcm.end());
     }
 
-    // Set the complexity option
-    opus_encoder_ctl(wrapper->enc, OPUS_SET_COMPLEXITY(complexity));
-}
-
-// Function to encode a frame of PCM samples into Opus format
-int opus_encoder_wrapper_encode_frame(opus_encoder_wrapper_t *wrapper, const int16_t *pcm_samples, size_t pcm_count, uint8_t *opus_out, size_t opus_max)
-{
-    // Check for null pointer
-    if (!wrapper || !wrapper->enc)
+    // Process while we have enough data for a frame
+    while (in_buffer.size() >= frame_size)
     {
-        return OPUS_INVALID_STATE;
-    }
-
-    // Check for correct frame size
-    if (pcm_count != (size_t)wrapper->frame_size)
-    {
-        return OPUS_BUFFER_TOO_SMALL;
-    }
-
-    // Encode the PCM samples into Opus format
-    int ret = opus_encode(wrapper->enc, pcm_samples, wrapper->frame_size / wrapper->channels, opus_out, opus_max);
-    if (ret < 0)
-    {
-        return ret;
-    }
-
-    // Return the number of bytes written
-    return ret;
-}
-
-// Function to encode PCM data into Opus format using a callback
-void opus_encoder_wrapper_encode(opus_encoder_wrapper_t *wrapper, const int16_t *pcm, size_t samples, opus_encode_handler_cb_t handler_cb, void *cb_ctx)
-{
-    // Check for null pointer
-    if (!wrapper || !wrapper->enc)
-    {
-        return;
-    }
-
-    //
-    size_t required = wrapper->in_buffer_size + samples;
-    if (!reserve_pcm_buffer(wrapper, required))
-    {
-        return;
-    }
-
-    // Append new PCM samples to input buffer
-    memcpy(wrapper->in_buffer + wrapper->in_buffer_size, pcm, samples * sizeof(int16_t));
-    wrapper->in_buffer_size += samples;
-
-    // Process complete frames
-    while (wrapper->in_buffer_size >= (size_t)wrapper->frame_size)
-    {
-        // Encode a frame
+        // Prepare Opus output buffer
         uint8_t opus[MAX_OPUS_PACKET_SIZE];
 
-        // encode the frame
-        int ret = opus_encode(wrapper->enc, wrapper->in_buffer, wrapper->frame_size / wrapper->channels, opus, MAX_OPUS_PACKET_SIZE);
+        // Encode PCM data to Opus
+        auto ret = opus_encode(audio_encoder, in_buffer.data(), frame_size, opus, MAX_OPUS_PACKET_SIZE);
         if (ret < 0)
         {
             return;
         }
 
-        // handler callback
-        if (handler_cb)
+        // Check if handler is provided
+        if (handler != nullptr)
         {
-            handler_cb(opus, ret, cb_ctx);
+            handler(std::vector<uint8_t>(opus, opus + ret));
         }
 
-        // Remove the processed frame from the input buffer
-        size_t remain = wrapper->in_buffer_size - wrapper->frame_size;
-        memmove(wrapper->in_buffer, wrapper->in_buffer + wrapper->frame_size, remain * sizeof(int16_t));
-
-        // Update input buffer size
-        wrapper->in_buffer_size = remain;
+        // Remove processed PCM data from internal buffer
+        in_buffer.erase(in_buffer.begin(), in_buffer.begin() + frame_size);
     }
 }
 
-// Function to check if the input buffer is empty
-bool opus_encoder_wrapper_is_buffer_empty(opus_encoder_wrapper_t *wrapper)
+// Encode function (blocking)
+bool OpusEncoderWrapper::Encode(std::vector<int16_t> &&pcm, std::vector<uint8_t> &opus)
 {
-    // Check for null pointer
-    if (!wrapper)
+    // Check if encoder is initialized
+    if (audio_encoder == nullptr)
     {
-        return true;
+        return false;
     }
 
-    // Return whether the input buffer is empty
-    return wrapper->in_buffer_size == 0;
+    // Check if PCM size matches frame size
+    if (pcm.size() != frame_size)
+    {
+        return false;
+    }
+
+    // Encode PCM data to Opus
+    uint8_t buf[MAX_OPUS_PACKET_SIZE];
+    auto ret = opus_encode(audio_encoder, pcm.data(), frame_size, buf, MAX_OPUS_PACKET_SIZE);
+    if (ret < 0)
+    {
+        return false;
+    }
+
+    // Assign encoded data to output vector
+    opus.assign(buf, buf + ret);
+
+    // Successful encode
+    return true;
 }
 
-// Function to reset the Opus encoder state
-void opus_encoder_wrapper_reset(opus_encoder_wrapper_t *wrapper)
+// Reset encoder state
+void OpusEncoderWrapper::ResetState()
 {
-    // Check for null pointer
-    if (!wrapper || !wrapper->enc)
-    {
-        return;
-    }
+    // Lock mutex
+    std::lock_guard<std::mutex> lock(mutex);
 
-    // Reset the Opus encoder state
-    opus_encoder_ctl(wrapper->enc, OPUS_RESET_STATE);
-    wrapper->in_buffer_size = 0;
+    // Reset Opus encoder state
+    if (audio_encoder != nullptr)
+    {
+        opus_encoder_ctl(audio_encoder, OPUS_RESET_STATE);
+        in_buffer.clear();
+    }
 }
 
-// Function to destroy and free an Opus encoder wrapper
-void opus_encoder_wrapper_destroy(opus_encoder_wrapper_t *wrapper)
+// Set DTX (Discontinuous Transmission)
+void OpusEncoderWrapper::SetDtx(bool enable)
 {
-    // Check for null pointer
-    if (!wrapper)
-    {
-        return;
-    }
+    // Lock mutex
+    std::lock_guard<std::mutex> lock(mutex);
 
-    // Destroy the Opus encoder and free buffers
-    if (wrapper->enc)
+    // Set DTX option
+    if (audio_encoder != nullptr)
     {
-        // Destroy the Opus encoder
-        opus_encoder_destroy(wrapper->enc);
+        opus_encoder_ctl(audio_encoder, OPUS_SET_DTX(enable ? 1 : 0));
     }
+}
 
-    // Free input buffer
-    if (wrapper->in_buffer)
+// Set Complexity
+void OpusEncoderWrapper::SetComplexity(int complexity)
+{
+    // Lock mutex
+    std::lock_guard<std::mutex> lock(mutex);
+
+    // Set Complexity option
+    if (audio_encoder != nullptr)
     {
-        // Free the input buffer
-        free(wrapper->in_buffer);
+        opus_encoder_ctl(audio_encoder, OPUS_SET_COMPLEXITY(complexity));
     }
-
-    // Free the wrapper itself
-    free(wrapper);
 }

@@ -133,6 +133,8 @@ elseif(CONFIG_GEEKROS_SYSTEM_LANGUAGE_ZH_CN)
     set(SELECTED_LANG "ZH_CN")
 elseif(CONFIG_GEEKROS_SYSTEM_LANGUAGE_ZH_TW)
     set(SELECTED_LANG "ZH_TW")
+else()
+    set(SELECTED_LANG "ZH_CN")
 endif()
 
 add_custom_target(copy_static_assets_language ALL

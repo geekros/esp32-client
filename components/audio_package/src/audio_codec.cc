@@ -20,113 +20,69 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:audio:codec]"
 
-// Set output volume implementation
-static void audio_codec_set_output_volume(audio_codec_t *codec, int volume)
+// Constructor
+AudioCodec::AudioCodec()
 {
-    codec->output_volume = volume;
-    ESP_LOGI(TAG, "Set output volume to %d", volume);
 }
 
-// Set input gain implementation
-static void audio_codec_set_input_gain(audio_codec_t *codec, float gain)
+// Destructor
+AudioCodec::~AudioCodec()
 {
-    codec->input_gain = gain;
-    ESP_LOGI(TAG, "Set input gain to %.1f", gain);
 }
 
-// Enable output implementation
-static void audio_codec_enable_input(audio_codec_t *codec, bool enable)
+// Set output volume
+void AudioCodec::SetOutputVolume(int volume)
 {
-    if (enable == codec->input_enabled)
-    {
-        return;
-    }
-    codec->input_enabled = enable;
-    ESP_LOGI(TAG, "Set input enable to %s", enable ? "true" : "false");
+    output_volume = volume;
 }
 
-// Enable output implementation
-static void audio_codec_enable_output(audio_codec_t *codec, bool enable)
+// Set input gain
+void AudioCodec::SetInputGain(float gain)
 {
-    if (enable == codec->output_enabled)
-    {
-        return;
-    }
-    codec->output_enabled = enable;
-    ESP_LOGI(TAG, "Set output enable to %s", enable ? "true" : "false");
+    input_gain = gain;
 }
 
-// Output data implementation
-static void audio_codec_output_data(audio_codec_t *codec, int16_t *data, int samples)
+// Enable or disable input
+void AudioCodec::EnableInput(bool enable)
 {
-    if (codec->func && codec->func->Write)
-    {
-        codec->func->Write(codec, data, samples);
-    }
+    input_enabled = enable;
 }
 
-// Input data implementation
-static bool audio_codec_input_data(audio_codec_t *codec, int16_t *data, int samples)
+// Enable or disable output
+void AudioCodec::EnableOutput(bool enable)
 {
-    if (!codec->func || !codec->func->Read)
-    {
-        return false;
-    }
-    int r = codec->func->Read(codec, data, samples);
-    return (r > 0);
+    output_enabled = enable;
 }
 
-// Start codec implementation
-static void audio_codec_start(audio_codec_t *codec)
+// Output audio data
+void AudioCodec::OutputData(std::vector<int16_t> &data)
 {
-    if (codec->output_volume <= 0)
-    {
-        ESP_LOGW(TAG, "Output volume %d too small, set to 10", codec->output_volume);
-        codec->output_volume = 10;
-    }
-
-    if (codec->tx_handle)
-    {
-        ESP_ERROR_CHECK(i2s_channel_enable(codec->tx_handle));
-    }
-    if (codec->rx_handle)
-    {
-        ESP_ERROR_CHECK(i2s_channel_enable(codec->rx_handle));
-    }
-
-    if (codec->func && codec->func->EnableInput)
-    {
-        codec->func->EnableInput(codec, true);
-    }
-    if (codec->func && codec->func->EnableOutput)
-    {
-        codec->func->EnableOutput(codec, true);
-    }
-
-    ESP_LOGI(TAG, "Audio codec started");
+    Write(data.data(), data.size());
 }
 
-// Audio codec function implementations
-const audio_codec_func_t audio_codec_func = {
-    .Read = NULL,
-    .Write = NULL,
-    .SetOutputVolume = audio_codec_set_output_volume,
-    .SetInputGain = audio_codec_set_input_gain,
-    .EnableInput = audio_codec_enable_input,
-    .EnableOutput = audio_codec_enable_output,
-    .OutputData = audio_codec_output_data,
-    .InputData = audio_codec_input_data,
-    .Start = audio_codec_start,
-};
-
-// Function to initialize audio codec
-void audio_codec_init(audio_codec_t *codec, const audio_codec_func_t *func)
+// Input audio data
+bool AudioCodec::InputData(std::vector<int16_t> &data)
 {
-    memset(codec, 0, sizeof(audio_codec_t));
-    codec->func = func;
+    int samples = Read(data.data(), data.size());
+    return samples > 0;
+}
 
-    codec->input_channels = 1;
-    codec->output_channels = 1;
-    codec->output_volume = 70;
-    codec->input_gain = 0.0f;
+// Start the audio codec
+void AudioCodec::Start()
+{
+    // Enable RX channel if applicable
+    if (tx_handle != nullptr)
+    {
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
+    }
+
+    // Enable TX channel if applicable
+    if (rx_handle != nullptr)
+    {
+        ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+    }
+
+    // Enable input and output by default
+    EnableInput(true);
+    EnableOutput(true);
 }

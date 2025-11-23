@@ -20,50 +20,39 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:device:i2c]"
 
-// I2C device handle
-i2c_master_dev_handle_t i2c_device;
-
-// I2C device constructor
-void I2cDevice(i2c_master_bus_handle_t i2c_bus, uint8_t addr)
+// Constructor
+I2CDevice::I2CDevice(i2c_master_bus_handle_t i2c_bus, uint8_t addr)
 {
-    // Configure the I2C device
-    i2c_device_config_t i2c_device_cfg = {};
-    i2c_device_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
-    i2c_device_cfg.device_address = addr;
-    i2c_device_cfg.scl_speed_hz = 400 * 1000;
-    i2c_device_cfg.scl_wait_us = 0;
-    i2c_device_cfg.flags.disable_ack_check = 0;
-
-    // Add the I2C device to the bus
-    ESP_ERROR_CHECK(i2c_master_bus_add_device(i2c_bus, &i2c_device_cfg, &i2c_device));
+    i2c_device_config_t i2c_device_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = addr,
+        .scl_speed_hz = 400 * 1000,
+        .scl_wait_us = 0,
+        .flags = {
+            .disable_ack_check = 0,
+        },
+    };
+    ESP_ERROR_CHECK(i2c_master_bus_add_device(i2c_bus, &i2c_device_cfg, &i2c_device_));
+    assert(i2c_device_ != NULL);
 }
 
-// Write a value to a register over I2C
-void WriteReg(uint8_t reg, uint8_t value)
+// Write to a single register
+void I2CDevice::WriteReg(uint8_t reg, uint8_t value)
 {
-    // Create a buffer with the register address and value
     uint8_t buffer[2] = {reg, value};
-
-    // Write the buffer to the I2C device
-    ESP_ERROR_CHECK(i2c_master_transmit(i2c_device, buffer, 2, 100));
+    ESP_ERROR_CHECK(i2c_master_transmit(i2c_device_, buffer, 2, 100));
 }
 
-// Read a value from a register over I2C
-uint8_t ReadReg(uint8_t reg)
+// Read a single register
+uint8_t I2CDevice::ReadReg(uint8_t reg)
 {
-    // Create a buffer to hold the read value
     uint8_t buffer[1];
-
-    // Read the value from the I2C device
-    ESP_ERROR_CHECK(i2c_master_transmit_receive(i2c_device, &reg, 1, buffer, 1, 100));
-
-    // Return the read value
+    ESP_ERROR_CHECK(i2c_master_transmit_receive(i2c_device_, &reg, 1, buffer, 1, 100));
     return buffer[0];
 }
 
-// Read multiple values from a register over I2C
-void ReadRegs(uint8_t reg, uint8_t *buffer, size_t length)
+// Read multiple registers
+void I2CDevice::ReadRegs(uint8_t reg, uint8_t *buffer, size_t length)
 {
-    // Read multiple values from the I2C device
-    ESP_ERROR_CHECK(i2c_master_transmit_receive(i2c_device, &reg, 1, buffer, length, 100));
+    ESP_ERROR_CHECK(i2c_master_transmit_receive(i2c_device_, &reg, 1, buffer, length, 100));
 }

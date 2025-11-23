@@ -18,10 +18,9 @@ limitations under the License.
 #define AUDIO_PROCESSOR_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <vector>
+#include <functional>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -31,38 +30,23 @@ limitations under the License.
 #include "model_path.h"
 #include "audio_codec.h"
 
-// Forward declaration of AudioProcessor structure
-typedef struct audio_processor_t audio_processor_t;
-
-// Define callback types
-typedef void (*audio_processor_output_cb_t)(int16_t *data, size_t samples, void *user_ctx);
-
-// VAD callback type
-typedef void (*audio_processor_vad_cb_t)(bool speaking, void *user_ctx);
-
-// Define AudioProcessorInterface structure
-typedef struct audio_processor_interface
+// AudioProcessor class definition
+class AudioProcessor
 {
-    void (*initialize)(struct audio_processor_t *self, audio_codec_t *codec, int frame_duration_ms, srmodel_list_t *models_list);
-    void (*feed)(struct audio_processor_t *self, int16_t *data, size_t samples);
-    void (*start)(struct audio_processor_t *self);
-    void (*stop)(struct audio_processor_t *self);
-    bool (*is_running)(struct audio_processor_t *self);
-    void (*set_output_callback)(struct audio_processor_t *self, audio_processor_output_cb_t cb, void *user_ctx);
-    void (*set_vad_callback)(struct audio_processor_t *self, audio_processor_vad_cb_t cb, void *user_ctx);
-    size_t (*get_feed_size)(struct audio_processor_t *self);
-    void (*enable_device_aec)(struct audio_processor_t *self, bool enable);
-} audio_processor_interface_t;
+public:
+    // Constructor and destructor
+    virtual ~AudioProcessor() = default;
 
-// Define AudioProcessor structure
-struct audio_processor_t
-{
-    const audio_processor_interface_t *itf;
-    audio_processor_output_cb_t output_cb;
-    void *output_ctx;
-
-    audio_processor_vad_cb_t vad_cb;
-    void *vad_ctx;
+    // Define public methods
+    virtual void Initialize(AudioCodec *codec, int frame_duration_ms, srmodel_list_t *models_list) = 0;
+    virtual void Feed(std::vector<int16_t> &&data) = 0;
+    virtual void Start() = 0;
+    virtual void Stop() = 0;
+    virtual bool IsRunning() = 0;
+    virtual void OnOutput(std::function<void(std::vector<int16_t> &&data)> callback) = 0;
+    virtual void OnVadStateChange(std::function<void(bool speaking)> callback) = 0;
+    virtual size_t GetFeedSize() = 0;
+    virtual void EnableDeviceAec(bool enable) = 0;
 };
 
 #endif

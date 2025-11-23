@@ -18,10 +18,7 @@ limitations under the License.
 #define REQUEST_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -30,6 +27,11 @@ limitations under the License.
 #include <esp_timer.h>
 #include <esp_http_client.h>
 #include <esp_crt_bundle.h>
+
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
 
 // Include configuration and module headers
 #include "client_config.h"
@@ -45,7 +47,34 @@ typedef struct
     int data_offset;
 } http_response_t;
 
-// Function to handle HTTP request
-esp_err_t http_request(const char *url, esp_http_client_method_t method, const char *post_data, char *response_buf, int response_buf_len);
+// HttpRequest class definition
+class HttpRequest
+{
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
+
+    // HTTP event handler
+    static esp_err_t EventHandler(esp_http_client_event_t *event);
+
+public:
+    // Constructor and destructor
+    HttpRequest();
+    ~HttpRequest();
+
+    // Get the singleton instance of the HttpRequest class
+    static HttpRequest &Instance()
+    {
+        static HttpRequest instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    HttpRequest(const HttpRequest &) = delete;
+    HttpRequest &operator=(const HttpRequest &) = delete;
+
+    // Function to handle HTTP request
+    esp_err_t Request(const std::string &url, esp_http_client_method_t method, const std::string &post_data, std::string &response_buf, int response_buf_len);
+};
 
 #endif

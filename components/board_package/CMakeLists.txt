@@ -14,7 +14,7 @@
 
 # Define source files directories
 set(SOURCES
-    "src"
+    "src/board_basic.cc"
 )
 
 # Define include directories

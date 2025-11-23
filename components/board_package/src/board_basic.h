@@ -27,10 +27,14 @@ limitations under the License.
 #include <esp_log.h>
 #include <esp_err.h>
 
+// Forward declaration of audio codec structure
+struct audio_codec_t;
+
 // Define board structure
 typedef struct
 {
     void (*board_init)(void);
+    struct audio_codec_t *(*get_audio_codec)(void);
 } board_t;
 
 // Function to get the board structure

@@ -18,15 +18,17 @@ limitations under the License.
 #define WIFI_SERVER_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
 
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 #include <esp_http_server.h>
+
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
 
 // Include cJSON header
 #include "cJSON.h"
@@ -34,22 +36,49 @@ limitations under the License.
 // Include client configuration header
 #include "client_config.h"
 
-// Include component headers
-#include "system_reboot.h"
-
 // Include headers
-#include "wifi_configuration.h"
+#include "wifi_access_point.h"
+#include "system_reboot.h"
+#include "utils_basic.h"
 
-// Define server configuration structure and callback type
-typedef struct
+// WifiServer class definition
+class WifiServer
 {
-    const char *http_html;
-} server_config_t;
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
 
-// Function to start the WiFi server
-esp_err_t wifi_server_start(void);
+    // Member variables
+    httpd_handle_t server = NULL;
 
-// Function to stop the WiFi server
-esp_err_t wifi_server_stop(void);
+    // Static functions
+    static esp_err_t StaticHandler(httpd_req_t *req);
+    static esp_err_t ScanHandler(httpd_req_t *req);
+    static esp_err_t SubmitHandler(httpd_req_t *req);
+    static esp_err_t ConfigHandler(httpd_req_t *req);
+    static esp_err_t ConfigSubmitHandler(httpd_req_t *req);
+    static esp_err_t CaptiveHandle(httpd_req_t *req);
+    static esp_err_t IndexHandler(httpd_req_t *req);
+
+public:
+    // Constructor and Destructor
+    WifiServer();
+    ~WifiServer();
+
+    // Get singleton instance
+    static WifiServer &Instance()
+    {
+        static WifiServer instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    WifiServer(const WifiServer &) = delete;
+    WifiServer &operator=(const WifiServer &) = delete;
+
+    // Server functions
+    void Start();
+    void Stop();
+};
 
 #endif

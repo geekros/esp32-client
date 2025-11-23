@@ -18,10 +18,7 @@ limitations under the License.
 #define SYSTEM_REBOOT_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -30,8 +27,33 @@ limitations under the License.
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 
-// Function to reboot the system
-void system_reboot(void *pvParameters);
+// SystemReboot class definition
+class SystemReboot
+{
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
+
+public:
+    // Constructor and Destructor
+    SystemReboot();
+    ~SystemReboot();
+
+    // Get the singleton instance of the SystemReboot class
+    static SystemReboot &Instance()
+    {
+        static SystemReboot instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    SystemReboot(const SystemReboot &) = delete;
+    SystemReboot &operator=(const SystemReboot &) = delete;
+
+    // Reboot the system
+    void Reboot(void *pvParameters);
+};
 
 #endif

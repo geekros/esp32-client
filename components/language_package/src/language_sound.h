@@ -14,30 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Include headers
-#include "system_reboot.h"
+#ifndef LANGUAGE_SOUND_H
+#define LANGUAGE_SOUND_H
 
-// Define log tag
-#define TAG "[client:components:system:reboot]"
+// Include standard headers
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-// Constructor
-SystemReboot::SystemReboot()
+// Include ESP headers
+#include <esp_log.h>
+#include <esp_err.h>
+
+// Define sound asset structure
+typedef struct
 {
-    event_group = xEventGroupCreate();
-}
+    const uint8_t *data;
+    size_t size;
+} sound_asset_t;
 
-// Destructor
-SystemReboot::~SystemReboot()
-{
-    if (event_group)
-    {
-        vEventGroupDelete(event_group);
-        event_group = NULL;
-    }
-}
+// Declare sound assets
+extern const sound_asset_t SOUND_WIFI_CONFIG;
+extern const sound_asset_t SOUND_WIFI_SUCCESS;
 
-// Reboot the system
-void SystemReboot::Reboot(void *pvParameters)
-{
-    esp_restart();
-}
+#endif

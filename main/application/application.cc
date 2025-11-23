@@ -17,15 +17,31 @@ limitations under the License.
 // Include headers
 #include "application.h"
 
-// Board interface pointer
-static const board_t *board_interface = NULL;
-
 // Define log tag
 #define TAG "[client:application]"
 
-// Application main function
-void application_main(void)
+// Constructor
+Application::Application()
 {
+    event_group = xEventGroupCreate();
+}
+
+// Destructor
+Application::~Application()
+{
+    if (event_group)
+    {
+        vEventGroupDelete(event_group);
+        event_group = NULL;
+    }
+}
+
+// Main application entry point
+void Application::Main()
+{
+    // Log the GeekROS version
+    ESP_LOGI(TAG, "Client Version: %s", GEEKROS_VERSION);
+
     // Check if GeekROS service GRK and project token are configured
     if (GEEKROS_SERVICE_GRK == NULL || strlen(GEEKROS_SERVICE_GRK) == 0 || GEEKROS_SERVICE_PROJECT_TOKEN == NULL || strlen(GEEKROS_SERVICE_PROJECT_TOKEN) == 0)
     {
@@ -33,54 +49,62 @@ void application_main(void)
         return;
     }
 
+    // Initialize basic runtime components
+    RuntimeBasic::Instance().Init();
+
     // Initialize system components
-    system_init(GEEKROS_SPIFFS_BASE_PATH, GEEKROS_SPIFFS_LABEL, GEEKROS_SPIFFS_MAX_FILE);
+    SystemBasic::Instance().Init(GEEKROS_SPIFFS_BASE_PATH, GEEKROS_SPIFFS_LABEL, GEEKROS_SPIFFS_MAX_FILE);
 
     // Initialize locale and language components
-    language_init();
+    LanguageBasic::Instance().Init();
 
-    // Load speech recognition models from SPIFFS
-    srmodel_list_t *models = model_load_from_path();
-    if (!models)
+    // Initialize WiFi manager
+    auto &wifi_manager = WifiManager::Instance();
+    auto ssid_list = wifi_manager.GetSsidList();
+    if (ssid_list.empty())
     {
-        ESP_LOGE(TAG, "Failed to load model");
-        return;
-    }
+        // Initialize access point mode if no SSIDs are configured
+        auto &wifi_access_point = WifiAccessPoint::Instance();
 
-    // Initialize the board-specific hardware
-    board_interface = board();
-
-    // Call the board initialization function
-    board_interface->board_init();
-
-    // Initialize WiFi SSID manager
-    wifi_ssid_manager_t *wifi_mgr = wifi_ssid_manager_get_instance();
-    wifi_ssid_manager_load(wifi_mgr);
-
-    // Get the list of stored WiFi SSIDs
-    const wifi_ssid_item_t *wifi_list = wifi_ssid_manager_get_list(wifi_mgr);
-    if (wifi_list && wifi_mgr->count > 0)
-    {
-        // connect to the Wi-Fi network
-        wifi_station_start();
+        // Start access point mode
+        wifi_access_point.Start();
     }
     else
     {
-        // No stored WiFi SSIDs, start in AP mode or prompt for configuration
-        wifi_configuration_start();
+        // Initialize station mode
+        auto &wifi_station = WifiStation::Instance();
+
+        wifi_station.OnScanBegin([this]()
+                                 { ESP_LOGI(TAG, "WiFi scan started"); });
+
+        wifi_station.OnConnect([this](const std::string &ssid)
+                               { ESP_LOGI(TAG, "Connecting to SSID: %s", ssid.c_str()); });
+
+        wifi_station.OnConnected([this](const std::string &ssid)
+                                 { ESP_LOGI(TAG, "Connected to SSID: %s", ssid.c_str()); });
+
+        // Start station mode
+        wifi_station.Start();
+
+        // Wait for connection
+        if (!wifi_station.WaitForConnected(60 * 1000))
+        {
+            wifi_station.Stop();
+            return;
+        }
     }
 
     // Start the application loop
-    application_loop();
+    Loop();
 }
 
-// Application loop function
-void application_loop(void)
+// Main application loop
+void Application::Loop()
 {
     // Main application loop
     while (true)
     {
         // Log a heartbeat message every 500 milliseconds
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }

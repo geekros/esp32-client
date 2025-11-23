@@ -46,9 +46,7 @@ extern "C" void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    // Log the GeekROS version
-    ESP_LOGI(TAG, "Client Version: %s", GEEKROS_VERSION);
-
     // Start the application main function
-    application_main();
+    auto &application = Application::Instance();
+    application.Main();
 }

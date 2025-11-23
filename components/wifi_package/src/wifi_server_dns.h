@@ -18,10 +18,7 @@ limitations under the License.
 #define WIFI_SERVER_DNS_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -33,25 +30,47 @@ limitations under the License.
 #include <lwip/netdb.h>
 
 // Include FreeRTOS headers
+// Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 
-// DNS server structure
-typedef struct
+// WifiServerDns class definition
+class WifiServerDns
 {
-    int port;
-    int fd;
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
+
+    // DNS server parameters
+    int port = 53;
+    int fd = -1;
     esp_ip4_addr_t gateway;
-    bool running;
-} wifi_dns_server_t;
 
-// DNS server function declarations
-void wifi_dns_server_init(wifi_dns_server_t *dns);
+    // DNS server free task
+    void Task();
 
-// Start DNS server
-void wifi_dns_server_start(wifi_dns_server_t *dns, esp_ip4_addr_t gateway);
+public:
+    // Constructor and destructor
+    WifiServerDns();
+    ~WifiServerDns();
 
-// Stop DNS server
-void wifi_dns_server_stop(wifi_dns_server_t *dns);
+    // Get the singleton instance of the WifiServerDns class
+    static WifiServerDns &Instance()
+    {
+        static WifiServerDns instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    WifiServerDns(const WifiServerDns &) = delete;
+    WifiServerDns &operator=(const WifiServerDns &) = delete;
+
+    // Start DNS server
+    void Start(esp_ip4_addr_t gateway_data);
+
+    // Stop DNS server
+    void Stop();
+};
 
 #endif

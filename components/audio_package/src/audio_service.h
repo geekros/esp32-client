@@ -18,10 +18,13 @@ limitations under the License.
 #define AUDIO_SERVICE_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <memory>
+#include <deque>
+#include <chrono>
+#include <mutex>
+#include <cstring>
+#include <condition_variable>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -42,161 +45,144 @@ limitations under the License.
 #include "opus_decoder.h"
 #include "opus_resampler.h"
 
+// Include AFE headers
 #include "afe_audio_processor.h"
 
-// Define constants
+// Define audio processor running event bit
 #define OPUS_FRAME_DURATION_MS 60
 #define MAX_ENCODE_TASKS_IN_QUEUE 2
 #define MAX_PLAYBACK_TASKS_IN_QUEUE 2
+
 #define MAX_DECODE_PACKETS_IN_QUEUE (2400 / OPUS_FRAME_DURATION_MS)
 #define MAX_SEND_PACKETS_IN_QUEUE (2400 / OPUS_FRAME_DURATION_MS)
 
-// Power management constants
+#define MAX_TIMESTAMPS_IN_QUEUE 3
+
 #define AUDIO_POWER_TIMEOUT_MS 15000
 #define AUDIO_POWER_CHECK_INTERVAL_MS 1000
 
-// Event group bits
-#define AS_EVENT_AUDIO_PROCESSOR_RUNNING (1 << 0)
+#define AS_EVENT_AUDIO_PROCESSOR_RUNNING (1 << 2)
 
-// Callback type definitions
-typedef void (*audio_service_on_send_queue_available_cb_t)(void *user_ctx);
-typedef void (*audio_service_on_vad_change_cb_t)(bool speaking, void *user_ctx);
-
-// Audio task type enumeration
-typedef enum
+// Define audio callbacks structure
+struct AudioCallbacks
 {
-    AUDIO_TASK_TYPE_ENCODE_TO_SEND_QUEUE = 0,
-    AUDIO_TASK_TYPE_DECODE_TO_PLAYBACK_QUEUE = 1,
-} audio_task_type_t;
+    std::function<void(void)> on_send_queue_available;
+    std::function<void(bool)> on_vad_change;
+};
 
-// Data structure definitions
-typedef struct
+// Define audio task type enum
+enum AudioTaskType
 {
+    AudioTaskTypeEncodeToSendQueue,
+    AudioTaskTypeDecodeToPlaybackQueue,
+};
+
+// Define audio task structure
+struct AudioTask
+{
+    AudioTaskType type;
+    std::vector<int16_t> pcm;
     uint32_t timestamp;
-    int sample_rate;
-    int frame_duration_ms;
-    uint8_t *payload;
-    size_t payload_len;
-} audio_stream_packet_t;
+};
 
-// Audio task structure
-typedef struct
+// Define audio stream packet structure
+struct AudioStreamPacket
 {
-    audio_task_type_t type;
-    int16_t *pcm;
-    size_t pcm_samples;
-    uint32_t timestamp;
-} audio_task_t;
+    int sample_rate = 0;
+    int frame_duration = 0;
+    uint32_t timestamp = 0;
+    std::vector<uint8_t> payload;
+};
 
-// Debug statistics structure
-typedef struct
+// Audio service class definition
+class AudioService
 {
-    uint32_t input_count;
-    uint32_t decode_count;
-    uint32_t encode_count;
-    uint32_t playback_count;
-} audio_debug_statistics_t;
-
-// Audio service structure
-typedef struct
-{
-    audio_service_on_send_queue_available_cb_t on_send_queue_available;
-    audio_service_on_vad_change_cb_t on_vad_change;
-    void *user_ctx;
-} audio_service_callbacks_t;
-
-// Main audio service structure
-typedef struct
-{
-    audio_codec_t *codec;
-    srmodel_list_t *models_list;
-    audio_service_callbacks_t callbacks;
-
-    /* AFE audio processor (VAD/AEC) */
-    audio_processor_t *audio_processor;
-    bool audio_processor_initialized;
-    bool voice_detected;
-
-    /* Opus encoder / decoder / resamplers */
-    opus_encoder_wrapper_t *opus_encoder;
-    opus_decoder_wrapper_t *opus_decoder;
-    opus_resampler_t input_resampler;
-    opus_resampler_t reference_resampler;
-    opus_resampler_t output_resampler;
-    bool input_resampler_inited;
-    bool reference_resampler_inited;
-    bool output_resampler_inited;
-
-    audio_debug_statistics_t stats;
-
+private:
+    // FreeRTOS event group handle
     EventGroupHandle_t event_group;
 
-    /* Tasks */
-    TaskHandle_t audio_input_task_handle;
-    TaskHandle_t audio_output_task_handle;
-    TaskHandle_t opus_codec_task_handle;
+    // Member variables
+    AudioCodec *codec = nullptr;
+    AudioCallbacks callbacks;
 
-    /* Queues & synchronization */
-    SemaphoreHandle_t queue_mutex; /* protects all queues */
-    SemaphoreHandle_t queue_sem;   /* condition variable replacement */
+    // Audio processor and Opus codec wrappers
+    std::unique_ptr<AudioProcessor> audio_processor;
+    std::unique_ptr<OpusEncoderWrapper> opus_encoder;
+    std::unique_ptr<OpusDecoderWrapper> opus_decoder;
 
-    /* Decode queue: server -> speaker */
-    audio_stream_packet_t *decode_queue[MAX_DECODE_PACKETS_IN_QUEUE];
-    int decode_head;
-    int decode_tail;
-    int decode_count;
+    // Resamplers for input, reference, and output audio
+    OpusResampler input_resampler;
+    OpusResampler reference_resampler;
+    OpusResampler output_resampler;
 
-    /* Send queue: mic -> server */
-    audio_stream_packet_t *send_queue[MAX_SEND_PACKETS_IN_QUEUE];
-    int send_head;
-    int send_tail;
-    int send_count;
+    // Models list
+    srmodel_list_t *models_list = nullptr;
 
-    /* Encode queue: PCM from processor waiting to be encoded */
-    audio_task_t *encode_queue[MAX_ENCODE_TASKS_IN_QUEUE];
-    int encode_head;
-    int encode_tail;
-    int encode_count;
+    // FreeRTOS task handles
+    TaskHandle_t audio_input_task_handle = nullptr;
+    TaskHandle_t audio_output_task_handle = nullptr;
+    TaskHandle_t opus_codec_task_handle = nullptr;
 
-    /* Playback queue: PCM ready for DAC */
-    audio_task_t *playback_queue[MAX_PLAYBACK_TASKS_IN_QUEUE];
-    int playback_head;
-    int playback_tail;
-    int playback_count;
+    // Mutex and condition variable for audio queues
+    std::mutex audio_queue_mutex;
+    std::condition_variable audio_queue_cv;
 
-    bool service_stopped;
-    bool audio_input_need_warmup;
+    // Audio queues
+    std::deque<std::unique_ptr<AudioStreamPacket>> audio_decode_queue;
+    std::deque<std::unique_ptr<AudioStreamPacket>> audio_send_queue;
+    std::deque<std::unique_ptr<AudioTask>> audio_encode_queue;
+    std::deque<std::unique_ptr<AudioTask>> audio_playback_queue;
 
-    esp_timer_handle_t audio_power_timer;
-    int64_t last_input_time_ms;
-    int64_t last_output_time_ms;
-} audio_service_t;
+    // For server AEC
+    std::deque<uint32_t> timestamp_queue;
 
-// Function declarations
-audio_service_t *audio_service_create(audio_codec_t *codec, srmodel_list_t *models_list, const audio_service_callbacks_t *cbs);
+    // State variables
+    bool audio_processor_initialized = false;
+    bool voice_detected = false;
+    bool service_stopped = true;
+    bool audio_input_need_warmup = false;
 
-// Destroy audio service
-void audio_service_destroy(audio_service_t *svc);
+    // Audio power management
+    esp_timer_handle_t audio_power_timer = nullptr;
+    std::chrono::steady_clock::time_point last_input_time;
+    std::chrono::steady_clock::time_point last_output_time;
 
-// Start and stop audio service
-void audio_service_start(audio_service_t *svc);
-void audio_service_stop(audio_service_t *svc);
+    // Private methods
+    void AudioInputTask();
+    void AudioOutputTask();
+    void OpusCodecTask();
+    void PushTaskToEncodeQueue(AudioTaskType type, std::vector<int16_t> &&pcm);
+    void SetDecodeSampleRate(int sample_rate, int frame_duration);
+    void CheckAndUpdateAudioPowerState();
 
-// Enqueue and dequeue audio packets
-void audio_service_enable_voice_processing(audio_service_t *svc, bool enable);
-void audio_service_enable_device_aec(audio_service_t *svc, bool enable);
+public:
+    // Constructor and destructor
+    AudioService();
+    ~AudioService();
 
-// Check service state
-bool audio_service_is_voice_detected(const audio_service_t *svc);
-bool audio_service_is_idle(audio_service_t *svc);
+    // Public methods
+    void Initialize(AudioCodec *codec_data);
+    void Start();
+    void Stop();
 
-// Push packet to decode queue
-bool audio_service_push_packet_to_decode_queue(audio_service_t *svc, audio_stream_packet_t *packet, bool wait);
+    // Getters for state
+    bool IsVoiceDetected() const { return voice_detected; }
+    bool IsIdle();
+    bool IsAudioProcessorRunning() const { return xEventGroupGetBits(event_group) & AS_EVENT_AUDIO_PROCESSOR_RUNNING; }
 
-// Pop packet from send queue
-audio_stream_packet_t *audio_service_pop_packet_from_send_queue(audio_service_t *svc);
+    // Enable or disable features
+    void EnableVoiceProcessing(bool enable);
+    void EnableDeviceAec(bool enable);
 
-// Play sound from OGG data
-void audio_service_play_sound(audio_service_t *svc, const uint8_t *ogg_data, size_t ogg_size);
+    // Set audio callbacks
+    void SetCallbacks(AudioCallbacks &cb);
+
+    // Audio data methods
+    bool PushPacketToDecodeQueue(std::unique_ptr<AudioStreamPacket> packet, bool wait = false);
+    std::unique_ptr<AudioStreamPacket> PopPacketFromSendQueue();
+    void PlaySound(const std::string_view &sound);
+    bool ReadAudioData(std::vector<int16_t> &data, int sample_rate, int samples);
+    void ResetDecoder();
+};
 
 #endif

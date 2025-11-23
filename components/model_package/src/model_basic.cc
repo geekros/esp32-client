@@ -23,12 +23,25 @@ limitations under the License.
 // PSRAM buffer for model data
 static void *model_buffer = NULL;
 
-// Load model from SPIFFS
-srmodel_list_t *model_load_from_path(void)
+// Constructor
+ModelBasic::ModelBasic()
 {
-    // set AFE_CONFIG log level to NONE to suppress logs from srmodel_load
-    esp_log_level_set("AFE_CONFIG", ESP_LOG_NONE);
+    event_group = xEventGroupCreate();
+}
 
+// Destructor
+ModelBasic::~ModelBasic()
+{
+    if (event_group)
+    {
+        vEventGroupDelete(event_group);
+        event_group = NULL;
+    }
+}
+
+// Load model from SPIFFS
+srmodel_list_t *ModelBasic::Load(void)
+{
     // model file path
     const char *path = GEEKROS_SPIFFS_MODEL_PATH "/srmodels.bin";
 
@@ -36,7 +49,7 @@ srmodel_list_t *model_load_from_path(void)
     FILE *fp = fopen(path, "rb");
     if (!fp)
     {
-        return NULL;
+        return nullptr;
     }
 
     // get file size
@@ -49,7 +62,7 @@ srmodel_list_t *model_load_from_path(void)
     if (!model_buffer)
     {
         fclose(fp);
-        return NULL;
+        return nullptr;
     }
 
     // read file to PSRAM
@@ -61,7 +74,7 @@ srmodel_list_t *model_load_from_path(void)
     {
         free(model_buffer);
         model_buffer = NULL;
-        return NULL;
+        return nullptr;
     }
 
     // parse with official SR loader
@@ -71,27 +84,10 @@ srmodel_list_t *model_load_from_path(void)
     {
         free(model_buffer);
         model_buffer = NULL;
-        return NULL;
+        return nullptr;
     }
 
     ESP_LOGI(TAG, "Model initialized successfully, number of models: %d", models->num);
 
     return models;
-}
-
-// Unload model
-void model_unload(srmodel_list_t *models)
-{
-    // free model resources
-    if (models)
-    {
-        esp_srmodel_deinit(models);
-    }
-
-    // free PSRAM buffer
-    if (model_buffer)
-    {
-        free(model_buffer);
-        model_buffer = NULL;
-    }
 }

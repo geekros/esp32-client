@@ -18,7 +18,7 @@ limitations under the License.
 #include "language_basic.h"
 
 // Define log tag
-#define TAG "[client:components:language]"
+#define TAG "[client:components:language:basic]"
 
 // Global variable to hold current locale code
 static char language_code[16] = "ZH_CN";
@@ -26,11 +26,24 @@ static char language_code[16] = "ZH_CN";
 // Global variable to hold parsed JSON root
 static cJSON *json_root = NULL;
 
-// Global variable to hold music path
-static char *language_audio_path = NULL;
+// Constructor
+LanguageBasic::LanguageBasic()
+{
+    event_group = xEventGroupCreate();
+}
 
-// Function to load locale JSON file
-static void load_locale_json()
+// Destructor
+LanguageBasic::~LanguageBasic()
+{
+    if (event_group)
+    {
+        vEventGroupDelete(event_group);
+        event_group = NULL;
+    }
+}
+
+// Load language configuration
+void LanguageBasic::LoadConfig()
 {
     // Example: construct file path based on locale_code
     char path[128];
@@ -71,23 +84,16 @@ static void load_locale_json()
 }
 
 // Initialization function for language package
-void language_init(void)
+void LanguageBasic::Init()
 {
     // Load locale JSON file
-    load_locale_json();
+    LoadConfig();
 
-    // Set music path (stub value)
-    if (!language_audio_path)
-    {
-        // Allocate and set music path
-        language_audio_path = (char *)malloc(256);
-    }
-
-    ESP_LOGI(TAG, "Current language: %s %s", get_language(), get_language_content("language"));
+    ESP_LOGI(TAG, "Current language: %s %s", GetLanguage()->c_str(), Language("language")->c_str());
 }
 
-// Function to get the current locale/language code
-const char *get_language(void)
+// Get the current locale/language code
+std::string *LanguageBasic::GetLanguage()
 {
     // Determine locale code based on configuration
 #if CONFIG_GEEKROS_SYSTEM_LANGUAGE_EN_US
@@ -101,47 +107,27 @@ const char *get_language(void)
 #endif
 
     // Return the current locale code
-    return language_code;
+    return new std::string(language_code);
 }
 
 // Function to get localized string by key
-const char *get_language_content(const char *key)
+std::string *LanguageBasic::Language(const std::string &key)
 {
     // Check if JSON root is loaded
     if (!json_root)
     {
-        ESP_LOGW(TAG, "Locale JSON not loaded");
         // Return the key itself if not found
-        return key;
+        return new std::string(key);
     }
 
     // Get the item from JSON by key
-    cJSON *item = cJSON_GetObjectItem(json_root, key);
+    cJSON *item = cJSON_GetObjectItem(json_root, key.c_str());
     if (!item || !cJSON_IsString(item))
     {
-        ESP_LOGW(TAG, "Key not found in locale JSON: %s", key);
         // Return the key itself if not found
-        return key;
+        return new std::string(key);
     }
 
     // Return the localized string
-    return item->valuestring;
-}
-
-// Function to get localized music string by key
-const char *get_language_audio_path(const char *key)
-{
-    // Check if music path is allocated
-    if (!language_audio_path)
-    {
-        ESP_LOGW(TAG, "Music path not set");
-        // Return NULL if music path is not set
-        return NULL;
-    }
-
-    // Construct the music file path based on locale and key
-    snprintf(language_audio_path, 256, "/spiffs/language/%s/%s.ogg", language_code, key);
-
-    // Return the music file path
-    return language_audio_path;
+    return new std::string(item->valuestring);
 }

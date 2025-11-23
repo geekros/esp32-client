@@ -20,67 +20,38 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:system:hostname]"
 
-// Function to get the device hostname
-const char *get_hostname()
+// Constructor
+SystemHostname::SystemHostname()
+{
+    // Create event group
+    event_group = xEventGroupCreate();
+}
+
+// Destructor
+SystemHostname::~SystemHostname()
+{
+    if (event_group)
+    {
+        vEventGroupDelete(event_group);
+        event_group = NULL;
+    }
+}
+
+// Get the device hostname
+std::string SystemHostname::Get()
 {
     // Define static hostname buffer
     static char hostname[32];
 
-    // Initialize NVS
-    esp_err_t err;
-    nvs_handle_t handle;
+    // Define MAC address buffer
+    uint8_t mac[6];
 
-    // Open NVS namespace
-    err = nvs_open(GEEKROS_NVS_NAMESPACE, NVS_READWRITE, &handle);
-    if (err != ESP_OK)
-    {
-        snprintf(hostname, sizeof(hostname), GEEKROS_NVS_NAMESPACE "-xxxxxx");
-        return hostname;
-    }
+    // Read MAC address
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
 
-    // Read hostname from NVS
-    size_t stored_len = sizeof(hostname);
-    err = nvs_get_str(handle, GEEKROS_NVS_HOSTNAME, hostname, &stored_len);
+    // Format hostname
+    snprintf(hostname, sizeof(hostname), GEEKROS_NVS_NAMESPACE "-%02x%02x%02x", mac[3], mac[4], mac[5]);
 
-    if (err != ESP_OK)
-    {
-        // Generate new hostname based on MAC address
-        uint8_t mac[6];
-        esp_read_mac(mac, ESP_MAC_WIFI_STA);
-        snprintf(hostname, sizeof(hostname), GEEKROS_NVS_NAMESPACE "-%02x%02x%02x", mac[3], mac[4], mac[5]);
-
-        // Save it persistently
-        nvs_set_str(handle, GEEKROS_NVS_HOSTNAME, hostname);
-        nvs_commit(handle);
-
-        // Set return value to ESP_OK
-        err = ESP_OK;
-    }
-
-    // Close NVS handle
-    nvs_close(handle);
-
-    // Return hostname
-    return hostname;
-}
-
-// Clear NVS hostname (for testing purposes)
-void clear_hostname(void)
-{
-    // Open NVS namespace
-    nvs_handle_t handle;
-    esp_err_t err = nvs_open(GEEKROS_NVS_NAMESPACE, NVS_READWRITE, &handle);
-    if (err == ESP_OK)
-    {
-        // Erase hostname key
-        err = nvs_erase_key(handle, GEEKROS_NVS_HOSTNAME);
-        if (err == ESP_OK)
-        {
-            // Commit changes
-            nvs_commit(handle);
-        }
-    }
-
-    // Close NVS handle
-    nvs_close(handle);
+    // Return hostname as string
+    return std::string(hostname);
 }

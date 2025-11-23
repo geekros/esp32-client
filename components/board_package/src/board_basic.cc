@@ -15,29 +15,7 @@ limitations under the License.
 */
 
 // Include headers
-#include "system_reboot.h"
+#include "board_basic.h"
 
 // Define log tag
-#define TAG "[client:components:system:reboot]"
-
-// Constructor
-SystemReboot::SystemReboot()
-{
-    event_group = xEventGroupCreate();
-}
-
-// Destructor
-SystemReboot::~SystemReboot()
-{
-    if (event_group)
-    {
-        vEventGroupDelete(event_group);
-        event_group = NULL;
-    }
-}
-
-// Reboot the system
-void SystemReboot::Reboot(void *pvParameters)
-{
-    esp_restart();
-}
+#define TAG "[client:components:board:basic]"

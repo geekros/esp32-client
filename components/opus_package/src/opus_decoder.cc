@@ -20,94 +20,71 @@ limitations under the License.
 // Define log tag
 #define TAG "[client:components:opus:decoder]"
 
-// Function to create and initialize an Opus decoder wrapper
-opus_decoder_wrapper_t *opus_decoder_wrapper_create(int sample_rate, int channels, int duration_ms)
+// Constructor
+OpusDecoderWrapper::OpusDecoderWrapper(int sample_rate, int channels, int duration_ms) : sample_rate(sample_rate), duration_ms(duration_ms)
 {
-    // Variable to hold error code
+    // Declare error variable
     int error;
 
-    // Allocate memory for the wrapper
-    opus_decoder_wrapper_t *wrap = (opus_decoder_wrapper_t *)calloc(1, sizeof(opus_decoder_wrapper_t));
-    if (!wrap)
+    // Create Opus decoder
+    audio_decoder = opus_decoder_create(sample_rate, channels, &error);
+    if (audio_decoder == nullptr)
     {
-        return NULL;
+        return;
     }
-
-    // Create the Opus decoder
-    wrap->dec = opus_decoder_create(sample_rate, channels, &error);
-    if (wrap->dec == NULL || error != OPUS_OK)
-    {
-        free(wrap);
-        return NULL;
-    }
-
-    // Initialize wrapper parameters
-    wrap->sample_rate = sample_rate;
-    wrap->channels = channels;
-    wrap->duration_ms = duration_ms;
 
     // Calculate frame size
-    wrap->frame_size = (sample_rate / 1000) * duration_ms * channels;
-
-    // Return the created wrapper
-    return wrap;
+    frame_size = sample_rate / 1000 * channels * duration_ms;
 }
 
-// Function to decode Opus data into PCM format
-int opus_decoder_wrapper_decode(opus_decoder_wrapper_t *wrapper, const uint8_t *opus_data, size_t opus_len, int16_t *output_pcm, size_t max_pcm_samples)
+// Destructor
+OpusDecoderWrapper::~OpusDecoderWrapper()
 {
-    // Check for null pointer
-    if (!wrapper || !wrapper->dec)
+    std::lock_guard<std::mutex> lock(mutex);
+    if (audio_decoder != nullptr)
     {
-        return OPUS_INVALID_STATE;
+        opus_decoder_destroy(audio_decoder);
+    }
+}
+
+// Decode function
+bool OpusDecoderWrapper::Decode(std::vector<uint8_t> &&opus, std::vector<int16_t> &pcm)
+{
+    // Lock mutex
+    std::lock_guard<std::mutex> lock(mutex);
+
+    // Check if decoder is initialized
+    if (audio_decoder == nullptr)
+    {
+        return false;
     }
 
-    // Check if output buffer is large enough
-    if (max_pcm_samples < (size_t)wrapper->frame_size)
-    {
-        return OPUS_BUFFER_TOO_SMALL;
-    }
+    // Prepare PCM buffer
+    pcm.resize(frame_size);
 
-    // Decode the Opus data
-    int ret = opus_decode(wrapper->dec, opus_data, opus_len, output_pcm, wrapper->frame_size, 0);
+    // Decode Opus data
+    auto ret = opus_decode(audio_decoder, opus.data(), opus.size(), pcm.data(), pcm.size(), 0);
     if (ret < 0)
     {
-        return ret;
+        return false;
     }
 
-    // Return number of samples decoded
-    return ret;
+    // Resize PCM vector to actual decoded size
+    pcm.resize(ret);
+
+    // Successful decode
+    return true;
 }
 
-// Function to decode Opus data into PCM format
-void opus_decoder_wrapper_destroy(opus_decoder_wrapper_t *wrapper)
+// Reset decoder state
+void OpusDecoderWrapper::ResetState()
 {
-    // Check for null pointer
-    if (!wrapper)
+    // Lock mutex
+    std::lock_guard<std::mutex> lock(mutex);
+
+    // Reset Opus decoder state
+    if (audio_decoder != nullptr)
     {
-        return;
+        opus_decoder_ctl(audio_decoder, OPUS_RESET_STATE);
     }
-
-    // Destroy the Opus decoder
-    if (wrapper->dec)
-    {
-        // Destroy the decoder instance
-        opus_decoder_destroy(wrapper->dec);
-    }
-
-    // Free the wrapper memory
-    free(wrapper);
-}
-
-// Function to reset the Opus decoder state
-void opus_decoder_wrapper_reset(opus_decoder_wrapper_t *wrapper)
-{
-    // Check for null pointer
-    if (!wrapper || !wrapper->dec)
-    {
-        return;
-    }
-
-    // Reset the decoder state
-    opus_decoder_ctl(wrapper->dec, OPUS_RESET_STATE);
 }
