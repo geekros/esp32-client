@@ -38,7 +38,7 @@ WifiStation::WifiStation()
     err = nvs_get_i8(nvs, "max_tx_power", &max_tx_power);
     if (err != ESP_OK)
     {
-        max_tx_power = 0;
+        max_tx_power = 52;
     }
 
     // Read remember BSSID setting

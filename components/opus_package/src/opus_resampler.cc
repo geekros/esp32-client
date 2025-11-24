@@ -31,13 +31,13 @@ OpusResampler::~OpusResampler()
 }
 
 // Configure resampler
-void OpusResampler::Configure(int input_sample_rate, int output_sample_rate)
+void OpusResampler::Configure(int input_sample_rate_, int output_sample_rate_)
 {
     // Check for valid sample rates
-    int encode = input_sample_rate > output_sample_rate ? 1 : 0;
+    int encode = input_sample_rate_ > output_sample_rate_ ? 1 : 0;
 
     // Initialize Silk resampler
-    auto ret = silk_resampler_init(&resampler_state, input_sample_rate, output_sample_rate, encode);
+    auto ret = silk_resampler_init(&resampler_state, input_sample_rate_, output_sample_rate_, encode);
     if (ret != 0)
     {
         ESP_LOGE(TAG, "Failed to initialize resampler");
@@ -45,10 +45,10 @@ void OpusResampler::Configure(int input_sample_rate, int output_sample_rate)
     }
 
     // Save sample rates
-    input_sample_rate = input_sample_rate;
+    input_sample_rate = input_sample_rate_;
 
     // Save output sample rate
-    output_sample_rate = output_sample_rate;
+    output_sample_rate = output_sample_rate_;
 }
 
 // Process resampling

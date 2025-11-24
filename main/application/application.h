@@ -44,6 +44,10 @@ limitations under the License.
 #include "wifi_station.h"
 #include "wifi_access_point.h"
 
+// Define event group bits
+#define MAIN_EVENT_SEND_AUDIO (1 << 1)
+#define MAIN_EVENT_VAD_CHANGE (1 << 3)
+
 // Application class definition
 class Application
 {

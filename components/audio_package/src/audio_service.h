@@ -48,6 +48,9 @@ limitations under the License.
 // Include AFE headers
 #include "afe_audio_processor.h"
 
+// Include header for board
+#include "board_basic.h"
+
 // Define audio processor running event bit
 #define OPUS_FRAME_DURATION_MS 60
 #define MAX_ENCODE_TASKS_IN_QUEUE 2

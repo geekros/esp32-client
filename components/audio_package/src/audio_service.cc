@@ -126,6 +126,12 @@ void AudioService::Stop()
     esp_timer_stop(audio_power_timer);
     service_stopped = true;
 
+    if (codec)
+    {
+        codec->EnableInput(false);
+        codec->EnableOutput(false);
+    }
+
     // Set audio processor not running event bit
     xEventGroupSetBits(event_group, AS_EVENT_AUDIO_PROCESSOR_RUNNING);
 
@@ -236,9 +242,12 @@ void AudioService::AudioInputTask()
                     continue;
                 }
             }
+            vTaskDelay(1);
+            continue;
         }
 
-        break;
+        vTaskDelay(10);
+        continue;
     }
 }
 
@@ -385,12 +394,14 @@ void AudioService::SetDecodeSampleRate(int sample_rate, int frame_duration)
     opus_decoder.reset();
     opus_decoder = std::make_unique<OpusDecoderWrapper>(sample_rate, 1, frame_duration);
 
-    // TODO: makeryang
-    // auto codec = Board::GetInstance().GetAudioCodec();
-    // if (opus_decoder->SampleRate() != codec->OutputSampleRate())
-    // {
-    //     output_resampler.Configure(opus_decoder->SampleRate(), codec->OutputSampleRate());
-    // }
+    // Reconfigure output resampler
+    if (codec)
+    {
+        if (opus_decoder->SampleRate() != codec->OutputSampleRate())
+        {
+            output_resampler.Configure(opus_decoder->SampleRate(), codec->OutputSampleRate());
+        }
+    }
 }
 
 // Push task to encode queue
@@ -519,7 +530,7 @@ void AudioService::EnableDeviceAec(bool enable)
 // Set audio callbacks
 void AudioService::SetCallbacks(AudioCallbacks &cb)
 {
-    callbacks = callbacks_data;
+    callbacks = cb;
 }
 
 // Play sound from OGG data
@@ -625,7 +636,7 @@ void AudioService::PlaySound(const std::string_view &ogg)
                         if (pkt_len >= 16)
                         {
                             sample_rate = pkt_ptr[12] | (pkt_ptr[13] << 8) | (pkt_ptr[14] << 16) | (pkt_ptr[15] << 24);
-                            ESP_LOGI(TAG, "OpusHead: version=%d, channels=%d, sample_rate=%d", version, channel_count, sample_rate);
+                            ESP_LOGI(TAG, "version=%d, channels=%d, sample_rate=%d", version, channel_count, sample_rate);
                         }
                     }
                 }

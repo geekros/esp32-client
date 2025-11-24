@@ -21,16 +21,16 @@ limitations under the License.
 #define TAG "[client:components:codec:es8311]"
 
 // Constructor
-ES8311AudioCodec::ES8311AudioCodec(void *i2c_master_handle, i2c_port_t i2c_port, int input_sample_rate, int output_sample_rate, gpio_num_t mclk, gpio_num_t bclk, gpio_num_t ws, gpio_num_t dout, gpio_num_t din, gpio_num_t pa_pin, uint8_t es8311_addr, bool use_mclk, bool pa_inverted)
+ES8311AudioCodec::ES8311AudioCodec(void *i2c_master_handle, i2c_port_t i2c_port, int input_sample_rate_, int output_sample_rate_, gpio_num_t mclk, gpio_num_t bclk, gpio_num_t ws, gpio_num_t dout, gpio_num_t din, gpio_num_t pa_pin_, uint8_t es8311_addr, bool use_mclk, bool pa_inverted_)
 {
     // Initialize member variables
     duplex = true;
     input_reference = false;
     input_channels = 1;
-    input_sample_rate = input_sample_rate;
-    output_sample_rate = output_sample_rate;
-    pa_pin = pa_pin;
-    pa_inverted = pa_inverted;
+    input_sample_rate = input_sample_rate_;
+    output_sample_rate = output_sample_rate_;
+    pa_pin = pa_pin_;
+    pa_inverted = pa_inverted_;
     input_gain = 30;
 
     // Create duplex I2S channels

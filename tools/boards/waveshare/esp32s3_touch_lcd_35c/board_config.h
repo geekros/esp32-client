@@ -18,9 +18,7 @@ limitations under the License.
 #define BOARD_CONFIG_H
 
 // Include standard libraries
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
+#include <string>
 
 // Include ESP libraries
 #include <esp_log.h>

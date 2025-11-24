@@ -19,23 +19,3 @@ limitations under the License.
 
 // Define log tag
 #define TAG "[client:components:language:sound]"
-
-// Declare sound assets
-extern const uint8_t _binary_wifi_config_ogg_start[];
-extern const uint8_t _binary_wifi_config_ogg_end[];
-
-// Declare sound assets
-extern const uint8_t _binary_wifi_success_ogg_start[];
-extern const uint8_t _binary_wifi_success_ogg_end[];
-
-// Define wifi configuration sound asset
-const sound_asset_t SOUND_WIFI_CONFIG = {
-    .data = _binary_wifi_config_ogg_start,
-    .size = (size_t)(_binary_wifi_config_ogg_end - _binary_wifi_config_ogg_start),
-};
-
-// Define wifi success sound asset
-const sound_asset_t SOUND_WIFI_SUCCESS = {
-    .data = _binary_wifi_success_ogg_start,
-    .size = (size_t)(_binary_wifi_success_ogg_end - _binary_wifi_success_ogg_start),
-};

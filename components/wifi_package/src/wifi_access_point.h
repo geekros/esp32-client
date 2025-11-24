@@ -118,7 +118,7 @@ public:
     std::vector<wifi_ap_record_t> ap_records;
 
     // Configuration parameters
-    int8_t max_tx_power;
+    int8_t max_tx_power = 52;
     bool remember_bssid;
     bool sleep_mode;
 };

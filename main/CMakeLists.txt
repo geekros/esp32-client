@@ -105,7 +105,7 @@ endif()
 # ----------------------------------------------------------------------
 # Asset html management
 # ----------------------------------------------------------------------
-set(ASSETS_SRC_DIR ${CMAKE_SOURCE_DIR}/tools/assets/html/release/dist)
+set(ASSETS_SRC_DIR ${CMAKE_SOURCE_DIR}/tools/assets/html)
 set(ASSETS_BUILD_DIR ${CMAKE_BINARY_DIR}/assets/html)
 
 add_custom_target(copy_static_assets_html ALL

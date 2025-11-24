@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="images/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>GEEKROS</title>
+        <meta name="description" content="GEEKROS" />
+        <meta name="keywords" content="GEEKROS" />
+        <link rel="stylesheet" href="css/common.css" />
+    </head>
+    <body>
+        <div class="app">
+            <main class="card">
+                <header>
+                    <img src="images/logo.png" class="logo" />
+                </header>
+                <form id="main-form" onsubmit="submitForm(event)">
+                    <div class="field-group">
+                        <div class="field-group-items">
+                            <div style="width: 100%">
+                                <button class="ssid-button" id="btn-choose-wifi">
+                                    <span class="placeholder">Select WIFI SSID</span>
+                                </button>
+                            </div>
+                            <button class="scan-button">
+                                <svg
+                                    id="scan-loading-true"
+                                    style="width: 14px; height: 14px; animation: var(--animate-spin); display: none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="lucide lucide-rotate-cw-icon lucide-rotate-cw"
+                                >
+                                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                                    <path d="M21 3v5h-5" />
+                                </svg>
+                                <svg
+                                    id="scan-loading-false"
+                                    style="width: 14px; height: 14px"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="lucide lucide-rotate-cw-icon lucide-rotate-cw"
+                                >
+                                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                                    <path d="M21 3v5h-5" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="field-group-items">
+                            <div style="width: 100%">
+                                <input class="wifi-password-input" type="password" name="password" placeholder="Enter WIFI Password" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="field-group-items">
+                            <button type="submit" class="submit-button">Connect</button>
+                        </div>
+                    </div>
+                </form>
+            </main>
+        </div>
+        <div class="sheet-backdrop" id="sheet-backdrop"></div>
+        <section class="sheet" id="sheet">
+            <div class="sheet-header">
+                <div class="sheet-drag"></div>
+            </div>
+            <div class="sheet-body"></div>
+        </section>
+    </body>
+    <script type="text/javascript">
+        const ssid = {
+            selected: {
+                ssid: "",
+                password: "",
+            },
+        };
+
+        const btnChooseWifi = document.getElementById("btn-choose-wifi");
+        const ssidButton = document.querySelector(".ssid-button");
+        const scanButton = document.querySelector(".scan-button");
+        const scanLoadingTrue = document.getElementById("scan-loading-true");
+        const scanLoadingFalse = document.getElementById("scan-loading-false");
+        const submitButton = document.querySelector(".submit-button");
+        const sheetBody = document.querySelector(".sheet-body");
+        const sheetBackdrop = document.getElementById("sheet-backdrop");
+        const sheet = document.getElementById("sheet");
+        const sheetClose = document.getElementById("sheet-close");
+
+        function OnScan() {
+            ssidButton.innerHTML = `<span class="placeholder">Select WIFI SSID</span>`;
+            scanLoadingTrue.style.display = "block";
+            scanLoadingFalse.style.display = "none";
+            scanButton.disabled = true;
+            sheetBody.innerHTML = `
+                <div style="width: 100%; height: 280px; display: flex; align-items: center; justify-content: center">
+                    <svg
+                        style="width: 14px; height: 14px; animation: var(--animate-spin)"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-loader-icon lucide-loader"
+                    >
+                        <path d="M12 2v4" />
+                        <path d="m16.2 7.8 2.9-2.9" />
+                        <path d="M18 12h4" />
+                        <path d="m16.2 16.2 2.9 2.9" />
+                        <path d="M12 18v4" />
+                        <path d="m4.9 19.1 2.9-2.9" />
+                        <path d="M2 12h4" />
+                        <path d="m4.9 4.9 2.9 2.9" />
+                    </svg>
+                </div>
+            `;
+            fetch("/scan")
+                .then((response) => response.json())
+                .then((data) => {
+                    const ssidul = document.createElement("ul");
+                    ssidul.classList.add("ssid-list");
+                    data.aps.forEach((ap) => {
+                        const ssidli = document.createElement("li");
+                        ssidli.classList.add("ssid-item");
+                        ssidli.innerHTML = `
+                            <div class="ssid-item-box">
+                                <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center">
+                                    ${
+                                        ap.authmode > 0
+                                            ? `<svg
+                                                style="width: 14px; height: 14px"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                class="lucide lucide-lock-keyhole-icon lucide-lock-keyhole"
+                                            >
+                                                <circle cx="12" cy="16" r="1" />
+                                                <rect x="3" y="10" width="18" height="12" rx="2" />
+                                                <path d="M7 10V7a5 5 0 0 1 10 0v3" />
+                                            </svg>`
+                                            : `<svg
+                                                style="width: 14px; height: 14px"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                class="lucide lucide-lock-keyhole-open-icon lucide-lock-keyhole-open"
+                                            >
+                                                <circle cx="12" cy="16" r="1" />
+                                                <rect width="18" height="12" x="3" y="10" rx="2" />
+                                                <path d="M7 10V7a5 5 0 0 1 9.33-2.5" />
+                                            </svg>`
+                                    }
+                                </div>
+                                <div style="width: 100%">${ap.ssid}</div>
+                            </div>
+                        `;
+                        ssidli.addEventListener("click", () => {
+                            OnSelectAP(ap);
+                        });
+                        ssidul.appendChild(ssidli);
+                    });
+                    sheetBody.innerHTML = "";
+                    sheetBody.appendChild(ssidul);
+                    scanLoadingTrue.style.display = "none";
+                    scanLoadingFalse.style.display = "block";
+                    scanButton.disabled = false;
+                })
+                .catch((error) => {
+                    console.error("Error during scan:", error);
+                    sheetBody.innerHTML = `
+                        <div style="width: 100%; height: 280px; display: flex; align-items: center; justify-content: center; color: var(--color-error)">
+                            Failed to scan WIFI networks.
+                        </div>
+                    `;
+                    scanLoadingTrue.style.display = "none";
+                    scanLoadingFalse.style.display = "block";
+                    scanButton.disabled = false;
+                });
+        }
+
+        scanButton.addEventListener("click", OnScan);
+
+        function OnSelectAP(ap) {
+            ssid.selected.ssid = ap.ssid;
+            ssidButton.innerHTML = `<span>${ap.ssid}</span>`;
+            submitButton.disabled = false;
+            submitButton.innerText = "Connect";
+            closeSheet();
+        }
+
+        function openSheet() {
+            if (scanButton.disabled === false) {
+                sheet.classList.add("open");
+                sheetBackdrop.classList.add("visible");
+            }
+        }
+
+        function closeSheet() {
+            sheet.classList.remove("open");
+            sheetBackdrop.classList.remove("visible");
+        }
+
+        btnChooseWifi.addEventListener("click", openSheet);
+        sheetBackdrop.addEventListener("click", closeSheet);
+
+        async function submitForm(event) {
+            event.preventDefault();
+            if (submitButton.disabled) {
+                return;
+            }
+            const passwordInput = document.querySelector(".wifi-password-input");
+            ssid.selected.password = passwordInput.value;
+            if (ssid.selected.ssid !== "") {
+                submitButton.disabled = true;
+                submitButton.innerText = "Connecting...";
+                fetch("/submit", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        ssid: ssid.selected.ssid,
+                        password: ssid.selected.password,
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            submitButton.innerText = "Connected";
+                            setTimeout(() => {
+                                submitButton.innerText = "Please wait for the reboot";
+                            }, 2000);
+                        } else {
+                            submitButton.disabled = false;
+                            submitButton.innerText = "Connect";
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error during connection:", error);
+                        submitButton.disabled = false;
+                        submitButton.innerText = "Connect";
+                    });
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("Document loaded");
+            OnScan();
+        });
+    </script>
+</html>

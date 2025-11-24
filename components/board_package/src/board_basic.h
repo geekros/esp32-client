@@ -18,26 +18,30 @@ limitations under the License.
 #define BOARD_BASIC_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
 
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 
-// Forward declaration of audio codec structure
-struct audio_codec_t;
+// Include headers
+#include "audio_codec.h"
 
-// Define board structure
-typedef struct
+// BoardBasic class definition
+class BoardBasic
 {
-    void (*board_init)(void);
-    struct audio_codec_t *(*get_audio_codec)(void);
-} board_t;
+public:
+    // Default virtual destructor
+    virtual ~BoardBasic() = default;
 
-// Function to get the board structure
-const board_t *board(void);
+    // Pure virtual function for board initialization
+    virtual void Initialization() = 0;
+
+    // Pure virtual function to get audio codec
+    virtual AudioCodec *GetAudioCodec() = 0;
+};
+
+// Factory function to create a BoardBasic instance
+extern BoardBasic *CreateBoard();
 
 #endif

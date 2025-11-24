@@ -45,7 +45,7 @@ public:
     ~OpusResampler();
 
     // Configure resampler
-    void Configure(int input_sample_rate, int output_sample_rate);
+    void Configure(int input_sample_rate_, int output_sample_rate_);
     void Process(const int16_t *input, int input_samples, int16_t *output);
     int GetOutputSamples(int input_samples) const;
 

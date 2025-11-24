@@ -18,24 +18,35 @@ limitations under the License.
 #define LANGUAGE_SOUND_H
 
 // Include standard headers
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <string_view>
 
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
 
-// Define sound asset structure
-typedef struct
+// Namespace for language sounds
+namespace Lang
 {
-    const uint8_t *data;
-    size_t size;
-} sound_asset_t;
+    // Namespace for sound assets
+    namespace Sounds
+    {
+        // WiFi configuration sound asset
+        extern const char ogg_wifi_config_start[] asm("_binary_wifi_config_ogg_start");
+        extern const char ogg_wifi_config_end[] asm("_binary_wifi_config_ogg_end");
+        static const std::string_view OGG_WIFI_CONFIG{
+            static_cast<const char *>(ogg_wifi_config_start),
+            static_cast<size_t>(ogg_wifi_config_end - ogg_wifi_config_start),
+        };
 
-// Declare sound assets
-extern const sound_asset_t SOUND_WIFI_CONFIG;
-extern const sound_asset_t SOUND_WIFI_SUCCESS;
+        // WiFi success sound asset
+        extern const char ogg_wifi_success_start[] asm("_binary_wifi_success_ogg_start");
+        extern const char ogg_wifi_success_end[] asm("_binary_wifi_success_ogg_end");
+        static const std::string_view OGG_WIFI_SUCCESS{
+            static_cast<const char *>(ogg_wifi_success_start),
+            static_cast<size_t>(ogg_wifi_success_end - ogg_wifi_success_start),
+        };
+    }
+}
 
 #endif

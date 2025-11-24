@@ -453,7 +453,7 @@ void WifiServer::Start()
 {
     // Initialize HTTP server with default configuration
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 50;
+    config.max_uri_handlers = 35;
     config.uri_match_fn = httpd_uri_match_wildcard;
     // 5G Network takes longer to connect
     config.recv_wait_timeout = 15;
@@ -461,14 +461,6 @@ void WifiServer::Start()
 
     // Start the HTTP server
     ESP_ERROR_CHECK(httpd_start(&server, &config));
-
-    // Register static file handler
-    httpd_uri_t static_http = {};
-    static_http.uri = "/static/*";
-    static_http.method = HTTP_GET;
-    static_http.handler = StaticHandler;
-    static_http.user_ctx = &WifiAccessPoint::Instance();
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &static_http));
 
     // Register images file handler
     httpd_uri_t images_http = {};
@@ -479,19 +471,12 @@ void WifiServer::Start()
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &images_http));
 
     // Register script file handler
-    httpd_uri_t script_http = {};
-    script_http.uri = "/script/*";
-    script_http.method = HTTP_GET;
-    script_http.handler = StaticHandler;
-    static_http.user_ctx = &WifiAccessPoint::Instance();
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &script_http));
-
-    httpd_uri_t locales_http = {};
-    locales_http.uri = "/locales/*";
-    locales_http.method = HTTP_GET;
-    locales_http.handler = StaticHandler;
-    locales_http.user_ctx = &WifiAccessPoint::Instance();
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &locales_http));
+    httpd_uri_t css_http = {};
+    css_http.uri = "/css/*";
+    css_http.method = HTTP_GET;
+    css_http.handler = StaticHandler;
+    css_http.user_ctx = &WifiAccessPoint::Instance();
+    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &css_http));
 
     // Register scan handler
     httpd_uri_t scan_http = {};

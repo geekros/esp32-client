@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ESP32 配网</title>
+        <style>
+            :root {
+                --bg: #050505;
+                --bg-elevated: #111111;
+                --bg-soft: #181818;
+                --border-subtle: #262626;
+                --border-strong: #3d3d3d;
+                --fg: #f5f5f5;
+                --muted: #a3a3a3;
+                --accent: #fafafa;
+                --accent-soft: #262626;
+                --radius-xl: 18px;
+                --radius-lg: 12px;
+                --radius-md: 8px;
+                --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.45);
+                --transition-fast: 150ms ease-out;
+                --transition-normal: 220ms cubic-bezier(0.23, 1, 0.32, 1);
+                --danger: #f97373; /* 仍然是偏灰粉，可以改成更灰 */
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                background: radial-gradient(circle at top, #141414 0, #050505 55%);
+                color: var(--fg);
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            body {
+                min-height: 100vh;
+                display: flex;
+                align-items: stretch;
+                justify-content: center;
+                padding: 16px;
+            }
+
+            .app {
+                width: 100%;
+                max-width: 520px;
+                margin: auto;
+            }
+
+            .card {
+                background: linear-gradient(135deg, #111111, #050505);
+                border-radius: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.04);
+                box-shadow: var(--shadow-soft);
+                padding: 20px 18px 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .card::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 60%);
+                opacity: 0.6;
+                mix-blend-mode: screen;
+            }
+
+            .card-inner {
+                position: relative;
+                z-index: 1;
+            }
+
+            .card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 6px;
+            }
+
+            .title-block {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .title {
+                font-size: 20px;
+                font-weight: 600;
+                letter-spacing: 0.02em;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .title-pill {
+                border-radius: 999px;
+                border: 1px solid rgba(250, 250, 250, 0.08);
+                padding: 2px 8px;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.14em;
+                color: var(--muted);
+            }
+
+            .subtitle {
+                font-size: 12px;
+                color: var(--muted);
+            }
+
+            .status-badge {
+                border-radius: 999px;
+                border: 1px solid rgba(250, 250, 250, 0.08);
+                padding: 4px 10px;
+                font-size: 11px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                color: var(--muted);
+                background: rgba(15, 15, 15, 0.8);
+                backdrop-filter: blur(10px);
+            }
+
+            .status-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 999px;
+                background: #22c55e;
+                box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+            }
+
+            .status-dot.offline {
+                background: #71717a;
+                box-shadow: 0 0 0 4px rgba(113, 113, 122, 0.18);
+            }
+
+            .form {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                margin-top: 4px;
+            }
+
+            .field-group {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .field-label {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.14em;
+                color: var(--muted);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+            }
+
+            .field-label span.right {
+                font-size: 10px;
+                opacity: 0.7;
+            }
+
+            .input-root {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 10px;
+                border-radius: var(--radius-lg);
+                border: 1px solid var(--border-subtle);
+                background: rgba(15, 15, 15, 0.9);
+                transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+            }
+
+            .input-root:focus-within {
+                border-color: rgba(250, 250, 250, 0.26);
+                box-shadow: 0 0 0 1px rgba(250, 250, 250, 0.12);
+                background: #111111;
+                transform: translateY(-0.5px);
+            }
+
+            .input-prefix {
+                font-size: 11px;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.14em;
+                white-space: nowrap;
+            }
+
+            .input {
+                border: none;
+                outline: none;
+                background: transparent;
+                color: var(--fg);
+                font-size: 14px;
+                width: 100%;
+                padding: 0;
+            }
+
+            .input::placeholder {
+                color: #6b7280;
+            }
+
+            .input[readonly] {
+                cursor: default;
+            }
+
+            .input-actions {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .btn {
+                border-radius: 999px;
+                border: 1px solid var(--border-strong);
+                background: var(--bg-soft);
+                color: var(--fg);
+                font-size: 12px;
+                padding: 6px 12px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                outline: none;
+                transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+                white-space: nowrap;
+            }
+
+            .btn-primary {
+                background: var(--accent);
+                color: #050505;
+                border-color: rgba(250, 250, 250, 0.4);
+            }
+
+            .btn-ghost {
+                background: transparent;
+                border-color: var(--border-subtle);
+                color: var(--muted);
+            }
+
+            .btn-icon {
+                width: 32px;
+                height: 32px;
+                border-radius: 999px;
+                padding: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--bg-soft);
+            }
+
+            .btn:hover {
+                transform: translateY(-0.5px);
+                background: #1f1f1f;
+                border-color: rgba(250, 250, 250, 0.22);
+                box-shadow: 0 7px 18px rgba(0, 0, 0, 0.6);
+            }
+
+            .btn-primary:hover {
+                background: #ffffff;
+                box-shadow: 0 8px 22px rgba(0, 0, 0, 0.7);
+            }
+
+            .btn:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+            }
+
+            .btn-icon svg {
+                width: 16px;
+                height: 16px;
+                stroke-width: 1.8;
+            }
+
+            .wifi-row {
+                display: flex;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .wifi-main {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .wifi-buttons {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .helper-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 11px;
+                color: var(--muted);
+                margin-top: 4px;
+            }
+
+            .helper-pill {
+                padding: 2px 8px;
+                border-radius: 999px;
+                border: 1px solid rgba(250, 250, 250, 0.08);
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.14em;
+            }
+
+            .footer-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 10px;
+                gap: 8px;
+            }
+
+            .footer-row .left {
+                font-size: 11px;
+                color: var(--muted);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .dot-pulse {
+                width: 6px;
+                height: 6px;
+                border-radius: 999px;
+                background: var(--muted);
+                position: relative;
+                overflow: visible;
+            }
+
+            .dot-pulse::after {
+                content: "";
+                position: absolute;
+                inset: -4px;
+                border-radius: inherit;
+                border: 1px solid rgba(163, 163, 163, 0.7);
+                opacity: 0;
+                animation: ping 1.4s infinite;
+            }
+
+            @keyframes ping {
+                0% {
+                    transform: scale(0.7);
+                    opacity: 0.7;
+                }
+                80%,
+                100% {
+                    transform: scale(1.4);
+                    opacity: 0;
+                }
+            }
+
+            /* 底部热点选择 Sheet */
+            .sheet-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.6);
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity var(--transition-normal), visibility var(--transition-normal);
+                z-index: 20;
+            }
+
+            .sheet-backdrop.visible {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .sheet {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(8, 8, 8, 0.98);
+                border-radius: 18px 18px 0 0;
+                border-top: 1px solid rgba(250, 250, 250, 0.08);
+                border-left: 1px solid rgba(250, 250, 250, 0.04);
+                border-right: 1px solid rgba(250, 250, 250, 0.04);
+                box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.85);
+                transform: translateY(100%);
+                transition: transform var(--transition-normal);
+                z-index: 30;
+                max-height: 70vh;
+                display: flex;
+                flex-direction: column;
+                backdrop-filter: blur(18px);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+
+            .sheet.open {
+                transform: translateY(0);
+            }
+
+            .sheet-header {
+                padding: 10px 16px 8px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .sheet-drag {
+                width: 32px;
+                height: 4px;
+                border-radius: 999px;
+                background: #27272a;
+                margin: 4px auto 4px;
+            }
+
+            .sheet-title-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+            }
+
+            .sheet-title-main {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .sheet-title {
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            .sheet-subtitle {
+                font-size: 11px;
+                color: var(--muted);
+            }
+
+            .sheet-body {
+                padding: 4px 8px 8px;
+                overflow: auto;
+            }
+
+            .network-list {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .network-item {
+                border-radius: var(--radius-md);
+                border: 1px solid var(--border-subtle);
+                background: #0b0b0b;
+                padding: 8px 10px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                cursor: pointer;
+                transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+            }
+
+            .network-item:hover {
+                border-color: rgba(250, 250, 250, 0.2);
+                background: #111111;
+                transform: translateY(-0.5px);
+            }
+
+            .network-main {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                min-width: 0;
+            }
+
+            .network-ssid {
+                font-size: 13px;
+                font-weight: 500;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .network-meta {
+                font-size: 11px;
+                color: var(--muted);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .badge-secure {
+                border-radius: 999px;
+                border: 1px solid var(--border-subtle);
+                padding: 1px 6px;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+            }
+
+            .signal-bars {
+                display: inline-flex;
+                align-items: flex-end;
+                gap: 1px;
+                width: 18px;
+            }
+
+            .signal-bar {
+                width: 3px;
+                border-radius: 999px;
+                background: #3f3f46;
+            }
+
+            .signal-bar.on {
+                background: #fafafa;
+            }
+
+            .sheet-empty,
+            .sheet-error {
+                font-size: 12px;
+                color: var(--muted);
+                padding: 10px 3px 4px;
+            }
+
+            .sheet-footer {
+                padding: 4px 16px 12px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+                border-top: 1px solid rgba(39, 39, 42, 0.9);
+                margin-top: 4px;
+            }
+
+            .badge-pill {
+                border-radius: 999px;
+                border: 1px solid rgba(250, 250, 250, 0.08);
+                padding: 3px 7px;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.14em;
+                color: var(--muted);
+            }
+
+            .error-text {
+                color: var(--danger);
+            }
+
+            @media (max-width: 480px) {
+                .card {
+                    border-radius: 20px;
+                    padding: 18px 14px 14px;
+                }
+
+                .wifi-row {
+                    flex-direction: column;
+                }
+
+                .wifi-buttons {
+                    justify-content: flex-end;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app">
+            <main class="card">
+                <div class="card-inner">
+                    <div class="card-header">
+                        <div class="title-block">
+                            <div class="title">
+                                ESP32 Wi-Fi
+                                <span class="title-pill">CONFIG</span>
+                            </div>
+                            <div class="subtitle">在本页完成 Wi-Fi 配置并写入到设备。</div>
+                        </div>
+                        <div class="status-badge" id="status-badge">
+                            <span class="status-dot offline" id="status-dot"></span>
+                            <span id="status-text">Disconnected</span>
+                        </div>
+                    </div>
+
+                    <form class="form" id="config-form">
+                        <div class="field-group">
+                            <label class="field-label">
+                                <span>设备名称</span>
+                                <span class="right" id="board-label">ESP32</span>
+                            </label>
+                            <div class="input-root">
+                                <span class="input-prefix">Name</span>
+                                <input id="device-name" class="input" type="text" placeholder="例如：Living Room ESP32" autocomplete="off" />
+                            </div>
+                        </div>
+
+                        <!-- WiFi 选择控件 -->
+                        <div class="field-group">
+                            <label class="field-label">
+                                <span>Wi-Fi 网络</span>
+                                <span class="right" id="wifi-helper-label">尚未选择</span>
+                            </label>
+
+                            <div class="wifi-row">
+                                <div class="wifi-main">
+                                    <div class="input-root" id="wifi-input-shell">
+                                        <span class="input-prefix">SSID</span>
+                                        <input id="wifi-ssid" class="input" type="text" placeholder="点击右侧按钮选择热点" readonly />
+                                        <div class="input-actions">
+                                            <button type="button" class="btn btn-primary" id="btn-choose-wifi">选择 Wi-Fi</button>
+                                        </div>
+                                    </div>
+                                    <div class="helper-row">
+                                        <span>只使用 2.4 GHz 网络，5G Wi-Fi 可能不可用。</span>
+                                        <span class="helper-pill" id="scan-status-pill">Idle</span>
+                                    </div>
+                                </div>
+
+                                <div class="wifi-buttons">
+                                    <button type="button" class="btn btn-icon" id="btn-scan" aria-label="重新扫描热点" title="重新扫描热点">
+                                        <!-- 简单 scan 图标 (类似 Tailwind 图标风格) -->
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M4 4h16M4 12h10M4 20h6" stroke-linecap="round" />
+                                            <circle cx="18" cy="12" r="3" stroke-linecap="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">
+                                <span>Wi-Fi 密码</span>
+                                <span class="right">不会在页面中明文保存</span>
+                            </label>
+                            <div class="input-root">
+                                <span class="input-prefix">Key</span>
+                                <input id="wifi-password" class="input" type="password" autocomplete="new-password" placeholder="输入所选热点的密码" />
+                            </div>
+                        </div>
+
+                        <div class="footer-row">
+                            <div class="left">
+                                <span class="dot-pulse"></span>
+                                <span id="footer-status">等待配置更改…</span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">保存配置</button>
+                        </div>
+                    </form>
+                </div>
+            </main>
+        </div>
+
+        <!-- 底部热点选择 Sheet -->
+        <div class="sheet-backdrop" id="sheet-backdrop"></div>
+
+        <section class="sheet" id="sheet">
+            <div class="sheet-header">
+                <div class="sheet-drag"></div>
+                <div class="sheet-title-row">
+                    <div class="sheet-title-main">
+                        <div class="sheet-title">选择 Wi-Fi 热点</div>
+                        <div class="sheet-subtitle" id="sheet-subtitle">正在加载扫描结果…</div>
+                    </div>
+                    <span class="badge-pill" id="sheet-count-pill">0 个发现</span>
+                </div>
+            </div>
+
+            <div class="sheet-body">
+                <ul class="network-list" id="network-list"></ul>
+                <div class="sheet-empty" id="sheet-empty" style="display: none">未发现可用热点，请尝试重新扫描。</div>
+                <div class="sheet-error" id="sheet-error" style="display: none"><span class="error-text">扫描失败。</span> 请检查设备网络或稍后重试。</div>
+            </div>
+
+            <div class="sheet-footer">
+                <button type="button" class="btn btn-ghost" id="sheet-close">取消</button>
+                <button type="button" class="btn" id="sheet-rescan">重新扫描</button>
+            </div>
+        </section>
+
+        <script>
+            // 简单状态
+            let networks = [];
+            let loadingConfig = false;
+            let loadingScan = false;
+
+            const statusDot = document.getElementById("status-dot");
+            const statusText = document.getElementById("status-text");
+            const footerStatus = document.getElementById("footer-status");
+            const wifiHelperLabel = document.getElementById("wifi-helper-label");
+            const scanStatusPill = document.getElementById("scan-status-pill");
+            const boardLabel = document.getElementById("board-label");
+
+            const inputName = document.getElementById("device-name");
+            const inputSSID = document.getElementById("wifi-ssid");
+            const inputPass = document.getElementById("wifi-password");
+
+            const btnChooseWifi = document.getElementById("btn-choose-wifi");
+            const btnScan = document.getElementById("btn-scan");
+
+            const sheet = document.getElementById("sheet");
+            const sheetBackdrop = document.getElementById("sheet-backdrop");
+            const sheetSubtitle = document.getElementById("sheet-subtitle");
+            const sheetCountPill = document.getElementById("sheet-count-pill");
+            const sheetClose = document.getElementById("sheet-close");
+            const sheetRescan = document.getElementById("sheet-rescan");
+            const listEl = document.getElementById("network-list");
+            const emptyEl = document.getElementById("sheet-empty");
+            const errorEl = document.getElementById("sheet-error");
+
+            function setOnline(on) {
+                if (on) {
+                    statusDot.classList.remove("offline");
+                    statusText.textContent = "Connected";
+                } else {
+                    statusDot.classList.add("offline");
+                    statusText.textContent = "Disconnected";
+                }
+            }
+
+            function setFooterMessage(msg) {
+                footerStatus.textContent = msg;
+            }
+
+            function setScanState(state) {
+                loadingScan = state === "loading";
+                if (loadingScan) {
+                    scanStatusPill.textContent = "Scanning…";
+                    sheetSubtitle.textContent = "正在扫描附近的 Wi-Fi 热点…";
+                } else {
+                    scanStatusPill.textContent = "Idle";
+                }
+            }
+
+            function openSheet() {
+                sheet.classList.add("open");
+                sheetBackdrop.classList.add("visible");
+            }
+
+            function closeSheet() {
+                sheet.classList.remove("open");
+                sheetBackdrop.classList.remove("visible");
+            }
+
+            sheetBackdrop.addEventListener("click", closeSheet);
+            sheetClose.addEventListener("click", closeSheet);
+
+            function renderNetworks() {
+                listEl.innerHTML = "";
+                errorEl.style.display = "none";
+
+                if (!Array.isArray(networks) || networks.length === 0) {
+                    emptyEl.style.display = "block";
+                    sheetCountPill.textContent = "0 个发现";
+                    return;
+                }
+
+                emptyEl.style.display = "none";
+                sheetCountPill.textContent = networks.length + " 个发现";
+
+                networks.forEach((net) => {
+                    const li = document.createElement("li");
+                    li.className = "network-item";
+
+                    const main = document.createElement("div");
+                    main.className = "network-main";
+                    const ssidEl = document.createElement("div");
+                    ssidEl.className = "network-ssid";
+                    ssidEl.textContent = net.ssid || "(未知 SSID)";
+                    const meta = document.createElement("div");
+                    meta.className = "network-meta";
+
+                    const rssiText = document.createElement("span");
+                    const rssi = typeof net.rssi === "number" ? net.rssi : null;
+                    if (rssi !== null) {
+                        rssiText.textContent = rssi + " dBm";
+                    } else if (typeof net.rssi === "string") {
+                        rssiText.textContent = net.rssi;
+                    } else {
+                        rssiText.textContent = "强度未知";
+                    }
+
+                    meta.appendChild(rssiText);
+
+                    if (net.secure || net.auth || net.encrypted) {
+                        const badge = document.createElement("span");
+                        badge.className = "badge-secure";
+                        badge.textContent = "Secure";
+                        meta.appendChild(badge);
+                    }
+
+                    main.appendChild(ssidEl);
+                    main.appendChild(meta);
+
+                    const signal = document.createElement("div");
+                    signal.className = "signal-bars";
+                    const strengthLevel = rssiToLevel(rssi);
+                    for (let i = 1; i <= 4; i++) {
+                        const bar = document.createElement("div");
+                        bar.className = "signal-bar" + (i <= strengthLevel ? " on" : "");
+                        bar.style.height = 4 + i * 3 + "px";
+                        signal.appendChild(bar);
+                    }
+
+                    li.appendChild(main);
+                    li.appendChild(signal);
+
+                    li.addEventListener("click", () => {
+                        if (net.ssid) {
+                            inputSSID.value = net.ssid;
+                            wifiHelperLabel.textContent = "已选择：" + net.ssid;
+                        }
+                        closeSheet();
+                    });
+
+                    listEl.appendChild(li);
+                });
+            }
+
+            function rssiToLevel(rssi) {
+                if (typeof rssi !== "number") return 2;
+                if (rssi >= -55) return 4;
+                if (rssi >= -65) return 3;
+                if (rssi >= -75) return 2;
+                return 1;
+            }
+
+            async function loadConfig() {
+                loadingConfig = true;
+                setFooterMessage("正在读取配置…");
+                try {
+                    const res = await fetch("/config", { cache: "no-store" });
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    const data = await res.json();
+
+                    // 根据你的实际 JSON 结构调整字段名称
+                    if (data.name) inputName.value = data.name;
+                    if (data.device || data.board) {
+                        boardLabel.textContent = data.device || data.board;
+                    }
+                    if (data.ssid) {
+                        inputSSID.value = data.ssid;
+                        wifiHelperLabel.textContent = "当前：" + data.ssid;
+                    }
+                    if (data.status === "online") {
+                        setOnline(true);
+                    } else {
+                        setOnline(false);
+                    }
+
+                    setFooterMessage("配置已加载，可以修改后保存。");
+                } catch (err) {
+                    console.error("[config] failed:", err);
+                    setFooterMessage("读取配置失败，请稍后重试。");
+                } finally {
+                    loadingConfig = false;
+                }
+            }
+
+            async function scanNetworks() {
+                setScanState("loading");
+                errorEl.style.display = "none";
+                try {
+                    const res = await fetch("/scan", { cache: "no-store" });
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    const data = await res.json();
+                    // 允许后端返回 { networks: [...] } 或直接 [ ... ]
+                    networks = Array.isArray(data) ? data : data.networks || [];
+                    renderNetworks();
+                    sheetSubtitle.textContent = "点击条目即可选择 Wi-Fi。";
+                    setScanState("idle");
+                } catch (err) {
+                    console.error("[scan] failed:", err);
+                    networks = [];
+                    renderNetworks();
+                    setScanState("idle");
+                    errorEl.style.display = "block";
+                    sheetSubtitle.textContent = "扫描失败，请稍后重试。";
+                }
+            }
+
+            document.getElementById("config-form").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const payload = {
+                    name: inputName.value.trim(),
+                    ssid: inputSSID.value.trim(),
+                    password: inputPass.value,
+                };
+
+                setFooterMessage("正在保存配置…");
+                try {
+                    const res = await fetch("/config", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    setFooterMessage("配置已保存，设备可能会重启或重新连接 Wi-Fi。");
+                } catch (err) {
+                    console.error("[save config] failed:", err);
+                    setFooterMessage("保存失败，请检查连接。");
+                }
+            });
+
+            btnChooseWifi.addEventListener("click", () => {
+                openSheet();
+            });
+
+            btnScan.addEventListener("click", () => {
+                openSheet();
+                scanNetworks();
+            });
+
+            sheetRescan.addEventListener("click", () => {
+                scanNetworks();
+            });
+
+            window.addEventListener("DOMContentLoaded", () => {
+                // 页面加载完成时，主动请求 /config 和 /scan
+                loadConfig();
+                scanNetworks();
+            });
+        </script>
+    </body>
+</html>

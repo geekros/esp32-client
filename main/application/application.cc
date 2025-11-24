@@ -58,29 +58,73 @@ void Application::Main()
     // Initialize locale and language components
     LanguageBasic::Instance().Init();
 
+    // Initialize board-specific components
+    BoardBasic *board = CreateBoard();
+    board->Initialization();
+
+    // Initialize audio service
+    auto codec = board->GetAudioCodec();
+    audio_service.Initialize(codec);
+    // Start audio service
+    audio_service.Start();
+
+    // Set audio service callbacks
+    AudioCallbacks callbacks;
+    callbacks.on_send_queue_available = [this]()
+    {
+        xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
+    };
+    callbacks.on_vad_change = [this](bool speaking)
+    {
+        ESP_LOGI(TAG, "VAD Change: %s", speaking ? "Speaking" : "Silent");
+        xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
+    };
+    audio_service.SetCallbacks(callbacks);
+
     // Initialize WiFi manager
     auto &wifi_manager = WifiManager::Instance();
     auto ssid_list = wifi_manager.GetSsidList();
     if (ssid_list.empty())
     {
+        // No SSIDs configured, enter WiFi configuration mode
+        audio_service.EnableVoiceProcessing(false);
+
+        // Play WiFi configuration sound
+        audio_service.PlaySound(Lang::Sounds::OGG_WIFI_CONFIG);
+
+        // Wait until audio service is idle
+        while (!audio_service.IsIdle())
+        {
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+
+        // Stop audio service
+        audio_service.Stop();
+
         // Initialize access point mode if no SSIDs are configured
         auto &wifi_access_point = WifiAccessPoint::Instance();
 
         // Start access point mode
         wifi_access_point.Start();
+
+        // Keep the application running in access point mode
+        while (true)
+        {
+            vTaskDelay(pdMS_TO_TICKS(10000));
+        }
     }
     else
     {
         // Initialize station mode
         auto &wifi_station = WifiStation::Instance();
 
-        wifi_station.OnScanBegin([this]()
+        wifi_station.OnScanBegin([]()
                                  { ESP_LOGI(TAG, "WiFi scan started"); });
 
-        wifi_station.OnConnect([this](const std::string &ssid)
+        wifi_station.OnConnect([](const std::string &ssid)
                                { ESP_LOGI(TAG, "Connecting to SSID: %s", ssid.c_str()); });
 
-        wifi_station.OnConnected([this](const std::string &ssid)
+        wifi_station.OnConnected([](const std::string &ssid)
                                  { ESP_LOGI(TAG, "Connected to SSID: %s", ssid.c_str()); });
 
         // Start station mode
@@ -92,10 +136,15 @@ void Application::Main()
             wifi_station.Stop();
             return;
         }
-    }
+        else
+        {
+            // Play WiFi success sound
+            audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
 
-    // Start the application loop
-    Loop();
+            // Start the application loop
+            Loop();
+        }
+    }
 }
 
 // Main application loop

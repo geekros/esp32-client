@@ -57,7 +57,7 @@ protected:
     int output_sample_rate = 0;
     int input_channels = 1;
     int output_channels = 1;
-    int output_volume = 95;
+    int output_volume = 85;
     float input_gain = 0.0;
 
     // Pure virtual methods for reading and writing audio data
@@ -65,7 +65,7 @@ protected:
     virtual int Write(const int16_t *data, int samples) = 0;
 
 public:
-    //
+    // Constructor and destructor
     AudioCodec();
     virtual ~AudioCodec();
 

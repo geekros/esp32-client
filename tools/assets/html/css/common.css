@@ -1,0 +1,260 @@
+/*
+// Copyright 2025 GEEKROS, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+*/
+
+@charset "utf-8";
+
+:root {
+    --fg: #000000;
+    --transition-normal: 220ms cubic-bezier(0.23, 1, 0.32, 1);
+    --animate-spin: spin 1s linear infinite;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: var(--fg);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    inset: 0;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    padding: 16px;
+}
+
+.app {
+    width: 100%;
+    max-width: 520px;
+    margin: auto;
+}
+
+.card {
+    background: linear-gradient(135deg, #f5f5f5, #ffffff);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: var(--shadow-soft);
+    padding: 20px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 60%);
+    opacity: 0.6;
+    mix-blend-mode: screen;
+}
+
+header {
+    width: 100%;
+    text-align: center;
+    padding-top: 10px;
+}
+
+header .logo {
+    height: 30px;
+    margin: 0 auto;
+}
+
+form .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+form .field-group .field-group-items {
+    height: auto;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
+
+form .field-group .field-group-items .ssid-button {
+    flex-shrink: 0;
+    width: 100%;
+    height: 45px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(2, 2, 2, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+form .field-group .field-group-items .ssid-button .placeholder {
+    color: rgba(15, 15, 15, 0.4);
+    font-size: 13px !important;
+}
+
+form .field-group .field-group-items .scan-button {
+    flex-shrink: 0;
+    width: 45px;
+    height: 45px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(2, 2, 2, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+form .field-group .field-group-items .scan-button:disabled {
+    cursor: default;
+    opacity: 0.8;
+}
+form .field-group .field-group-items .wifi-password-input {
+    flex-shrink: 0;
+    width: 100%;
+    height: 45px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(2, 2, 2, 0.1);
+    padding: 0 10px;
+    font-size: 16px !important;
+}
+form .field-group .field-group-items .wifi-password-input::placeholder {
+    color: rgba(15, 15, 15, 0.4);
+    font-size: 13px !important;
+}
+form .field-group .field-group-items .submit-button {
+    width: 100%;
+    height: 45px;
+    border-radius: 6px;
+    background: oklch(54.1% 0.281 293.009);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+    z-index: 20;
+}
+
+.sheet-backdrop.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 18px 18px 0 0;
+    border-top: 1px solid rgba(250, 250, 250, 0.08);
+    border-left: 1px solid rgba(250, 250, 250, 0.04);
+    border-right: 1px solid rgba(250, 250, 250, 0.04);
+    box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.05);
+    transform: translateY(100%);
+    transition: transform var(--transition-normal);
+    z-index: 30;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(18px);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.sheet.open {
+    transform: translateY(0);
+}
+.sheet .sheet-header {
+    padding: 10px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.sheet .sheet-drag {
+    width: 32px;
+    height: 4px;
+    border-radius: 999px;
+    background: #27272a;
+    margin: 4px auto 4px;
+}
+.sheet .sheet-body {
+    height: 280px;
+    padding: 10px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+}
+.sheet .sheet-body::-webkit-scrollbar {
+    display: none;
+}
+.sheet .sheet-body ul.ssid-list {
+    width: 100%;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.sheet .sheet-body .ssid-list .ssid-item {
+    width: 100%;
+    height: 40px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(2, 2, 2, 0.05);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 10px;
+    font-size: 13px !important;
+}
+.sheet .sheet-body .ssid-list .ssid-item .ssid-item-box {
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

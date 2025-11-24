@@ -30,5 +30,5 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES driver espressif__esp-sr opus_package
+    REQUIRES driver espressif__esp-sr board_package opus_package
 )
