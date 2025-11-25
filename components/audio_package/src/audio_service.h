@@ -166,6 +166,7 @@ public:
     // Public methods
     void Initialize(AudioCodec *codec_data);
     void Start();
+    void StartAudioTask();
     void Stop();
 
     // Getters for state
@@ -175,7 +176,6 @@ public:
 
     // Enable or disable features
     void EnableVoiceProcessing(bool enable);
-    void EnableDeviceAec(bool enable);
 
     // Set audio callbacks
     void SetCallbacks(AudioCallbacks &cb);
@@ -186,6 +186,7 @@ public:
     void PlaySound(const std::string_view &sound);
     bool ReadAudioData(std::vector<int16_t> &data, int sample_rate, int samples);
     void ResetDecoder();
+    void SetModelsList(srmodel_list_t *models_list);
 };
 
 #endif

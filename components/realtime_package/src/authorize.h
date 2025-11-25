@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef APPLICATION_H
-#define APPLICATION_H
+#ifndef REALTIME_AUTHORIZE_H
+#define REALTIME_AUTHORIZE_H
 
 // Include standard headers
 #include <string>
@@ -23,63 +23,54 @@ limitations under the License.
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
+#include <esp_http_client.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include project-specific headers
+// Include common headers
+#include "cJSON.h"
+
+// Include configuration and module headers
 #include "client_config.h"
 
 // Include components headers
-#include "runtime_basic.h"
-#include "board_basic.h"
-#include "system_basic.h"
-#include "system_time.h"
-#include "language_basic.h"
-#include "language_sound.h"
-#include "model_basic.h"
-#include "audio_service.h"
-#include "wifi_manager.h"
-#include "wifi_station.h"
-#include "wifi_access_point.h"
+#include "http_request.h"
 
-// Define event group bits
-#define MAIN_EVENT_SEND_AUDIO (1 << 1)
-#define MAIN_EVENT_VAD_CHANGE (1 << 3)
+// Define response access token structure
+typedef struct
+{
+    char access_token[256];
+    int expiration;
+} response_access_token_t;
 
-// Application class definition
-class Application
+// Realtime authorize class
+class RealtimeAuthorize
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
-    // Audio service instance
-    AudioService audio_service;
-
 public:
     // Constructor and destructor
-    Application();
-    ~Application();
+    RealtimeAuthorize();
+    ~RealtimeAuthorize();
 
-    // Get the singleton instance of the Application class
-    static Application &Instance()
+    // Get the singleton instance of the RealtimeAuthorize class
+    static RealtimeAuthorize &Instance()
     {
-        static Application instance;
+        static RealtimeAuthorize instance;
         return instance;
     }
 
     // Delete copy constructor and assignment operator
-    Application(const Application &) = delete;
-    Application &operator=(const Application &) = delete;
+    RealtimeAuthorize(const RealtimeAuthorize &) = delete;
+    RealtimeAuthorize &operator=(const RealtimeAuthorize &) = delete;
 
-    // Main application entry point
-    void Main();
-
-    // Main application loop
-    void Loop();
+    // Request access token
+    response_access_token_t Request(void);
 };
 
 #endif

@@ -65,8 +65,6 @@ void Application::Main()
     // Initialize audio service
     auto codec = board->GetAudioCodec();
     audio_service.Initialize(codec);
-    // Start audio service
-    audio_service.Start();
 
     // Set audio service callbacks
     AudioCallbacks callbacks;
@@ -76,16 +74,21 @@ void Application::Main()
     };
     callbacks.on_vad_change = [this](bool speaking)
     {
-        ESP_LOGI(TAG, "VAD Change: %s", speaking ? "Speaking" : "Silent");
         xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
     };
     audio_service.SetCallbacks(callbacks);
+
+    // Enable voice processing
+    audio_service.EnableVoiceProcessing(true);
 
     // Initialize WiFi manager
     auto &wifi_manager = WifiManager::Instance();
     auto ssid_list = wifi_manager.GetSsidList();
     if (ssid_list.empty())
     {
+        // Start audio task for playback
+        audio_service.StartAudioTask();
+
         // No SSIDs configured, enter WiFi configuration mode
         audio_service.EnableVoiceProcessing(false);
 
@@ -97,9 +100,6 @@ void Application::Main()
         {
             vTaskDelay(pdMS_TO_TICKS(50));
         }
-
-        // Stop audio service
-        audio_service.Stop();
 
         // Initialize access point mode if no SSIDs are configured
         auto &wifi_access_point = WifiAccessPoint::Instance();
@@ -115,19 +115,8 @@ void Application::Main()
     }
     else
     {
-        // Initialize station mode
+        // Initialize station mode and start
         auto &wifi_station = WifiStation::Instance();
-
-        wifi_station.OnScanBegin([]()
-                                 { ESP_LOGI(TAG, "WiFi scan started"); });
-
-        wifi_station.OnConnect([](const std::string &ssid)
-                               { ESP_LOGI(TAG, "Connecting to SSID: %s", ssid.c_str()); });
-
-        wifi_station.OnConnected([](const std::string &ssid)
-                                 { ESP_LOGI(TAG, "Connected to SSID: %s", ssid.c_str()); });
-
-        // Start station mode
         wifi_station.Start();
 
         // Wait for connection
@@ -138,11 +127,28 @@ void Application::Main()
         }
         else
         {
-            // Play WiFi success sound
-            audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
+            // Small delay to ensure stability
+            vTaskDelay(pdMS_TO_TICKS(2000));
 
-            // Start the application loop
-            Loop();
+            // Initialize system time synchronization
+            SystemTime::Instance().InitTimeSync();
+
+            if (SystemTime::Instance().WaitForSync(10000))
+            {
+                // Start audio service
+                audio_service.Start();
+
+                // Play WiFi success sound
+                audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
+
+                // Start the application loop
+                Loop();
+            }
+            else
+            {
+                ESP_LOGW(TAG, "System time synchronization timed out");
+                return;
+            }
         }
     }
 }
@@ -153,7 +159,28 @@ void Application::Loop()
     // Main application loop
     while (true)
     {
-        // Log a heartbeat message every 500 milliseconds
-        vTaskDelay(pdMS_TO_TICKS(500));
+        // Wait for send audio or VAD change events
+        auto bits = xEventGroupWaitBits(event_group, MAIN_EVENT_SEND_AUDIO | MAIN_EVENT_VAD_CHANGE, pdTRUE, pdFALSE, portMAX_DELAY);
+
+        // Handle send audio event
+        if (bits & MAIN_EVENT_SEND_AUDIO)
+        {
+            auto packet = audio_service.PopPacketFromSendQueue();
+            if (packet)
+            {
+                ESP_LOGI(TAG, "Sending audio packet with timestamp: %u, payload size: %zu bytes", packet->timestamp, packet->payload.size());
+            }
+        }
+
+        // Handle VAD change event
+        if (bits & MAIN_EVENT_VAD_CHANGE)
+        {
+            // Get current VAD state
+            bool speaking = audio_service.IsVoiceDetected();
+            ESP_LOGI(TAG, "VAD State: %s", speaking ? "Speaking" : "Silent");
+        }
+
+        // Small delay to prevent tight loop
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }

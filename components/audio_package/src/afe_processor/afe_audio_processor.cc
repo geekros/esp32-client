@@ -105,14 +105,8 @@ void AfeAudioProcessor::Initialize(AudioCodec *codec_data, int frame_duration_ms
     afe_config->agc_init = false;
     afe_config->memory_alloc_mode = AFE_MEMORY_ALLOC_MORE_PSRAM;
 
-    // Enable AEC and VAD
-#ifdef CONFIG_USE_DEVICE_AEC
-    afe_config->aec_init = true;
-    afe_config->vad_init = false;
-#else
     afe_config->aec_init = false;
     afe_config->vad_init = true;
-#endif
 
     // Create AFE interface and data
     afe_iface = esp_afe_handle_from_config(afe_config);
@@ -245,23 +239,6 @@ void AfeAudioProcessor::AudioProcessorTask()
                 }
             }
         }
-    }
-}
-
-// Enable or disable device AEC
-void AfeAudioProcessor::EnableDeviceAec(bool enable)
-{
-    if (enable)
-    {
-#if CONFIG_USE_DEVICE_AEC
-        afe_iface->disable_vad(afe_data);
-        afe_iface->enable_aec(afe_data);
-#endif
-    }
-    else
-    {
-        afe_iface->disable_aec(afe_data);
-        afe_iface->enable_vad(afe_data);
     }
 }
 

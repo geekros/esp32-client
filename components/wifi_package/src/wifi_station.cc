@@ -155,21 +155,21 @@ void WifiStation::SetPowerSaveMode(bool enabled)
 }
 
 // Register on scan begin callback
-void WifiStation::OnScanBegin(std::function<void()> on_scan_begin)
+void WifiStation::OnScanBegin(std::function<void()> on_scan_begin_cb)
 {
-    on_scan_begin = on_scan_begin;
+    on_scan_begin = on_scan_begin_cb;
 }
 
 // Register on connect callback
-void WifiStation::OnConnect(std::function<void(const std::string &ssid)> on_connect)
+void WifiStation::OnConnect(std::function<void(const std::string &ssid)> on_connect_cb)
 {
-    on_connect = on_connect;
+    on_connect = on_connect_cb;
 }
 
 // Register on connected callback
-void WifiStation::OnConnected(std::function<void(const std::string &ssid)> on_connected)
+void WifiStation::OnConnected(std::function<void(const std::string &ssid)> on_connected_cb)
 {
-    on_connected = on_connected;
+    on_connected = on_connected_cb;
 }
 
 // Handle scan result
@@ -349,6 +349,13 @@ void WifiStation::IpEventHandler(void *arg, esp_event_base_t event_base, int32_t
     // Reset reconnect count
     this_->reconnect_count = 0;
 
+    // Stop the scan timer
+    esp_timer_stop(this_->timer_handle_);
+
+    // Small delay to ensure IP is fully assigned
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // Log connection details
     ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&event->ip_info.gw));
     ESP_LOGI(TAG, "Netmask: " IPSTR, IP2STR(&event->ip_info.netmask));
     ESP_LOGI(TAG, "IP Address: " IPSTR, IP2STR(&event->ip_info.ip));

@@ -52,4 +52,5 @@ void RuntimeBasic::Init(void)
     esp_log_level_set("ES8311", ESP_LOG_NONE);
     esp_log_level_set("Adev_Codec", ESP_LOG_NONE);
     esp_log_level_set("MODEL_LOADER", ESP_LOG_NONE);
+    esp_log_level_set("AFE", ESP_LOG_NONE);
 }

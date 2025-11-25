@@ -114,9 +114,9 @@ public:
     void SetPowerSaveMode(bool enabled);
     void Stop();
 
-    void OnConnect(std::function<void(const std::string &ssid)> on_connect);
-    void OnConnected(std::function<void(const std::string &ssid)> on_connected);
-    void OnScanBegin(std::function<void()> on_scan_begin);
+    void OnConnect(std::function<void(const std::string &ssid)> on_connect_cb);
+    void OnConnected(std::function<void(const std::string &ssid)> on_connected_cb);
+    void OnScanBegin(std::function<void()> on_scan_begin_cb);
 };
 
 #endif

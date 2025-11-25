@@ -38,6 +38,7 @@ limitations under the License.
 
 // Include components headers
 #include "system_basic.h"
+#include "system_time.h"
 
 // Structure to hold HTTP response data
 typedef struct
@@ -74,7 +75,7 @@ public:
     HttpRequest &operator=(const HttpRequest &) = delete;
 
     // Function to handle HTTP request
-    esp_err_t Request(const std::string &url, esp_http_client_method_t method, const std::string &post_data, std::string &response_buf, int response_buf_len);
+    esp_err_t Request(const std::string &url, esp_http_client_method_t method, const char *post_data, char *response_buf, int response_buf_len);
 };
 
 #endif

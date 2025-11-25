@@ -119,18 +119,39 @@ void AudioService::Start()
         vTaskDelete(NULL); }, "opus_codec", 2048 * 13, this, 2, &opus_codec_task_handle);
 }
 
+// Start audio output task
+void AudioService::StartAudioTask()
+{
+    // Set service stopped flag to false
+    service_stopped = false;
+
+    // Set audio processor running event bit
+    xEventGroupClearBits(event_group, AS_EVENT_AUDIO_PROCESSOR_RUNNING);
+
+    // Start audio power management timer
+    esp_timer_start_periodic(audio_power_timer, 1000000);
+
+    // Create audio output task
+    xTaskCreate([](void *arg)
+                {
+        AudioService* audio_service = (AudioService*)arg;
+        audio_service->AudioOutputTask();
+        vTaskDelete(NULL); }, "audio_output", 2048 * 2, this, 4, &audio_output_task_handle);
+
+    // Create opus codec task
+    xTaskCreate([](void *arg)
+                {
+        AudioService* audio_service = (AudioService*)arg;
+        audio_service->OpusCodecTask();
+        vTaskDelete(NULL); }, "opus_codec", 2048 * 13, this, 2, &opus_codec_task_handle);
+}
+
 // Stop audio service
 void AudioService::Stop()
 {
     // Set service stopped flag to true
     esp_timer_stop(audio_power_timer);
     service_stopped = true;
-
-    if (codec)
-    {
-        codec->EnableInput(false);
-        codec->EnableOutput(false);
-    }
 
     // Set audio processor not running event bit
     xEventGroupSetBits(event_group, AS_EVENT_AUDIO_PROCESSOR_RUNNING);
@@ -236,9 +257,19 @@ void AudioService::AudioInputTask()
             int samples = audio_processor->GetFeedSize();
             if (samples > 0)
             {
+                // Read audio data
                 if (ReadAudioData(data, 16000, samples))
                 {
+                    // Feed data to audio processor
                     audio_processor->Feed(std::move(data));
+
+                    // Delay according to frame duration
+                    int frame_ms = samples * 1000 / 16000;
+                    if (frame_ms > 0)
+                    {
+                        vTaskDelay(pdMS_TO_TICKS(frame_ms));
+                    }
+
                     continue;
                 }
             }
@@ -515,18 +546,6 @@ void AudioService::EnableVoiceProcessing(bool enable)
     }
 }
 
-// Enable or disable device AEC
-void AudioService::EnableDeviceAec(bool enable)
-{
-    if (!audio_processor_initialized)
-    {
-        audio_processor->Initialize(codec, OPUS_FRAME_DURATION_MS, models_list);
-        audio_processor_initialized = true;
-    }
-
-    audio_processor->EnableDeviceAec(enable);
-}
-
 // Set audio callbacks
 void AudioService::SetCallbacks(AudioCallbacks &cb)
 {
@@ -630,13 +649,13 @@ void AudioService::PlaySound(const std::string_view &ogg)
 
                     if (pkt_len >= 12)
                     {
-                        uint8_t version = pkt_ptr[8];
-                        uint8_t channel_count = pkt_ptr[9];
+                        // uint8_t version = pkt_ptr[8];
+                        // uint8_t channel_count = pkt_ptr[9];
 
                         if (pkt_len >= 16)
                         {
                             sample_rate = pkt_ptr[12] | (pkt_ptr[13] << 8) | (pkt_ptr[14] << 16) | (pkt_ptr[15] << 24);
-                            ESP_LOGI(TAG, "version=%d, channels=%d, sample_rate=%d", version, channel_count, sample_rate);
+                            // ESP_LOGI(TAG, "version=%d, channels=%d, sample_rate=%d", version, channel_count, sample_rate);
                         }
                     }
                 }
@@ -685,6 +704,12 @@ void AudioService::ResetDecoder()
     audio_decode_queue.clear();
     audio_playback_queue.clear();
     audio_queue_cv.notify_all();
+}
+
+// Set models list for audio processor
+void AudioService::SetModelsList(srmodel_list_t *models_list_data)
+{
+    models_list = models_list_data;
 }
 
 // Check and update audio power state

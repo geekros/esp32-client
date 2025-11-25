@@ -67,18 +67,19 @@ esp_err_t HttpRequest::EventHandler(esp_http_client_event_t *event)
 }
 
 // Function to handle HTTP request
-esp_err_t HttpRequest::Request(const std::string &url, esp_http_client_method_t method, const std::string &post_data, std::string &response_buf, int response_buf_len)
+esp_err_t HttpRequest::Request(const std::string &url, esp_http_client_method_t method, const char *post_data, char *response_buf, int response_buf_len)
 {
     // Prepare HTTP response structure
     http_response_t response = {
-        .buffer = response_buf.data(),
+        .buffer = response_buf,
         .buffer_len = response_buf_len,
         .data_offset = 0,
     };
 
     // Configure HTTP client
     esp_http_client_config_t config = {};
-    config.url = url.c_str();
+    std::string full_url = GEEKROS_SERVICE + url;
+    config.url = full_url.c_str();
     config.crt_bundle_attach = esp_crt_bundle_attach;
     config.event_handler = [](esp_http_client_event_t *event)
     {
@@ -95,28 +96,20 @@ esp_err_t HttpRequest::Request(const std::string &url, esp_http_client_method_t 
     std::string chip_id = SystemBasic::Instance().GetChipID();
 
     // Get current time
-    int64_t time_us = esp_timer_get_time();
-    int64_t time_ms = time_us / 1000;
-    char time_str[32];
-
-    // Format time string
-    snprintf(time_str, sizeof(time_str), "%lld", time_ms);
-
-    ESP_LOGI(TAG, "Device ID: %s", chip_id.c_str());
-    ESP_LOGI(TAG, "Time MS: %s", time_str);
+    int64_t ts = SystemTime::Instance().GetUnixTimestamp();
 
     // Set standard headers
     esp_http_client_set_header(client, "Content-Type", "application/json");
     esp_http_client_set_header(client, "Content-X-Source", "hardware");
     esp_http_client_set_header(client, "Content-X-Device", chip_id.c_str());
-    esp_http_client_set_header(client, "Content-X-Time", time_str);
+    esp_http_client_set_header(client, "Content-X-Time", std::to_string(ts).c_str());
     esp_http_client_set_header(client, "Authorization", "Bearer " GEEKROS_SERVICE_GRK);
 
     // Set headers
-    if (method == HTTP_METHOD_POST && !post_data.empty())
+    if (method == HTTP_METHOD_POST && post_data && post_data[0] != '\0')
     {
         // Set POST data
-        esp_http_client_set_post_field(client, post_data.c_str(), post_data.length());
+        esp_http_client_set_post_field(client, post_data, strlen(post_data));
     }
 
     // Perform the HTTP request
