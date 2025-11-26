@@ -168,9 +168,7 @@ void ES8311AudioCodec::UpdateDeviceState()
         ESP_ERROR_CHECK(esp_codec_dev_set_in_gain(dev, input_gain));
         ESP_ERROR_CHECK(esp_codec_dev_set_out_vol(dev, output_volume));
     }
-
-    // Check if both input and output are disabled
-    if (!input_enabled && !output_enabled && dev != nullptr)
+    else if (!input_enabled && !output_enabled && dev != nullptr)
     {
         esp_codec_dev_close(dev);
         dev = nullptr;
@@ -233,25 +231,11 @@ void ES8311AudioCodec::EnableOutput(bool enable)
 // Private method to read audio data
 int ES8311AudioCodec::Read(int16_t *dest, int samples)
 {
-    // If input is not enabled, return 0
-    if (!input_enabled || dev == nullptr)
+    if (input_enabled)
     {
-        return 0;
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_codec_dev_read(dev, (void *)dest, samples * sizeof(int16_t)));
     }
-
-    // Define number of bytes to read
-    size_t bytes_to_read = samples * sizeof(int16_t);
-
-    // Read data from codec device
-    int bytes_read = esp_codec_dev_read(dev, (void *)dest, bytes_to_read);
-    if (bytes_read <= 0)
-    {
-        // Return 0 if no data read
-        return 0;
-    }
-
-    // Return number of samples read
-    return bytes_read / sizeof(int16_t);
+    return samples;
 }
 
 // Private method to write audio data

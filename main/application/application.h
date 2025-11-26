@@ -48,6 +48,7 @@ limitations under the License.
 // Define event group bits
 #define MAIN_EVENT_SEND_AUDIO (1 << 1)
 #define MAIN_EVENT_VAD_CHANGE (1 << 3)
+#define MAIN_EVENT_CLOCK_TICK (1 << 6)
 
 // Application class definition
 class Application
@@ -55,6 +56,9 @@ class Application
 private:
     // Event group handle
     EventGroupHandle_t event_group;
+
+    // Clock timer handle
+    esp_timer_handle_t clock_timer_handle = nullptr;
 
     // Audio service instance
     AudioService audio_service;
@@ -74,6 +78,8 @@ public:
     // Delete copy constructor and assignment operator
     Application(const Application &) = delete;
     Application &operator=(const Application &) = delete;
+
+    void InitializeAudioService();
 
     // Main application entry point
     void Main();

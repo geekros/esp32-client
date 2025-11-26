@@ -92,7 +92,7 @@ void AudioService::Start()
     service_stopped = false;
 
     // Set audio processor running event bit
-    xEventGroupClearBits(event_group, AS_EVENT_AUDIO_PROCESSOR_RUNNING);
+    // xEventGroupClearBits(event_group, AS_EVENT_AUDIO_PROCESSOR_RUNNING);
 
     // Start audio power management timer
     esp_timer_start_periodic(audio_power_timer, 1000000);
@@ -257,27 +257,14 @@ void AudioService::AudioInputTask()
             int samples = audio_processor->GetFeedSize();
             if (samples > 0)
             {
-                // Read audio data
                 if (ReadAudioData(data, 16000, samples))
                 {
-                    // Feed data to audio processor
                     audio_processor->Feed(std::move(data));
-
-                    // Delay according to frame duration
-                    int frame_ms = samples * 1000 / 16000;
-                    if (frame_ms > 0)
-                    {
-                        vTaskDelay(pdMS_TO_TICKS(frame_ms));
-                    }
-
                     continue;
                 }
             }
-            vTaskDelay(1);
-            continue;
         }
-
-        vTaskDelay(10);
+        vTaskDelay(pdMS_TO_TICKS(10));
         continue;
     }
 }

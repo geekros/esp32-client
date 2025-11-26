@@ -84,6 +84,9 @@ void WifiStation::Start()
     // Initialize WiFi
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
+    // Disable power save mode
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+
     // Set WiFi mode to station
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
@@ -353,7 +356,7 @@ void WifiStation::IpEventHandler(void *arg, esp_event_base_t event_base, int32_t
     esp_timer_stop(this_->timer_handle_);
 
     // Small delay to ensure IP is fully assigned
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     // Log connection details
     ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&event->ip_info.gw));
