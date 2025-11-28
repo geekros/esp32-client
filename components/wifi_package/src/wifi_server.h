@@ -38,6 +38,7 @@ limitations under the License.
 
 // Include headers
 #include "wifi_access_point.h"
+#include "language_basic.h"
 #include "system_reboot.h"
 #include "utils_basic.h"
 

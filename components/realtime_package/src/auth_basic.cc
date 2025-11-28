@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 // Include the headers
-#include "authorize.h"
+#include "auth_basic.h"
 
 // Define log tag
-#define TAG "[client:components:realtime:authorize]"
+#define TAG "[client:components:realtime:auth]"
 
 // Constructor
 RealtimeAuthorize::RealtimeAuthorize()
@@ -85,10 +85,16 @@ response_access_token_t RealtimeAuthorize::Request(void)
                     response_data.expiration = expiration->valueint;
                 }
 
+                // Get time item
+                cJSON *time = cJSON_GetObjectItem(data, "time");
+                if (time)
+                {
+                    // Set time to response data
+                    response_data.time = time->valueint;
+                }
+
                 // Delete JSON root
                 cJSON_Delete(root);
-
-                ESP_LOGI(TAG, "Authorize successful. Access Token: %s, Expiration: %d", response_data.access_token, response_data.expiration);
             }
             else
             {

@@ -65,3 +65,11 @@ std::string SystemBasic::GetChipID()
 
     return std::string(chip_id);
 }
+
+// Print heap statistics
+void SystemBasic::PrintHeaps()
+{
+    int free_sram = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    int min_free_sram = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL);
+    ESP_LOGI(TAG, "Free sram: %u Minimal sram: %u", free_sram, min_free_sram);
+}

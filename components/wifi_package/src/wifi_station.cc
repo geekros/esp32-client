@@ -84,9 +84,6 @@ void WifiStation::Start()
     // Initialize WiFi
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    // Disable power save mode
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
-
     // Set WiFi mode to station
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
@@ -112,7 +109,7 @@ void WifiStation::Start()
     };
 
     // Create the timer
-    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer_handle_));
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer_handle));
 }
 
 // Add WiFi authentication information
@@ -221,7 +218,7 @@ void WifiStation::HandleScanResult()
     // If no matching SSIDs, wait for next scan
     if (connect_queue.empty())
     {
-        esp_timer_start_once(timer_handle_, 10 * 1000);
+        esp_timer_start_once(timer_handle, 10 * 1000);
         return;
     }
 
@@ -313,7 +310,7 @@ void WifiStation::WifiEventHandler(void *arg, esp_event_base_t event_base, int32
         }
 
         // Start a new scan after timeout
-        esp_timer_start_once(this_->timer_handle_, 10 * 1000);
+        esp_timer_start_once(this_->timer_handle, 10 * 1000);
     }
 
     // Handle connection event
@@ -353,7 +350,7 @@ void WifiStation::IpEventHandler(void *arg, esp_event_base_t event_base, int32_t
     this_->reconnect_count = 0;
 
     // Stop the scan timer
-    esp_timer_stop(this_->timer_handle_);
+    esp_timer_stop(this_->timer_handle);
 
     // Small delay to ensure IP is fully assigned
     vTaskDelay(pdMS_TO_TICKS(1000));
@@ -370,11 +367,11 @@ void WifiStation::IpEventHandler(void *arg, esp_event_base_t event_base, int32_t
 void WifiStation::Stop()
 {
     // If timer exists, stop and delete it
-    if (timer_handle_ != nullptr)
+    if (timer_handle != nullptr)
     {
-        esp_timer_stop(timer_handle_);
-        esp_timer_delete(timer_handle_);
-        timer_handle_ = nullptr;
+        esp_timer_stop(timer_handle);
+        esp_timer_delete(timer_handle);
+        timer_handle = nullptr;
     }
 
     // Stop WiFi

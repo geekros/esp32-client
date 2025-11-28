@@ -15,6 +15,7 @@
 # Define source files directories
 set(SOURCES
     "src/wifi_access_point.cc"
+    "src/wifi_board.cc"
     "src/wifi_manager.cc"
     "src/wifi_server_dns.cc"
     "src/wifi_server.cc"
@@ -30,5 +31,5 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES driver json nvs_flash esp_wifi esp_event esp_http_server system_package utils_package
+    REQUIRES driver json nvs_flash esp_wifi esp_event esp_http_server system_package utils_package language_package
 )

@@ -92,35 +92,34 @@ void Application::Main()
     BoardBasic *board = CreateBoard();
     board->Initialization();
 
-    // Initialize WiFi manager
-    auto &wifi_manager = WifiManager::Instance();
-    auto ssid_list = wifi_manager.GetSsidList();
-    if (ssid_list.empty())
+    // Initialize and start audio service
+    auto codec = board->GetAudioCodec();
+    audio_service.Initialize(codec);
+
+    // Set loaded models to audio service
+    audio_service.SetModelsList(models);
+
+    // Define audio callbacks
+    AudioCallbacks audio_callbacks;
+    audio_callbacks.on_send_queue_available = [this]()
     {
-        // Initialize audio service
-        auto codec = board->GetAudioCodec();
-        audio_service.Initialize(codec);
+        xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
+    };
+    audio_callbacks.on_vad_change = [this](bool speaking)
+    {
+        xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
+    };
+    audio_service.SetCallbacks(audio_callbacks);
 
-        // Set loaded models to audio service
-        audio_service.SetModelsList(models);
+    // Initialize WiFi board
+    auto &wifi_board = WifiBoard::Instance();
 
-        // No SSIDs configured, enter WiFi configuration mode
-        audio_service.EnableVoiceProcessing(false);
-
-        // Start audio task for playback
-        audio_service.StartAudioTask();
-
-        // Set audio service callbacks
-        AudioCallbacks callbacks;
-        callbacks.on_send_queue_available = [this]()
-        {
-            xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
-        };
-        callbacks.on_vad_change = [this](bool speaking)
-        {
-            xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
-        };
-        audio_service.SetCallbacks(callbacks);
+    // Set WiFi board callbacks
+    WifiCallbacks wifi_board_callbacks;
+    wifi_board_callbacks.on_access_point = [this]()
+    {
+        // Start audio service
+        audio_service.Start();
 
         // Play WiFi configuration sound
         audio_service.PlaySound(Lang::Sounds::OGG_WIFI_CONFIG);
@@ -130,81 +129,43 @@ void Application::Main()
         {
             vTaskDelay(pdMS_TO_TICKS(50));
         }
-
-        // Initialize access point mode if no SSIDs are configured
-        auto &wifi_access_point = WifiAccessPoint::Instance();
-
-        // Start access point mode
-        wifi_access_point.Start();
-
-        // Keep the application running in access point mode
-        while (true)
-        {
-            vTaskDelay(pdMS_TO_TICKS(10000));
-        }
-    }
-    else
+    };
+    wifi_board_callbacks.on_station = [this]()
     {
-        // Initialize station mode and start
-        auto &wifi_station = WifiStation::Instance();
-        wifi_station.Start();
+        // Start audio service
+        audio_service.Start();
 
-        // Wait for connection
-        if (!wifi_station.WaitForConnected(60 * 1000))
+        // Play WiFi success sound
+        audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
+
+        // Wait until audio service is idle
+        while (!audio_service.IsIdle())
         {
-            ESP_LOGE(TAG, "Failed to connect to WiFi");
-            wifi_station.Stop();
-            return;
+            vTaskDelay(pdMS_TO_TICKS(50));
         }
 
-        // Small delay to ensure stability
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
 
-        // Initialize system time synchronization
-        SystemTime::Instance().InitTimeSync();
+        // Start realtime service
+        RealtimeBasic::Instance().RealtimeStart();
+    };
+    wifi_board.SetCallbacks(wifi_board_callbacks);
 
-        if (SystemTime::Instance().WaitForSync(10000))
-        {
-            // Initialize audio service
-            auto codec = board->GetAudioCodec();
-            audio_service.Initialize(codec);
+    // Create main event loop task
+    auto application_loop_task = [](void *param)
+    {
+        ((Application *)param)->Loop();
+        vTaskDelete(nullptr);
+    };
 
-            // Set loaded models to audio service
-            audio_service.SetModelsList(models);
+    // Create the task with a larger stack size
+    xTaskCreate(application_loop_task, "application_loop", 2048 * 4, this, 3, &main_event_loop_task_handle);
 
-            // Enable voice processing
-            audio_service.EnableVoiceProcessing(true);
+    // Start clock timer with 1 second period
+    esp_timer_start_periodic(clock_timer_handle, 1000000);
 
-            // Start audio service
-            audio_service.Start();
-
-            // Set audio service callbacks
-            AudioCallbacks callbacks;
-            callbacks.on_send_queue_available = [this]()
-            {
-                xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
-            };
-            callbacks.on_vad_change = [this](bool speaking)
-            {
-                xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
-            };
-            audio_service.SetCallbacks(callbacks);
-
-            // Play WiFi success sound
-            audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
-
-            // Start clock timer with 1 second period
-            esp_timer_start_periodic(clock_timer_handle, 1000000);
-
-            // Start the application loop
-            Loop();
-        }
-        else
-        {
-            ESP_LOGW(TAG, "System time synchronization timed out");
-            return;
-        }
-    }
+    // Start network
+    wifi_board.StartNetwork();
 }
 
 // Main application loop
@@ -222,7 +183,7 @@ void Application::Loop()
             auto packet = audio_service.PopPacketFromSendQueue();
             if (packet)
             {
-                // ESP_LOGI(TAG, "Sending audio packet with timestamp: %u, payload size: %zu bytes", packet->timestamp, packet->payload.size());
+                // TODO：Send audio packet to server
             }
         }
 
@@ -237,6 +198,15 @@ void Application::Loop()
         // Handle clock tick event
         if (bits & MAIN_EVENT_CLOCK_TICK)
         {
+            // Increment clock ticks
+            clock_ticks++;
+
+            // Print the debug info every 10 seconds
+            if (clock_ticks % 60 == 0)
+            {
+                // Every 10 seconds
+                SystemBasic::Instance().PrintHeaps();
+            }
         }
 
         // Small delay to prevent tight loop

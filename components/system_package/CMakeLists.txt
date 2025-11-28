@@ -29,6 +29,6 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES driver spiffs nvs_flash esp_netif
+    REQUIRES driver spiffs nvs_flash esp_netif esp_wifi spi_flash
 )
 

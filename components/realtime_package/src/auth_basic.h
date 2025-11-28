@@ -44,6 +44,7 @@ typedef struct
 {
     char access_token[256];
     int expiration;
+    int time;
 } response_access_token_t;
 
 // Realtime authorize class

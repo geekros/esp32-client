@@ -59,6 +59,9 @@ public:
 
     // Get system chip ID
     static std::string GetChipID();
+
+    // Print heap statistics
+    static void PrintHeaps();
 };
 
 #endif

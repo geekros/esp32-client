@@ -41,44 +41,6 @@ WifiServer::~WifiServer()
     }
 }
 
-// Static file handler
-esp_err_t WifiServer::StaticHandler(httpd_req_t *req)
-{
-    // Serve static files from SPIFFS
-    char filepath[256];
-
-    // Construct file path
-    strlcpy(filepath, GEEKROS_SPIFFS_HTML_PATH, sizeof(filepath));
-    strlcat(filepath, req->uri, sizeof(filepath));
-
-    // Open file
-    FILE *file = fopen(filepath, "rb");
-    if (!file)
-    {
-        httpd_resp_send_404(req);
-        return ESP_FAIL;
-    }
-
-    // Set MIME type
-    httpd_resp_set_type(req, UtilsBasic::GetMimeType(req->uri));
-
-    // Send file content
-    httpd_resp_set_hdr(req, "Connection", "close");
-
-    // Read and send file in chunks
-    char chunk[512];
-    size_t n;
-    while ((n = fread(chunk, 1, sizeof(chunk), file)) > 0)
-    {
-        httpd_resp_send_chunk(req, chunk, n);
-    }
-
-    // Close file and end response
-    fclose(file);
-    httpd_resp_send_chunk(req, NULL, 0);
-    return ESP_OK;
-}
-
 // Scan handler
 esp_err_t WifiServer::ScanHandler(httpd_req_t *req)
 {
@@ -218,7 +180,7 @@ esp_err_t WifiServer::SubmitHandler(httpd_req_t *req)
         vTaskDelay(pdMS_TO_TICKS(500));
         auto &system_reboot = SystemReboot::Instance();
         system_reboot.Reboot(param);
-        vTaskDelete(NULL);
+        vTaskDelete(nullptr);
     };
 
     // Create reboot task
@@ -396,8 +358,11 @@ esp_err_t WifiServer::ConfigSubmitHandler(httpd_req_t *req)
 // Captive portal handler
 esp_err_t WifiServer::CaptiveHandle(httpd_req_t *req)
 {
+    // Get language
+    std::string *language = LanguageBasic::Instance().GetLanguage();
+
     // Redirect to the main page with a timestamp to avoid caching
-    std::string url = std::string("http://") + GEEKROS_WIFI_AP_IP + "/?_time=" + std::to_string(esp_timer_get_time());
+    std::string url = std::string("http://") + GEEKROS_WIFI_AP_IP + "/?lang=" + *language + "&_time=" + std::to_string(esp_timer_get_time());
 
     // Send redirect response
     httpd_resp_set_type(req, "text/html");
@@ -453,7 +418,10 @@ void WifiServer::Start()
 {
     // Initialize HTTP server with default configuration
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 35;
+    config.max_uri_handlers = 50;
+    config.max_open_sockets = 4;
+    config.backlog_conn = 8;
+    config.lru_purge_enable = true;
     config.uri_match_fn = httpd_uri_match_wildcard;
     // 5G Network takes longer to connect
     config.recv_wait_timeout = 15;
@@ -461,22 +429,6 @@ void WifiServer::Start()
 
     // Start the HTTP server
     ESP_ERROR_CHECK(httpd_start(&server, &config));
-
-    // Register images file handler
-    httpd_uri_t images_http = {};
-    images_http.uri = "/images/*";
-    images_http.method = HTTP_GET;
-    images_http.handler = StaticHandler;
-    images_http.user_ctx = &WifiAccessPoint::Instance();
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &images_http));
-
-    // Register script file handler
-    httpd_uri_t css_http = {};
-    css_http.uri = "/css/*";
-    css_http.method = HTTP_GET;
-    css_http.handler = StaticHandler;
-    css_http.user_ctx = &WifiAccessPoint::Instance();
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &css_http));
 
     // Register scan handler
     httpd_uri_t scan_http = {};

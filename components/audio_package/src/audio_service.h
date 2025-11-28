@@ -166,7 +166,6 @@ public:
     // Public methods
     void Initialize(AudioCodec *codec_data);
     void Start();
-    void StartAudioTask();
     void Stop();
 
     // Getters for state

@@ -67,7 +67,7 @@ private:
     // Event group handle
     EventGroupHandle_t event_group;
 
-    esp_timer_handle_t timer_handle_ = nullptr;
+    esp_timer_handle_t timer_handle = nullptr;
     esp_event_handler_instance_t instance_any_id = nullptr;
     esp_event_handler_instance_t instance_got_ip = nullptr;
     esp_netif_t *station_netif = nullptr;

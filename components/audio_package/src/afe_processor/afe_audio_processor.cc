@@ -81,13 +81,8 @@ void AfeAudioProcessor::Initialize(AudioCodec *codec_data, int frame_duration_ms
 
     // Initialize AFE configuration
     afe_config_t *afe_config = afe_config_init(input_format.c_str(), NULL, AFE_TYPE_VC, AFE_MODE_HIGH_PERF);
-    afe_config->se_init = true;
-    afe_config->aec_mode = AEC_MODE_VOIP_HIGH_PERF;
     afe_config->vad_mode = VAD_MODE_0;
-    afe_config->vad_min_speech_ms = 128;
-    afe_config->vad_min_noise_ms = 1000;
-    afe_config->vad_delay_ms = 128;
-    afe_config->vad_mute_playback = true;
+    afe_config->vad_min_noise_ms = 100;
     if (vad_model_name != nullptr)
     {
         afe_config->vad_model_name = vad_model_name;
@@ -108,7 +103,10 @@ void AfeAudioProcessor::Initialize(AudioCodec *codec_data, int frame_duration_ms
     // Set other AFE parameters
     afe_config->agc_init = false;
     afe_config->memory_alloc_mode = AFE_MEMORY_ALLOC_MORE_PSRAM;
-    afe_config->vad_init = true;
+
+    // Set AEC and VAD parameters
+    afe_config->aec_init = false;
+    afe_config->vad_init = false;
 
     // Create AFE interface and data
     afe_iface = esp_afe_handle_from_config(afe_config);
@@ -119,7 +117,7 @@ void AfeAudioProcessor::Initialize(AudioCodec *codec_data, int frame_duration_ms
     {
         auto this_ = (AfeAudioProcessor *)param;
         this_->AudioProcessorTask();
-        vTaskDelete(NULL);
+        vTaskDelete(nullptr);
     };
 
     // Start audio processing task

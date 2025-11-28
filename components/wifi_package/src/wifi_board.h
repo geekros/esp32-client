@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef SYSTEM_REBOOT_H
-#define SYSTEM_REBOOT_H
+#ifndef WIFI_BOARD_H
+#define WIFI_BOARD_H
 
 // Include standard headers
 #include <string>
-#include <ctime>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -30,45 +29,58 @@ limitations under the License.
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include headers
-#include "lwip/dns.h"
+// Include client configuration header
+#include "client_config.h"
 
-// SystemReboot class definition
-class SystemTime
+// Include headers
+#include "wifi_manager.h"
+#include "wifi_station.h"
+#include "wifi_access_point.h"
+
+// Define audio callbacks structure
+struct WifiCallbacks
+{
+    std::function<void(void)> on_station;
+    std::function<void(void)> on_access_point;
+};
+
+// WifiBoard class declaration
+class WifiBoard
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
+    // Wifi callbacks
+    WifiCallbacks callbacks;
+
 public:
     // Constructor and Destructor
-    SystemTime();
-    ~SystemTime();
+    WifiBoard();
+    ~WifiBoard();
 
-    // Get the singleton instance of the SystemTime class
-    static SystemTime &Instance()
+    // Get singleton instance
+    static WifiBoard &Instance()
     {
-        static SystemTime instance;
+        static WifiBoard instance;
         return instance;
     }
 
     // Delete copy constructor and assignment operator
-    SystemTime(const SystemTime &) = delete;
-    SystemTime &operator=(const SystemTime &) = delete;
+    WifiBoard(const WifiBoard &) = delete;
+    WifiBoard &operator=(const WifiBoard &) = delete;
 
-    // Get current time as string
-    std::string GetTimeString();
+    // Start network function
+    void StartNetwork();
 
-    // Get current Unix timestamp
-    time_t GetUnixTimestamp();
+    // Enter WiFi Access Point mode
+    void EnterWifiAccessPoint();
 
-    // Set system time
-    esp_err_t SetTimeMs(uint64_t timestamp_ms);
-    esp_err_t SetTimeSec(uint32_t timestamp_sec);
+    // Enter WiFi Station mode
+    void EnterWifiStation();
 
-    // Timezone management
-    void ApplyTimezone();
-    std::string CurrentTimezone();
+    // Set WiFi callbacks
+    void SetCallbacks(WifiCallbacks &cb);
 };
 
 #endif

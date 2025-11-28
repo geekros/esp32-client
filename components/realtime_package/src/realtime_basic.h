@@ -14,61 +14,59 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef SYSTEM_REBOOT_H
-#define SYSTEM_REBOOT_H
+#ifndef REALTIME_BASIC_H
+#define REALTIME_BASIC_H
 
 // Include standard headers
 #include <string>
-#include <ctime>
 
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
+#include <esp_http_client.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include headers
-#include "lwip/dns.h"
+// Include common headers
+#include "cJSON.h"
 
-// SystemReboot class definition
-class SystemTime
+// Include configuration and module headers
+#include "client_config.h"
+
+// Include headers
+#include "auth_basic.h"
+#include "signaling_basic.h"
+#include "system_time.h"
+
+// Realtime basic class
+class RealtimeBasic
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
 public:
-    // Constructor and Destructor
-    SystemTime();
-    ~SystemTime();
+    // Constructor and destructor
+    RealtimeBasic();
+    ~RealtimeBasic();
 
-    // Get the singleton instance of the SystemTime class
-    static SystemTime &Instance()
+    // Get the singleton instance of the RealtimeBasic class
+    static RealtimeBasic &Instance()
     {
-        static SystemTime instance;
+        static RealtimeBasic instance;
         return instance;
     }
 
     // Delete copy constructor and assignment operator
-    SystemTime(const SystemTime &) = delete;
-    SystemTime &operator=(const SystemTime &) = delete;
+    RealtimeBasic(const RealtimeBasic &) = delete;
+    RealtimeBasic &operator=(const RealtimeBasic &) = delete;
 
-    // Get current time as string
-    std::string GetTimeString();
-
-    // Get current Unix timestamp
-    time_t GetUnixTimestamp();
-
-    // Set system time
-    esp_err_t SetTimeMs(uint64_t timestamp_ms);
-    esp_err_t SetTimeSec(uint32_t timestamp_sec);
-
-    // Timezone management
-    void ApplyTimezone();
-    std::string CurrentTimezone();
+    // Realtime start and stop methods
+    void RealtimeStart();
+    void RealtimeStop();
 };
 
 #endif

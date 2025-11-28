@@ -41,6 +41,8 @@ limitations under the License.
 #include "language_sound.h"
 #include "model_basic.h"
 #include "audio_service.h"
+#include "realtime_basic.h"
+#include "wifi_board.h"
 #include "wifi_manager.h"
 #include "wifi_station.h"
 #include "wifi_access_point.h"
@@ -54,11 +56,17 @@ limitations under the License.
 class Application
 {
 private:
+    // Clock ticks counter
+    int clock_ticks = 0;
+
     // Event group handle
     EventGroupHandle_t event_group;
 
     // Clock timer handle
     esp_timer_handle_t clock_timer_handle = nullptr;
+
+    // Main event loop task handle
+    TaskHandle_t main_event_loop_task_handle = nullptr;
 
     // Audio service instance
     AudioService audio_service;

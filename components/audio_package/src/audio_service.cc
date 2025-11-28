@@ -58,17 +58,27 @@ void AudioService::Initialize(AudioCodec *codec_data)
     // Set audio processor to AFE processor
     audio_processor = std::make_unique<AfeAudioProcessor>();
 
+    // Initialize audio processor
+    auto output_callback = [this](std::vector<int16_t> &&data)
+    {
+        PushTaskToEncodeQueue(AudioTaskTypeEncodeToSendQueue, std::move(data));
+    };
+
     // Set audio processor output callback to push encoded data to send queue
-    audio_processor->OnOutput([this](std::vector<int16_t> &&data)
-                              { PushTaskToEncodeQueue(AudioTaskTypeEncodeToSendQueue, std::move(data)); });
+    audio_processor->OnOutput(output_callback);
+
+    // Initialize vad state change callback
+    auto vad_state_change_callback = [this](bool speaking)
+    {
+        voice_detected = speaking;
+        if (callbacks.on_vad_change)
+        {
+            callbacks.on_vad_change(speaking);
+        }
+    };
 
     // Set VAD state change callback
-    audio_processor->OnVadStateChange([this](bool speaking)
-                                      {
-        voice_detected = speaking;
-        if (callbacks.on_vad_change) {
-            callbacks.on_vad_change(speaking);
-        } });
+    audio_processor->OnVadStateChange(vad_state_change_callback);
 
     // Initialize audio power management timer
     esp_timer_create_args_t audio_power_timer_args = {
@@ -92,58 +102,43 @@ void AudioService::Start()
     service_stopped = false;
 
     // Set audio processor running event bit
-    // xEventGroupClearBits(event_group, AS_EVENT_AUDIO_PROCESSOR_RUNNING);
-
-    // Start audio power management timer
-    esp_timer_start_periodic(audio_power_timer, 1000000);
-
-    // Create audio input task
-    xTaskCreatePinnedToCore([](void *arg)
-                            {
-        AudioService* audio_service = (AudioService*)arg;
-        audio_service->AudioInputTask();
-        vTaskDelete(NULL); }, "audio_input", 2048 * 3, this, 8, &audio_input_task_handle, 0);
-
-    // Create audio output task
-    xTaskCreate([](void *arg)
-                {
-        AudioService* audio_service = (AudioService*)arg;
-        audio_service->AudioOutputTask();
-        vTaskDelete(NULL); }, "audio_output", 2048 * 2, this, 4, &audio_output_task_handle);
-
-    // Create opus codec task
-    xTaskCreate([](void *arg)
-                {
-        AudioService* audio_service = (AudioService*)arg;
-        audio_service->OpusCodecTask();
-        vTaskDelete(NULL); }, "opus_codec", 2048 * 13, this, 2, &opus_codec_task_handle);
-}
-
-// Start audio output task
-void AudioService::StartAudioTask()
-{
-    // Set service stopped flag to false
-    service_stopped = false;
-
-    // Set audio processor running event bit
     xEventGroupClearBits(event_group, AS_EVENT_AUDIO_PROCESSOR_RUNNING);
 
     // Start audio power management timer
     esp_timer_start_periodic(audio_power_timer, 1000000);
 
-    // Create audio output task
-    xTaskCreate([](void *arg)
-                {
-        AudioService* audio_service = (AudioService*)arg;
+    // Define audio input task lambda
+    auto audio_input_task = [](void *arg)
+    {
+        AudioService *audio_service = (AudioService *)arg;
+        audio_service->AudioInputTask();
+        vTaskDelete(nullptr);
+    };
+
+    // Create audio input task
+    xTaskCreatePinnedToCore(audio_input_task, "audio_input", 2048 * 3, this, 8, &audio_input_task_handle, 0);
+
+    // Define audio output task lambda
+    auto audio_output_task = [](void *arg)
+    {
+        AudioService *audio_service = (AudioService *)arg;
         audio_service->AudioOutputTask();
-        vTaskDelete(NULL); }, "audio_output", 2048 * 2, this, 4, &audio_output_task_handle);
+        vTaskDelete(nullptr);
+    };
+
+    // Create audio output task
+    xTaskCreate(audio_output_task, "audio_output", 2048 * 2, this, 4, &audio_output_task_handle);
+
+    // Define opus codec task lambda
+    auto opus_codec_task = [](void *arg)
+    {
+        AudioService *audio_service = (AudioService *)arg;
+        audio_service->OpusCodecTask();
+        vTaskDelete(nullptr);
+    };
 
     // Create opus codec task
-    xTaskCreate([](void *arg)
-                {
-        AudioService* audio_service = (AudioService*)arg;
-        audio_service->OpusCodecTask();
-        vTaskDelete(NULL); }, "opus_codec", 2048 * 13, this, 2, &opus_codec_task_handle);
+    xTaskCreate(opus_codec_task, "opus_codec", 2048 * 13, this, 2, &opus_codec_task_handle);
 }
 
 // Stop audio service
@@ -278,10 +273,16 @@ void AudioService::AudioOutputTask()
         // Lock audio queue mutex
         std::unique_lock<std::mutex> lock(audio_queue_mutex);
 
-        // Wait for playback queue to have data or service to stop
-        audio_queue_cv.wait(lock, [this]()
-                            { return !audio_playback_queue.empty() || service_stopped; });
+        // Initialize wait condition
+        auto wait_condition = [this]()
+        {
+            return !audio_playback_queue.empty() || service_stopped;
+        };
 
+        // Wait for playback queue to have data or service to stop
+        audio_queue_cv.wait(lock, wait_condition);
+
+        // Check for service stopped
         if (service_stopped)
         {
             break;
@@ -316,10 +317,15 @@ void AudioService::OpusCodecTask()
         // Lock audio queue mutex
         std::unique_lock<std::mutex> lock(audio_queue_mutex);
 
-        audio_queue_cv.wait(lock, [this]()
-                            { return service_stopped ||
-                                     (!audio_encode_queue.empty() && audio_send_queue.size() < MAX_SEND_PACKETS_IN_QUEUE) ||
-                                     (!audio_decode_queue.empty() && audio_playback_queue.size() < MAX_PLAYBACK_TASKS_IN_QUEUE); });
+        // Define wait condition
+        auto wait_condition = [this]()
+        {
+            return service_stopped || (!audio_encode_queue.empty() && audio_send_queue.size() < MAX_SEND_PACKETS_IN_QUEUE) || (!audio_decode_queue.empty() && audio_playback_queue.size() < MAX_PLAYBACK_TASKS_IN_QUEUE);
+        };
+
+        // Wait for encode/decode tasks or service to stop
+        audio_queue_cv.wait(lock, wait_condition);
+
         // Check for service stopped
         if (service_stopped)
         {
@@ -445,8 +451,13 @@ void AudioService::PushTaskToEncodeQueue(AudioTaskType type, std::vector<int16_t
         timestamp_queue.pop_front();
     }
 
-    audio_queue_cv.wait(lock, [this]()
-                        { return audio_encode_queue.size() < MAX_ENCODE_TASKS_IN_QUEUE; });
+    // Initialize wait condition
+    auto wait_condition = [this]()
+    {
+        return audio_encode_queue.size() < MAX_ENCODE_TASKS_IN_QUEUE;
+    };
+
+    audio_queue_cv.wait(lock, wait_condition);
 
     // Push task to encode queue
     audio_encode_queue.push_back(std::move(task));
@@ -466,8 +477,14 @@ bool AudioService::PushPacketToDecodeQueue(std::unique_ptr<AudioStreamPacket> pa
     {
         if (wait)
         {
-            audio_queue_cv.wait(lock, [this]()
-                                { return audio_decode_queue.size() < MAX_DECODE_PACKETS_IN_QUEUE; });
+            // Initialize wait condition
+            auto wait_condition = [this]()
+            {
+                return audio_decode_queue.size() < MAX_DECODE_PACKETS_IN_QUEUE;
+            };
+
+            // Wait until there is space in the decode queue
+            audio_queue_cv.wait(lock, wait_condition);
         }
         else
         {
@@ -561,7 +578,9 @@ void AudioService::PlaySound(const std::string_view &ogg)
         for (size_t i = start; i + 4 <= size; ++i)
         {
             if (buf[i] == 'O' && buf[i + 1] == 'g' && buf[i + 2] == 'g' && buf[i + 3] == 'S')
+            {
                 return i;
+            }
         }
         return static_cast<size_t>(-1);
     };

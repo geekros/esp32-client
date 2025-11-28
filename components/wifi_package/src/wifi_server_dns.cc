@@ -96,10 +96,13 @@ void WifiServerDns::Start(esp_ip4_addr_t gateway_data)
         return;
     }
 
-    xTaskCreate([](void *arg)
-                {
-        WifiServerDns* dns_server = static_cast<WifiServerDns*>(arg);
-        dns_server->Task(); }, "wifi_service_dns_task", 4096, this, 5, NULL);
+    auto wifi_service_dns_task = [](void *arg)
+    {
+        WifiServerDns *dns_server = static_cast<WifiServerDns *>(arg);
+        dns_server->Task();
+    };
+
+    xTaskCreate(wifi_service_dns_task, "wifi_service_dns_task", 4096, this, 5, NULL);
 }
 
 // Stop DNS server

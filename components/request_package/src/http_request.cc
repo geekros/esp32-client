@@ -86,7 +86,7 @@ esp_err_t HttpRequest::Request(const std::string &url, esp_http_client_method_t 
         return HttpRequest::Instance().EventHandler(event);
     };
     config.user_data = &response;
-    config.timeout_ms = 10000;
+    config.timeout_ms = 30000;
 
     // Initialize HTTP client
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -114,14 +114,6 @@ esp_err_t HttpRequest::Request(const std::string &url, esp_http_client_method_t 
 
     // Perform the HTTP request
     esp_err_t err = esp_http_client_perform(client);
-    if (err == ESP_OK)
-    {
-        ESP_LOGI(TAG, "HTTP %s Status = %d, content_length = %lld", (method == HTTP_METHOD_GET ? "GET" : "POST"), esp_http_client_get_status_code(client), esp_http_client_get_content_length(client));
-    }
-    else
-    {
-        ESP_LOGE(TAG, "HTTP %s request failed: %s", (method == HTTP_METHOD_GET ? "GET" : "POST"), esp_err_to_name(err));
-    }
 
     // Cleanup HTTP client
     esp_http_client_cleanup(client);

@@ -38,6 +38,90 @@ menu "GEEKROS Client Configuration"
             config GEEKROS_SYSTEM_LANGUAGE_ZH_TW
                 bool "Chinese Traditional"
         endchoice
+        
+        # System Timezone
+        choice GEEKROS_SYSTEM_TIMEZONE
+            prompt "Select Timezone"
+            default GEEKROS_SYSTEM_TIMEZONE_UTC_8
+            help
+                Select the timezone for system time.
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_12
+                bool "UTC−12"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_11
+                bool "UTC−11"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_10
+                bool "UTC−10"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_9_30
+                bool "UTC−9:30"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_9
+                bool "UTC−9"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_8
+                bool "UTC−8"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_7
+                bool "UTC−7"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_6
+                bool "UTC−6"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_5
+                bool "UTC−5"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_4
+                bool "UTC−4"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_3_30
+                bool "UTC−3:30"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_3
+                bool "UTC−3"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_2
+                bool "UTC−2"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_NEG_1
+                bool "UTC−1"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_0
+                bool "UTC±0"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_1
+                bool "UTC+1"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_2
+                bool "UTC+2"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_3
+                bool "UTC+3"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_3_30
+                bool "UTC+3:30"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_4
+                bool "UTC+4"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_4_30
+                bool "UTC+4:30"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_5
+                bool "UTC+5"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_5_30
+                bool "UTC+5:30"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_5_45
+                bool "UTC+5:45"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_6
+                bool "UTC+6"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_6_30
+                bool "UTC+6:30"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_7
+                bool "UTC+7"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_8
+                bool "UTC+8"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_8_45
+                bool "UTC+8:45"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_9
+                bool "UTC+9"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_9_30
+                bool "UTC+9:30"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_10
+                bool "UTC+10"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_10_30
+                bool "UTC+10:30"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_11
+                bool "UTC+11"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_12
+                bool "UTC+12"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_12_45
+                bool "UTC+12:45"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_13
+                bool "UTC+13"
+            config GEEKROS_SYSTEM_TIMEZONE_UTC_14
+                bool "UTC+14"
+        endchoice
     endmenu
 
     # Development Board Configuration

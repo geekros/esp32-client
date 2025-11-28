@@ -36,64 +36,21 @@ UtilsBasic::~UtilsBasic()
     }
 }
 
-// Get MIME type based on URI
-const char *UtilsBasic::GetMimeType(const char *uri)
-{
-    if (strstr(uri, ".css"))
-    {
-        return "text/css";
-    }
-    if (strstr(uri, ".js"))
-    {
-        return "application/javascript";
-    }
-    if (strstr(uri, ".json"))
-    {
-        return "application/json";
-    }
-    if (strstr(uri, ".png"))
-    {
-        return "image/png";
-    }
-    if (strstr(uri, ".jpg") || strstr(uri, ".jpeg"))
-    {
-        return "image/jpeg";
-    }
-    if (strstr(uri, ".gif"))
-    {
-        return "image/gif";
-    }
-    if (strstr(uri, ".svg"))
-    {
-        return "image/svg+xml";
-    }
-    if (strstr(uri, ".ico"))
-    {
-        return "image/x-icon";
-    }
-    return "text/plain";
-}
-
 // Get captive portal URLs
 const char *const *UtilsBasic::GetCaptiveUrls(size_t &count)
 {
     // Define captive portal URLs
     static const char *urls[] = {
-        "/hotspot-detect.html",
-        "/generate204",
-        "/generate_204*",
-        "/mobile/status.php",
-        "/check_network_status.txt",
-        "/ncsi.txt",
-        "/connecttest.txt",
-        "/redirect",
-        "/fwlink/",
-        "/connectivity-check.html",
-        "/success.txt",
-        "/portal.html",
-        "/library/test/success.html",
-        "/mmtls/*",
-        "/wifidog/*",
+        "/hotspot-detect.html",      // Apple
+        "/generate_204*",            // Android
+        "/mobile/status.php",        // Android
+        "/check_network_status.txt", // Windows
+        "/ncsi.txt",                 // Windows
+        "/fwlink/",                  // Microsoft
+        "/connectivity-check.html",  // Firefox
+        "/success.txt",              // Various
+        "/portal.html",              // Various
+        "/library/test/success.html" // Apple
     };
 
     // Return URLs and count

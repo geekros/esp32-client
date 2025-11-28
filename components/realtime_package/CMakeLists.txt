@@ -14,7 +14,9 @@
 
 # Define source files directories
 set(SOURCES
-    "src/authorize.cc"
+    "src/auth_basic.cc"
+    "src/realtime_basic.cc"
+    "src/signaling_basic.cc"
 )
 
 # Define include directories
@@ -26,5 +28,5 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES request_package esp_http_client json
+    REQUIRES request_package system_package esp_http_client json
 )

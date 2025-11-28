@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef UTILS_BASIC_H
-#define UTILS_BASIC_H
+#ifndef REALTIME_SIGNALING_H
+#define REALTIME_SIGNALING_H
 
 // Include standard headers
 #include <string>
@@ -23,37 +23,20 @@ limitations under the License.
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
+#include <esp_http_client.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// UtilsBasic class definition
-class UtilsBasic
-{
-private:
-    // Event group handle
-    EventGroupHandle_t event_group;
+// Include common headers
+#include "cJSON.h"
 
-public:
-    // Constructor and Destructor
-    UtilsBasic();
-    ~UtilsBasic();
+// Include configuration and module headers
+#include "client_config.h"
 
-    // Get the singleton instance of the UtilsBasic class
-    static UtilsBasic &Instance()
-    {
-        static UtilsBasic instance;
-        return instance;
-    }
-
-    // Delete copy constructor and assignment operator
-    UtilsBasic(const UtilsBasic &) = delete;
-    UtilsBasic &operator=(const UtilsBasic &) = delete;
-
-    // Functions
-    static const char *const *GetCaptiveUrls(size_t &count);
-};
+// Include components headers
+#include "http_request.h"
 
 #endif
