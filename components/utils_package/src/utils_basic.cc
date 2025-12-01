@@ -57,3 +57,31 @@ const char *const *UtilsBasic::GetCaptiveUrls(size_t &count)
     count = sizeof(urls) / sizeof(urls[0]);
     return urls;
 }
+
+// Mask section of a string
+std::string UtilsBasic::MaskSection(const std::string text, size_t start, size_t end)
+{
+    // Validate indices
+    if (start >= text.size() || start >= end)
+    {
+        return text;
+    }
+
+    // Adjust end index if it exceeds text size
+    if (end > text.size())
+    {
+        end = text.size();
+    }
+
+    // Create masked string
+    std::string result;
+    result.reserve(text.size() - (end - start) + 3);
+
+    // Construct masked string
+    result = text.substr(0, start);
+    result += "***";
+    result += text.substr(end);
+
+    // Return masked string
+    return result;
+}

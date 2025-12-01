@@ -37,6 +37,40 @@ limitations under the License.
 #include "client_config.h"
 
 // Include components headers
-#include "http_request.h"
+#include "network_socket.h"
+#include "system_basic.h"
+#include "system_time.h"
+
+// SignalingBasic class definition
+class SignalingBasic
+{
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
+
+    // WebSocket instance
+    std::shared_ptr<WebSocket> socket_instance;
+
+public:
+    SignalingBasic();
+    ~SignalingBasic();
+
+    // Get the singleton instance of the SignalingBasic class
+    static SignalingBasic &Instance()
+    {
+        static SignalingBasic instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    SignalingBasic(const SignalingBasic &) = delete;
+    SignalingBasic &operator=(const SignalingBasic &) = delete;
+
+    // Connection method
+    void Connection(std::string token);
+
+    // Get WebSocket instance
+    std::shared_ptr<WebSocket> GetSocket();
+};
 
 #endif

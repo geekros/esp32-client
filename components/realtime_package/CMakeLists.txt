@@ -28,5 +28,5 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES request_package system_package esp_http_client json
+    REQUIRES utils_package system_package network_package esp_http_client json
 )

@@ -334,6 +334,13 @@ void WifiStation::IpEventHandler(void *arg, esp_event_base_t event_base, int32_t
     esp_ip4addr_ntoa(&event->ip_info.ip, ip_address, sizeof(ip_address));
     this_->ip_address = ip_address;
 
+    // Log connection details
+    ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&event->ip_info.gw));
+    ESP_LOGI(TAG, "Netmask: " IPSTR, IP2STR(&event->ip_info.netmask));
+    ESP_LOGI(TAG, "IP Address: " IPSTR, IP2STR(&event->ip_info.ip));
+    ESP_LOGI(TAG, "Connected to WiFi SSID: %s, IP Address: %s", this_->ssid.c_str(), ip_address);
+    ESP_LOGI(TAG, "Wifi connection successful");
+
     // Set connected bit
     xEventGroupSetBits(this_->event_group, WIFI_EVENT_CONNECTED);
 
@@ -351,16 +358,6 @@ void WifiStation::IpEventHandler(void *arg, esp_event_base_t event_base, int32_t
 
     // Stop the scan timer
     esp_timer_stop(this_->timer_handle);
-
-    // Small delay to ensure IP is fully assigned
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    // Log connection details
-    ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&event->ip_info.gw));
-    ESP_LOGI(TAG, "Netmask: " IPSTR, IP2STR(&event->ip_info.netmask));
-    ESP_LOGI(TAG, "IP Address: " IPSTR, IP2STR(&event->ip_info.ip));
-    ESP_LOGI(TAG, "Connected to WiFi SSID: %s, IP Address: %s", this_->ssid.c_str(), ip_address);
-    ESP_LOGI(TAG, "Wifi connection successful");
 }
 
 // Stop WiFi station
@@ -375,7 +372,7 @@ void WifiStation::Stop()
     }
 
     // Stop WiFi
-    ESP_ERROR_CHECK(esp_wifi_stop());
+    ESP_ERROR_CHECK(esp_wifi_scan_stop());
 
     // Unregister WiFi event handler
     if (instance_any_id != nullptr)

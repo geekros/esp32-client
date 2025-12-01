@@ -41,6 +41,7 @@ limitations under the License.
 #include "language_sound.h"
 #include "model_basic.h"
 #include "audio_service.h"
+#include "network_basic.h"
 #include "realtime_basic.h"
 #include "wifi_board.h"
 #include "wifi_manager.h"
@@ -87,6 +88,7 @@ public:
     Application(const Application &) = delete;
     Application &operator=(const Application &) = delete;
 
+    // Initialize audio service
     void InitializeAudioService();
 
     // Main application entry point

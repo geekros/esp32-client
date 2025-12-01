@@ -22,6 +22,7 @@ limitations under the License.
 
 // Define the geekros configuration
 #define GEEKROS_SERVICE "https://platform.geekros.com"
+#define GEEKROS_SIGNALING "wss://platform.geekros.com"
 #define GEEKROS_SERVICE_GRK CONFIG_GEEKROS_SERVICE_GRK
 #define GEEKROS_SERVICE_PROJECT_TOKEN CONFIG_GEEKROS_SERVICE_PROJECT_TOKEN
 

@@ -53,4 +53,9 @@ void RuntimeBasic::Init(void)
     esp_log_level_set("Adev_Codec", ESP_LOG_NONE);
     esp_log_level_set("MODEL_LOADER", ESP_LOG_NONE);
     esp_log_level_set("AFE", ESP_LOG_NONE);
+    esp_log_level_set("ping_sock", ESP_LOG_NONE);
+    esp_log_level_set("esp-x509-crt-bundle", ESP_LOG_NONE);
+    esp_log_level_set("esp-tls-mbedtls", ESP_LOG_NONE);
+    esp_log_level_set("EspSsl", ESP_LOG_NONE);
+    esp_log_level_set("Dynamic Impl", ESP_LOG_NONE);
 }

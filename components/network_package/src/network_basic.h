@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef REQUEST_H
-#define REQUEST_H
+#ifndef NETWORK_BASIC_H
+#define NETWORK_BASIC_H
 
 // Include standard headers
 #include <string>
@@ -23,59 +23,50 @@ limitations under the License.
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
-#include <esp_mac.h>
-#include <esp_timer.h>
-#include <esp_http_client.h>
-#include <esp_crt_bundle.h>
+#include <esp_network.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
+// Include common headers
+#include "lwip/netdb.h"
+
 // Include configuration and module headers
 #include "client_config.h"
 
-// Include components headers
-#include "system_basic.h"
-#include "system_time.h"
-
-// Structure to hold HTTP response data
-typedef struct
-{
-    char *buffer;
-    int buffer_len;
-    int data_offset;
-} http_response_t;
-
-// HttpRequest class definition
-class HttpRequest
+// Network basic class
+class NetworkBasic
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
-    // HTTP event handler
-    static esp_err_t EventHandler(esp_http_client_event_t *event);
+    // Network ready check method
+    static bool IsNetworkReady(uint32_t timeout_ms = 10000);
 
 public:
     // Constructor and destructor
-    HttpRequest();
-    ~HttpRequest();
+    NetworkBasic();
+    ~NetworkBasic();
 
-    // Get the singleton instance of the HttpRequest class
-    static HttpRequest &Instance()
+    // Get the singleton instance of the NetworkBasic class
+    static NetworkBasic &Instance()
     {
-        static HttpRequest instance;
+        static NetworkBasic instance;
         return instance;
     }
 
     // Delete copy constructor and assignment operator
-    HttpRequest(const HttpRequest &) = delete;
-    HttpRequest &operator=(const HttpRequest &) = delete;
+    NetworkBasic(const NetworkBasic &) = delete;
+    NetworkBasic &operator=(const NetworkBasic &) = delete;
 
-    // Function to handle HTTP request
-    esp_err_t Request(const std::string &url, esp_http_client_method_t method, const char *post_data, char *response_buf, int response_buf_len);
+    // Network ready notification method
+    void CheckNetwork(uint32_t timeout_ms = 10000);
+
+    // Pure virtual method to get the network interface
+    NetworkInterface *GetNetwork();
 };
 
 #endif

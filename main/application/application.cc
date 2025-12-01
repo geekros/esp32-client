@@ -92,32 +92,32 @@ void Application::Main()
     BoardBasic *board = CreateBoard();
     board->Initialization();
 
-    // Initialize and start audio service
-    auto codec = board->GetAudioCodec();
-    audio_service.Initialize(codec);
-
-    // Set loaded models to audio service
-    audio_service.SetModelsList(models);
-
-    // Define audio callbacks
-    AudioCallbacks audio_callbacks;
-    audio_callbacks.on_send_queue_available = [this]()
-    {
-        xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
-    };
-    audio_callbacks.on_vad_change = [this](bool speaking)
-    {
-        xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
-    };
-    audio_service.SetCallbacks(audio_callbacks);
-
     // Initialize WiFi board
     auto &wifi_board = WifiBoard::Instance();
 
     // Set WiFi board callbacks
     WifiCallbacks wifi_board_callbacks;
-    wifi_board_callbacks.on_access_point = [this]()
+    wifi_board_callbacks.on_access_point = [this, board, models]()
     {
+        // Initialize and start audio service
+        auto codec = board->GetAudioCodec();
+        audio_service.Initialize(codec);
+
+        // Set loaded models to audio service
+        audio_service.SetModelsList(models);
+
+        // Define audio callbacks
+        AudioCallbacks audio_callbacks;
+        audio_callbacks.on_send_queue_available = [this]()
+        {
+            xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
+        };
+        audio_callbacks.on_vad_change = [this](bool speaking)
+        {
+            xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
+        };
+        audio_service.SetCallbacks(audio_callbacks);
+
         // Start audio service
         audio_service.Start();
 
@@ -130,8 +130,33 @@ void Application::Main()
             vTaskDelay(pdMS_TO_TICKS(50));
         }
     };
-    wifi_board_callbacks.on_station = [this]()
+    wifi_board_callbacks.on_station = [this, board, models]()
     {
+        // Check network status
+        NetworkBasic::Instance().CheckNetwork();
+
+        // Start realtime service
+        RealtimeBasic::Instance().RealtimeStart();
+
+        // Initialize and start audio service
+        auto codec = board->GetAudioCodec();
+        audio_service.Initialize(codec);
+
+        // Set loaded models to audio service
+        audio_service.SetModelsList(models);
+
+        // Define audio callbacks
+        AudioCallbacks audio_callbacks;
+        audio_callbacks.on_send_queue_available = [this]()
+        {
+            xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
+        };
+        audio_callbacks.on_vad_change = [this](bool speaking)
+        {
+            xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
+        };
+        audio_service.SetCallbacks(audio_callbacks);
+
         // Start audio service
         audio_service.Start();
 
@@ -143,11 +168,6 @@ void Application::Main()
         {
             vTaskDelay(pdMS_TO_TICKS(50));
         }
-
-        vTaskDelay(pdMS_TO_TICKS(1000));
-
-        // Start realtime service
-        RealtimeBasic::Instance().RealtimeStart();
     };
     wifi_board.SetCallbacks(wifi_board_callbacks);
 
@@ -159,7 +179,7 @@ void Application::Main()
     };
 
     // Create the task with a larger stack size
-    xTaskCreate(application_loop_task, "application_loop", 2048 * 4, this, 3, &main_event_loop_task_handle);
+    xTaskCreate(application_loop_task, "application_loop", 4096, this, 3, &main_event_loop_task_handle);
 
     // Start clock timer with 1 second period
     esp_timer_start_periodic(clock_timer_handle, 1000000);

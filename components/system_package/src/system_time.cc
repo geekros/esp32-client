@@ -61,17 +61,18 @@ std::string SystemTime::GetTimeString()
 }
 
 // Get current Unix timestamp
-time_t SystemTime::GetUnixTimestamp()
+uint64_t SystemTime::GetUnixTimestamp()
 {
-    // Apply timezone
-    ApplyTimezone();
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    return static_cast<uint64_t>(tv.tv_sec);
+}
 
-    // Get current time
-    time_t now;
-    time(&now);
-
-    // Return Unix timestamp
-    return now;
+uint64_t SystemTime::GetUnixTimestampMs()
+{
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    return static_cast<uint64_t>(tv.tv_sec) * 1000ULL + tv.tv_usec / 1000ULL;
 }
 
 // Get current timezone string

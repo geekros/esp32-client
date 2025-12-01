@@ -37,7 +37,7 @@ limitations under the License.
 #include "client_config.h"
 
 // Include components headers
-#include "http_request.h"
+#include "network_https.h"
 
 // Define response access token structure
 typedef struct

@@ -14,7 +14,9 @@
 
 # Define source files directories
 set(SOURCES
-    "src/http_request.cc"
+    "src/network_basic.cc"
+    "src/network_https.cc"
+    "src/network_socket.cc"
 )
 
 # Define include directories
@@ -26,6 +28,6 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES driver system_package esp_http_client esp-tls mbedtls json
+    REQUIRES driver system_package 78__esp-ml307
 )
 

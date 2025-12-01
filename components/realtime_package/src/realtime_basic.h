@@ -32,6 +32,8 @@ limitations under the License.
 
 // Include common headers
 #include "cJSON.h"
+#include "ping/ping_sock.h"
+#include "lwip/netdb.h"
 
 // Include configuration and module headers
 #include "client_config.h"
@@ -40,6 +42,7 @@ limitations under the License.
 #include "auth_basic.h"
 #include "signaling_basic.h"
 #include "system_time.h"
+#include "utils_basic.h"
 
 // Realtime basic class
 class RealtimeBasic
@@ -65,8 +68,7 @@ public:
     RealtimeBasic &operator=(const RealtimeBasic &) = delete;
 
     // Realtime start and stop methods
-    void RealtimeStart();
-    void RealtimeStop();
+    void RealtimeStart(void);
 };
 
 #endif

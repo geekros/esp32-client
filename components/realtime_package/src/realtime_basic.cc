@@ -38,21 +38,50 @@ RealtimeBasic::~RealtimeBasic()
 }
 
 // Realtime start method
-void RealtimeBasic::RealtimeStart()
+void RealtimeBasic::RealtimeStart(void)
 {
     // Get access token
     response_access_token_t token_response = RealtimeAuthorize::Instance().Request();
     if (strlen(token_response.access_token) > 0)
     {
+        // Convert access token to string
+        std::string token_str(token_response.access_token);
+        std::string masked = UtilsBasic::MaskSection(token_str, 30, token_str.size() - 30);
+
         // Log access token info
-        ESP_LOGI(TAG, "Access token %s, Time: %d", token_response.access_token, token_response.time);
+        ESP_LOGI(TAG, "Access token %s, Time: %d", masked.c_str(), token_response.time);
 
         // Set system time
         SystemTime::Instance().SetTimeSec(token_response.time);
-    }
-}
 
-// Realtime stop method
-void RealtimeBasic::RealtimeStop()
-{
+        // Start signaling connection
+        SignalingBasic::Instance().Connection(token_response.access_token);
+
+        auto heartbeat = [](void *arg)
+        {
+            // Get WebSocket instance
+            auto socket = SignalingBasic::Instance().GetSocket();
+
+            while (true)
+            {
+                // Get current time
+                int64_t ts = SystemTime::Instance().GetUnixTimestamp();
+
+                // Create heartbeat message
+                std::string message = "{\"event\": \"client:signaling:heartbeat\", \"data\": \"heartbeat\", \"time\": " + std::to_string(ts) + "}";
+
+                // Send heartbeat message
+                socket->Send(message);
+
+                // Wait for next heartbeat
+                vTaskDelay(pdMS_TO_TICKS(22125));
+            }
+
+            // Delete task
+            vTaskDelete(NULL);
+        };
+
+        // Create heartbeat task
+        xTaskCreate(heartbeat, "realtime_signaling_heartbeat_task", 4096, NULL, 4, NULL);
+    }
 }

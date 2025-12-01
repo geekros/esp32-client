@@ -44,66 +44,75 @@ response_access_token_t RealtimeAuthorize::Request(void)
     response_access_token_t response_data;
 
     // Initialize response data
-    response_data.access_token[0] = '\0';
-    response_data.expiration = 0;
+    memset(&response_data, 0, sizeof(response_data));
 
-    // Response buffer
-    char response[1024];
+    // Initialize HTTPS
+    auto https = NetworkHttps::Instance().InitHttps();
 
-    // Send HTTP GET request to obtain access token
-    if (HttpRequest::Instance().Request("/open/accesstoken?token=" GEEKROS_SERVICE_PROJECT_TOKEN, HTTP_METHOD_GET, NULL, response, sizeof(response)) == ESP_OK)
+    // Open HTTPS connection
+    if (!https->Open("GET", GEEKROS_SERVICE + std::string("/open/accesstoken?token=") + GEEKROS_SERVICE_PROJECT_TOKEN))
     {
-        // Parse JSON response
-        cJSON *root = cJSON_Parse(response);
-        if (!root)
+        ESP_LOGE(TAG, "Failed to open HTTPS connection");
+        return response_data;
+    }
+
+    // Read HTTPS response
+    auto status_code = https->GetStatusCode();
+    if (status_code != 200)
+    {
+        ESP_LOGE(TAG, "HTTPS request failed with status code %d", status_code);
+        return response_data;
+    }
+
+    // Parse response body
+    std::string response_body;
+    response_body = https->ReadAll();
+
+    // Clear HTTPS connection
+    https->Close();
+
+    // Parse JSON response
+    cJSON *root = cJSON_Parse(response_body.c_str());
+    if (!root)
+    {
+        // Return empty response data
+        return response_data;
+    }
+
+    // Get code item
+    cJSON *code = cJSON_GetObjectItem(root, "code");
+    if (code && code->valueint == 0)
+    {
+        // Get data item
+        cJSON *data = cJSON_GetObjectItem(root, "data");
+        if (data)
         {
-            // Return empty response data
-            return response_data;
-        }
-
-        // Get code item
-        cJSON *code = cJSON_GetObjectItem(root, "code");
-        if (code && code->valueint == 0)
-        {
-            // Get data item
-            cJSON *data = cJSON_GetObjectItem(root, "data");
-            if (data)
+            // Get access token item
+            cJSON *access_token = cJSON_GetObjectItem(data, "access_token");
+            if (access_token && access_token->valuestring)
             {
-                // Get access token item
-                cJSON *access_token = cJSON_GetObjectItem(data, "access_token");
-                if (access_token && access_token->valuestring)
-                {
-                    // Copy access token to response data
-                    strncpy(response_data.access_token, access_token->valuestring, sizeof(response_data.access_token) - 1);
-                }
-
-                // Get expiration item
-                cJSON *expiration = cJSON_GetObjectItem(data, "expiration");
-                if (expiration)
-                {
-                    // Set expiration to response data
-                    response_data.expiration = expiration->valueint;
-                }
-
-                // Get time item
-                cJSON *time = cJSON_GetObjectItem(data, "time");
-                if (time)
-                {
-                    // Set time to response data
-                    response_data.time = time->valueint;
-                }
-
-                // Delete JSON root
-                cJSON_Delete(root);
+                // Copy access token to response data
+                strncpy(response_data.access_token, access_token->valuestring, sizeof(response_data.access_token) - 1);
             }
-            else
+
+            // Get expiration item
+            cJSON *expiration = cJSON_GetObjectItem(data, "expiration");
+            if (expiration)
             {
-                // Delete JSON root
-                cJSON_Delete(root);
-
-                // Return empty response data
-                return response_data;
+                // Set expiration to response data
+                response_data.expiration = expiration->valueint;
             }
+
+            // Get time item
+            cJSON *time = cJSON_GetObjectItem(data, "time");
+            if (time)
+            {
+                // Set time to response data
+                response_data.time = time->valueint;
+            }
+
+            // Delete JSON root
+            cJSON_Delete(root);
         }
         else
         {
@@ -113,6 +122,14 @@ response_access_token_t RealtimeAuthorize::Request(void)
             // Return empty response data
             return response_data;
         }
+    }
+    else
+    {
+        // Delete JSON root
+        cJSON_Delete(root);
+
+        // Return empty response data
+        return response_data;
     }
 
     // Return response data

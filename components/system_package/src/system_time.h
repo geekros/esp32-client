@@ -60,7 +60,10 @@ public:
     std::string GetTimeString();
 
     // Get current Unix timestamp
-    time_t GetUnixTimestamp();
+    uint64_t GetUnixTimestamp();
+
+    // Get current Unix timestamp in milliseconds
+    uint64_t GetUnixTimestampMs();
 
     // Set system time
     esp_err_t SetTimeMs(uint64_t timestamp_ms);

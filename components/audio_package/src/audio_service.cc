@@ -116,7 +116,7 @@ void AudioService::Start()
     };
 
     // Create audio input task
-    xTaskCreatePinnedToCore(audio_input_task, "audio_input", 2048 * 3, this, 8, &audio_input_task_handle, 0);
+    xTaskCreatePinnedToCore(audio_input_task, "audio_input", 4096, this, 8, &audio_input_task_handle, 0);
 
     // Define audio output task lambda
     auto audio_output_task = [](void *arg)
@@ -127,7 +127,7 @@ void AudioService::Start()
     };
 
     // Create audio output task
-    xTaskCreate(audio_output_task, "audio_output", 2048 * 2, this, 4, &audio_output_task_handle);
+    xTaskCreate(audio_output_task, "audio_output", 4096, this, 4, &audio_output_task_handle);
 
     // Define opus codec task lambda
     auto opus_codec_task = [](void *arg)
@@ -138,7 +138,7 @@ void AudioService::Start()
     };
 
     // Create opus codec task
-    xTaskCreate(opus_codec_task, "opus_codec", 2048 * 13, this, 2, &opus_codec_task_handle);
+    xTaskCreate(opus_codec_task, "opus_codec", 8192, this, 2, &opus_codec_task_handle);
 }
 
 // Stop audio service

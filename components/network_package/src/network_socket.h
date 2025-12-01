@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef UTILS_BASIC_H
-#define UTILS_BASIC_H
+#ifndef NETWORK_SOCKET_H
+#define NETWORK_SOCKET_H
 
 // Include standard headers
 #include <string>
+#include <memory>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -29,34 +30,41 @@ limitations under the License.
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// UtilsBasic class definition
-class UtilsBasic
+// Include configuration and module headers
+#include "client_config.h"
+
+// Include headers
+#include "web_socket.h"
+#include "network_interface.h"
+#include "network_basic.h"
+#include "system_basic.h"
+#include "system_time.h"
+
+// NetworkSocket class definition
+class NetworkSocket
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
 public:
-    // Constructor and Destructor
-    UtilsBasic();
-    ~UtilsBasic();
+    // Constructor and destructor
+    NetworkSocket();
+    ~NetworkSocket();
 
-    // Get the singleton instance of the UtilsBasic class
-    static UtilsBasic &Instance()
+    // Get the singleton instance of the NetworkSocket class
+    static NetworkSocket &Instance()
     {
-        static UtilsBasic instance;
+        static NetworkSocket instance;
         return instance;
     }
 
     // Delete copy constructor and assignment operator
-    UtilsBasic(const UtilsBasic &) = delete;
-    UtilsBasic &operator=(const UtilsBasic &) = delete;
+    NetworkSocket(const NetworkSocket &) = delete;
+    NetworkSocket &operator=(const NetworkSocket &) = delete;
 
-    // Get captive portal URLs
-    static const char *const *GetCaptiveUrls(size_t &count);
-
-    // Mask section of a string
-    static std::string MaskSection(const std::string text, size_t start, size_t end);
+    // HTTPS initialization method
+    std::unique_ptr<WebSocket> InitSocket();
 };
 
 #endif
