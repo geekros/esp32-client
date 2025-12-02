@@ -57,9 +57,6 @@ limitations under the License.
 class Application
 {
 private:
-    // Clock ticks counter
-    int clock_ticks = 0;
-
     // Event group handle
     EventGroupHandle_t event_group;
 

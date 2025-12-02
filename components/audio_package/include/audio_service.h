@@ -46,7 +46,7 @@ limitations under the License.
 #include "opus_resampler.h"
 
 // Include AFE headers
-#include "afe_audio_processor.h"
+#include "audio_afe_processor.h"
 
 // Include header for board
 #include "board_basic.h"

@@ -74,7 +74,7 @@ private:
     std::string ssid;
     std::string password;
     std::string ip_address;
-    int8_t max_tx_power;
+    int8_t max_tx_power = 60;
     uint8_t remember_bssid;
     int reconnect_count = 0;
     std::function<void(const std::string &ssid)> on_connect;

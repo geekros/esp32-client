@@ -14,12 +14,12 @@
 
 # Define source files directories
 set(SOURCES
-    "src/es8311_audio_codec.cc"
+    "src/es8311_basic.cc"
 )
 
 # Define include directories
 set(INCLUDE_DIRS
-    "src"
+    "include"
 )
 
 # Register the main component

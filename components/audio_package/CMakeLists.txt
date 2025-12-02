@@ -17,13 +17,12 @@ set(SOURCES
     "src/audio_service.cc"
     "src/audio_codec.cc"
     "src/audio_processor.cc"
-    "src/afe_processor/afe_audio_processor.cc"
+    "src/audio_afe_processor.cc"
 )
 
 # Define include directories
 set(INCLUDE_DIRS
-    "src"
-    "src/afe_processor"
+    "include"
 )
 
 # Register the main component

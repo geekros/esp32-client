@@ -21,8 +21,7 @@ set(SOURCES
 
 # Define include directories
 set(INCLUDE_DIRS
-    "src"
-    "src/include"
+    "include"
 )
 
 # Register the main component

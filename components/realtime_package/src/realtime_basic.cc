@@ -55,8 +55,46 @@ void RealtimeBasic::RealtimeStart(void)
         SystemTime::Instance().SetTimeSec(token_response.time);
 
         // Start signaling connection
-        SignalingBasic::Instance().Connection(token_response.access_token);
+        auto &signaling = SignalingBasic::Instance();
 
+        // Set signaling callbacks
+        SignalingCallbacks signaling_callbacks;
+        signaling_callbacks.on_connected_callback = [this]()
+        {
+            ESP_LOGI(TAG, "connected");
+        };
+        signaling_callbacks.on_data_callback = [this](const char *data, size_t len, bool binary)
+        {
+            cJSON *root = cJSON_Parse(data);
+            if (root)
+            {
+                // Get event item
+                cJSON *event = cJSON_GetObjectItem(root, "event");
+                if (event && event->valuestring)
+                {
+                    ESP_LOGI(TAG, "rtc event: %s", event->valuestring);
+                }
+
+                // Delete JSON root
+                cJSON_Delete(root);
+            }
+        };
+        signaling_callbacks.on_disconnected_callback = [this]()
+        {
+            ESP_LOGI(TAG, "disconnected");
+        };
+        signaling_callbacks.on_error_callback = [this](int error_code)
+        {
+            ESP_LOGE(TAG, "error: %d", error_code);
+        };
+
+        // Assign callbacks to signaling instance
+        signaling.SetCallbacks(signaling_callbacks);
+
+        // Assign callbacks to signaling instance
+        signaling.Connection(token_str);
+
+        // Create heartbeat task
         auto heartbeat = [](void *arg)
         {
             // Get WebSocket instance

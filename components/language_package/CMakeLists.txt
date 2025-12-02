@@ -20,7 +20,7 @@ set(SOURCES
 
 # Define include directories
 set(INCLUDE_DIRS
-    "src"
+    "include"
 )
 
 # Determine selected language for embedding sound files

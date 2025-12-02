@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // Include headers
-#include "es8311_audio_codec.h"
+#include "es8311_basic.h"
 
 // Define log tag
 #define TAG "[client:components:codec:es8311]"

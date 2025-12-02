@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef ES8311_CODEC_H
-#define ES8311_CODEC_H
+#ifndef ES8311_BASIC_H
+#define ES8311_BASIC_H
 
 // Include standard headers
 #include <string>

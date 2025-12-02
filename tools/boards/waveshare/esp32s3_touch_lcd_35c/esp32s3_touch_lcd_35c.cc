@@ -33,7 +33,7 @@ limitations under the License.
 // Include component headers
 #include "i2c_device.h"
 #include "axp2101_driver.h"
-#include "es8311_audio_codec.h"
+#include "es8311_basic.h"
 
 // Define log tag
 #define TAG "[client:waveshare:board]"

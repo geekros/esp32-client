@@ -17,11 +17,12 @@ set(SOURCES
     "src/auth_basic.cc"
     "src/realtime_basic.cc"
     "src/signaling_basic.cc"
+    "src/webrtc_basic.cc"
 )
 
 # Define include directories
 set(INCLUDE_DIRS
-    "src"
+    "include"
 )
 
 # Register the main component

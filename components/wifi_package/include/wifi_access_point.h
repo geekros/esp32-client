@@ -110,15 +110,12 @@ public:
     bool Connect(const std::string &ssid, const std::string &password);
     void Save(const std::string &ssid, const std::string &password);
 
-    // Get list of available access points
-    std::vector<wifi_ap_record_t> GetAccessPoints();
-
     // Member variables
     std::mutex mutex;
     std::vector<wifi_ap_record_t> ap_records;
 
     // Configuration parameters
-    int8_t max_tx_power = 52;
+    int8_t max_tx_power = 80;
     bool remember_bssid;
     bool sleep_mode;
 };

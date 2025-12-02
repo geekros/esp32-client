@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef REALTIME_SIGNALING_H
-#define REALTIME_SIGNALING_H
+#ifndef WIFI_SERVER_H
+#define WIFI_SERVER_H
 
 // Include standard headers
 #include <string>
@@ -23,54 +23,61 @@ limitations under the License.
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
-#include <esp_http_client.h>
+#include <esp_http_server.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include common headers
+// Include cJSON header
 #include "cJSON.h"
 
-// Include configuration and module headers
+// Include client configuration header
 #include "client_config.h"
 
-// Include components headers
-#include "network_socket.h"
-#include "system_basic.h"
-#include "system_time.h"
+// Include headers
+#include "wifi_access_point.h"
+#include "language_basic.h"
+#include "system_reboot.h"
+#include "utils_basic.h"
 
-// SignalingBasic class definition
-class SignalingBasic
+// WifiServer class definition
+class WifiServer
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
-    // WebSocket instance
-    std::shared_ptr<WebSocket> socket_instance;
+    // Member variables
+    httpd_handle_t server = NULL;
+
+    // Static functions
+    static esp_err_t StaticHandler(httpd_req_t *req);
+    static esp_err_t ScanHandler(httpd_req_t *req);
+    static esp_err_t SubmitHandler(httpd_req_t *req);
+    static esp_err_t CaptiveHandle(httpd_req_t *req);
+    static esp_err_t IndexHandler(httpd_req_t *req);
 
 public:
-    SignalingBasic();
-    ~SignalingBasic();
+    // Constructor and Destructor
+    WifiServer();
+    ~WifiServer();
 
-    // Get the singleton instance of the SignalingBasic class
-    static SignalingBasic &Instance()
+    // Get singleton instance
+    static WifiServer &Instance()
     {
-        static SignalingBasic instance;
+        static WifiServer instance;
         return instance;
     }
 
     // Delete copy constructor and assignment operator
-    SignalingBasic(const SignalingBasic &) = delete;
-    SignalingBasic &operator=(const SignalingBasic &) = delete;
+    WifiServer(const WifiServer &) = delete;
+    WifiServer &operator=(const WifiServer &) = delete;
 
-    // Connection method
-    void Connection(std::string token);
-
-    // Get WebSocket instance
-    std::shared_ptr<WebSocket> GetSocket();
+    // Server functions
+    void Start();
+    void Stop();
 };
 
 #endif

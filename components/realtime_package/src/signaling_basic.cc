@@ -48,7 +48,10 @@ void SignalingBasic::Connection(std::string token)
     // Define on connected callback
     auto on_connected = [this]()
     {
-        ESP_LOGI(TAG, "Connected");
+        if (callbacks.on_connected_callback)
+        {
+            callbacks.on_connected_callback();
+        }
     };
 
     // Set on connected callback
@@ -57,18 +60,9 @@ void SignalingBasic::Connection(std::string token)
     // Define on data callback
     auto on_data = [this](const char *data, size_t len, bool binary)
     {
-        cJSON *root = cJSON_Parse(data);
-        if (root)
+        if (callbacks.on_data_callback)
         {
-            // Get event item
-            cJSON *event = cJSON_GetObjectItem(root, "event");
-            if (event && event->valuestring)
-            {
-                ESP_LOGI(TAG, "Event: %s", event->valuestring);
-            }
-
-            // Delete JSON root
-            cJSON_Delete(root);
+            callbacks.on_data_callback(data, len, binary);
         }
     };
 
@@ -78,7 +72,10 @@ void SignalingBasic::Connection(std::string token)
     // Define on disconnected callback
     auto on_disconnected = [this]()
     {
-        ESP_LOGI(TAG, "Disconnected");
+        if (callbacks.on_disconnected_callback)
+        {
+            callbacks.on_disconnected_callback();
+        }
     };
 
     // Set on disconnected callback
@@ -87,7 +84,10 @@ void SignalingBasic::Connection(std::string token)
     // Define on error callback
     auto on_error = [this](int error)
     {
-        ESP_LOGE(TAG, "Error: %d", error);
+        if (callbacks.on_error_callback)
+        {
+            callbacks.on_error_callback(error);
+        }
     };
 
     // Set on error callback
@@ -105,4 +105,10 @@ void SignalingBasic::Connection(std::string token)
 std::shared_ptr<WebSocket> SignalingBasic::GetSocket()
 {
     return socket_instance;
+}
+
+// Set signaling callbacks
+void SignalingBasic::SetCallbacks(SignalingCallbacks &cb)
+{
+    callbacks = cb;
 }

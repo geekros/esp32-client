@@ -218,15 +218,7 @@ void Application::Loop()
         // Handle clock tick event
         if (bits & MAIN_EVENT_CLOCK_TICK)
         {
-            // Increment clock ticks
-            clock_ticks++;
-
-            // Print the debug info every 10 seconds
-            if (clock_ticks % 60 == 0)
-            {
-                // Every 10 seconds
-                SystemBasic::Instance().PrintHeaps();
-            }
+            // TODO: Handle clock tick event
         }
 
         // Small delay to prevent tight loop

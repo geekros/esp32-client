@@ -58,13 +58,6 @@ WifiAccessPoint::~WifiAccessPoint()
     }
 }
 
-// Get list of available access points
-std::vector<wifi_ap_record_t> WifiAccessPoint::GetAccessPoints()
-{
-    std::lock_guard<std::mutex> lock(mutex);
-    return ap_records;
-}
-
 // Start the access point
 void WifiAccessPoint::Start()
 {

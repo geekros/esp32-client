@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // Include headers
-#include "afe_audio_processor.h"
+#include "audio_afe_processor.h"
 
 // Define log tag
 #define TAG "[client:components:audio:afe_processor]"

@@ -190,171 +190,6 @@ esp_err_t WifiServer::SubmitHandler(httpd_req_t *req)
     return ESP_OK;
 }
 
-// Config handler
-esp_err_t WifiServer::ConfigHandler(httpd_req_t *req)
-{
-    // Get WifiAccessPoint instance
-    auto *this_ = static_cast<WifiAccessPoint *>(req->user_ctx);
-
-    // Build JSON response
-    cJSON *json = cJSON_CreateObject();
-    if (!json)
-    {
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to create JSON");
-        return ESP_FAIL;
-    }
-
-    // Set response headers
-    cJSON_AddNumberToObject(json, "max_tx_power", this_->max_tx_power);
-    cJSON_AddBoolToObject(json, "remember_bssid", this_->remember_bssid);
-    cJSON_AddBoolToObject(json, "sleep_mode", this_->sleep_mode);
-
-    // Send JSON response
-    char *json_str = cJSON_PrintUnformatted(json);
-    cJSON_Delete(json);
-    if (!json_str)
-    {
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to print JSON");
-        return ESP_FAIL;
-    }
-
-    // Send response
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_set_hdr(req, "Connection", "close");
-    httpd_resp_send(req, json_str, strlen(json_str));
-
-    // Free JSON string
-    free(json_str);
-
-    // Return success
-    return ESP_OK;
-}
-
-// Config submit handler
-esp_err_t WifiServer::ConfigSubmitHandler(httpd_req_t *req)
-{
-    // Read POST data
-    char *buf;
-    size_t buf_len = req->content_len;
-
-    // Limit maximum payload size
-    if (buf_len > 1024)
-    {
-        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Payload too large");
-        return ESP_FAIL;
-    }
-
-    // Allocate buffer
-    buf = (char *)malloc(buf_len + 1);
-    if (!buf)
-    {
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to allocate memory");
-        return ESP_FAIL;
-    }
-
-    // Receive data
-    int ret = httpd_req_recv(req, buf, buf_len);
-    if (ret <= 0)
-    {
-        free(buf);
-        if (ret == HTTPD_SOCK_ERR_TIMEOUT)
-        {
-            httpd_resp_send_408(req);
-        }
-        else
-        {
-            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Failed to receive request");
-        }
-        return ESP_FAIL;
-    }
-    buf[ret] = '\0';
-
-    // Parse JSON data
-    cJSON *json = cJSON_Parse(buf);
-    free(buf);
-    if (!json)
-    {
-        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
-        return ESP_FAIL;
-    }
-
-    // Get WifiAccessPoint instance
-    auto *this_ = static_cast<WifiAccessPoint *>(req->user_ctx);
-
-    // Open NVS handle
-    nvs_handle_t nvs;
-    esp_err_t err = nvs_open(GEEKROS_WIFI_NVS_NAMESPACE, NVS_READWRITE, &nvs);
-    if (err != ESP_OK)
-    {
-        cJSON_Delete(json);
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to open NVS");
-        return ESP_FAIL;
-    }
-
-    // Update max_tx_power
-    cJSON *max_tx_power = cJSON_GetObjectItem(json, "max_tx_power");
-    if (cJSON_IsNumber(max_tx_power))
-    {
-        this_->max_tx_power = max_tx_power->valueint;
-        err = esp_wifi_set_max_tx_power(this_->max_tx_power);
-        if (err != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Failed to set WiFi power: %d", err);
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to set WiFi power");
-            return ESP_FAIL;
-        }
-        err = nvs_set_i8(nvs, "max_tx_power", this_->max_tx_power);
-        if (err != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Failed to save WiFi power: %d", err);
-        }
-    }
-
-    // Update sleep_mode
-    cJSON *remember_bssid = cJSON_GetObjectItem(json, "remember_bssid");
-    if (cJSON_IsBool(remember_bssid))
-    {
-        this_->remember_bssid = cJSON_IsTrue(remember_bssid);
-        err = nvs_set_u8(nvs, "remember_bssid", this_->remember_bssid ? 1 : 0);
-        if (err != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Failed to save remember_bssid: %d", err);
-        }
-    }
-
-    // Update sleep_mode
-    cJSON *sleep_mode = cJSON_GetObjectItem(json, "sleep_mode");
-    if (cJSON_IsBool(sleep_mode))
-    {
-        this_->sleep_mode = cJSON_IsTrue(sleep_mode);
-        err = nvs_set_u8(nvs, "sleep_mode", this_->sleep_mode ? 1 : 0);
-        if (err != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Failed to save sleep_mode: %d", err);
-        }
-    }
-
-    // Commit changes and clean up
-    err = nvs_commit(nvs);
-    nvs_close(nvs);
-    cJSON_Delete(json);
-
-    // Check for errors
-    if (err != ESP_OK)
-    {
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to save configuration");
-        return ESP_FAIL;
-    }
-
-    // Send success response
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_set_hdr(req, "Connection", "close");
-    httpd_resp_send(req, "{\"success\":true}", HTTPD_RESP_USE_STRLEN);
-
-    // Return success
-    return ESP_OK;
-}
-
 // Captive portal handler
 esp_err_t WifiServer::CaptiveHandle(httpd_req_t *req)
 {
@@ -419,11 +254,8 @@ void WifiServer::Start()
     // Initialize HTTP server with default configuration
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.max_uri_handlers = 50;
-    config.max_open_sockets = 4;
-    config.backlog_conn = 8;
-    config.lru_purge_enable = true;
     config.uri_match_fn = httpd_uri_match_wildcard;
-    // 5G Network takes longer to connect
+    // Set timeouts
     config.recv_wait_timeout = 15;
     config.send_wait_timeout = 15;
 
@@ -445,20 +277,6 @@ void WifiServer::Start()
     submit_http.handler = SubmitHandler;
     submit_http.user_ctx = &WifiAccessPoint::Instance();
     ESP_ERROR_CHECK(httpd_register_uri_handler(server, &submit_http));
-
-    httpd_uri_t config_http = {};
-    config_http.uri = "/config";
-    config_http.method = HTTP_GET;
-    config_http.handler = ConfigHandler;
-    config_http.user_ctx = &WifiAccessPoint::Instance();
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &config_http));
-
-    httpd_uri_t config_submit_http = {};
-    config_submit_http.uri = "/config/submit";
-    config_submit_http.method = HTTP_POST;
-    config_submit_http.handler = ConfigSubmitHandler;
-    config_submit_http.user_ctx = &WifiAccessPoint::Instance();
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &config_submit_http));
 
     // Get captive portal URLs
     size_t url_count;
@@ -492,6 +310,4 @@ void WifiServer::Stop()
         httpd_stop(server);
         server = NULL;
     }
-
-    ESP_LOGI(TAG, "WiFi server stopped");
 }
