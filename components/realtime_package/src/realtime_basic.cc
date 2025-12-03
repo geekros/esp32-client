@@ -46,10 +46,10 @@ void RealtimeBasic::RealtimeStart(void)
     {
         // Convert access token to string
         std::string token_str(token_response.access_token);
-        std::string masked = UtilsBasic::MaskSection(token_str, 30, token_str.size() - 30);
+        std::string masked = UtilsBasic::MaskSection(token_str, 20, token_str.size() - 20);
 
         // Log access token info
-        ESP_LOGI(TAG, "Access token %s, Time: %d", masked.c_str(), token_response.time);
+        ESP_LOGI(TAG, "Signaling AccessToken %s, Time: %d", masked.c_str(), token_response.time);
 
         // Set system time
         SystemTime::Instance().SetTimeSec(token_response.time);
@@ -61,7 +61,7 @@ void RealtimeBasic::RealtimeStart(void)
         SignalingCallbacks signaling_callbacks;
         signaling_callbacks.on_connected_callback = [this]()
         {
-            ESP_LOGI(TAG, "connected");
+            ESP_LOGI(TAG, "Signaling Connected");
         };
         signaling_callbacks.on_data_callback = [this](const char *data, size_t len, bool binary)
         {
@@ -72,7 +72,7 @@ void RealtimeBasic::RealtimeStart(void)
                 cJSON *event = cJSON_GetObjectItem(root, "event");
                 if (event && event->valuestring)
                 {
-                    ESP_LOGI(TAG, "rtc event: %s", event->valuestring);
+                    ESP_LOGI(TAG, "Signaling Event: %s", event->valuestring);
                 }
 
                 // Delete JSON root
@@ -81,11 +81,11 @@ void RealtimeBasic::RealtimeStart(void)
         };
         signaling_callbacks.on_disconnected_callback = [this]()
         {
-            ESP_LOGI(TAG, "disconnected");
+            ESP_LOGI(TAG, "Signaling Disconnected");
         };
         signaling_callbacks.on_error_callback = [this](int error_code)
         {
-            ESP_LOGE(TAG, "error: %d", error_code);
+            ESP_LOGE(TAG, "Signaling Error: %d", error_code);
         };
 
         // Assign callbacks to signaling instance
