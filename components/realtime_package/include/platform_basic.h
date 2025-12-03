@@ -14,8 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Include the headers
-#include "webrtc_basic.h"
+#ifndef REALTIME_PLATFORM_H
+#define REALTIME_PLATFORM_H
 
-// Define log tag
-#define TAG "[client:components:realtime:webrtc]"
+// Include standard headers
+#include <string>
+
+// Include ESP headers
+#include <esp_log.h>
+#include <esp_err.h>
+#include <esp_http_client.h>
+
+// Include FreeRTOS headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+
+#endif
