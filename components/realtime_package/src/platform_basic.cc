@@ -19,3 +19,31 @@ limitations under the License.
 
 // Define log tag
 #define TAG "[client:components:realtime:platform]"
+
+// Constructor
+PlatformBasic::PlatformBasic()
+{
+    // Create the event group
+    event_group = xEventGroupCreate();
+}
+
+// Destructor
+PlatformBasic::~PlatformBasic()
+{
+    // Delete the event group
+    if (event_group != nullptr)
+    {
+        // Delete event group
+        vEventGroupDelete(event_group);
+
+        // Set event group to nullptr
+        event_group = nullptr;
+    }
+}
+
+// Platform create peer function
+int PlatformBasic::PlatformCreatePeer()
+{
+    // Create the peer
+    return ESP_OK;
+}

@@ -18,5 +18,6 @@ dependencies:
     78/esp-opus: ^1.0.5
     78/esp-ml307: ~3.3.7
     espressif/esp_libsrtp: ^1.0.0
+    espressif/media_lib_sal: ^0.9.0
     idf:
         version: ">=5.4.0"

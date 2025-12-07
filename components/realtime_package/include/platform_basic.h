@@ -19,6 +19,9 @@ limitations under the License.
 
 // Include standard headers
 #include <string>
+#include <functional>
+#include <vector>
+#include <cstdint>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -29,5 +32,32 @@ limitations under the License.
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+
+// Include common headers
+class PlatformBasic
+{
+private:
+    // Event group handle
+    EventGroupHandle_t event_group;
+
+public:
+    // Constructor and destructor
+    PlatformBasic();
+    ~PlatformBasic();
+
+    // Get the singleton instance of the PlatformBasic class
+    static PlatformBasic &Instance()
+    {
+        static PlatformBasic instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    PlatformBasic(const PlatformBasic &) = delete;
+    PlatformBasic &operator=(const PlatformBasic &) = delete;
+
+    // Platform create peer function
+    int PlatformCreatePeer();
+};
 
 #endif

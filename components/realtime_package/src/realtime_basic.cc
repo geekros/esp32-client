@@ -46,7 +46,7 @@ void RealtimeBasic::RealtimeStart(void)
     {
         // Convert access token to string
         std::string token_str(token_response.access_token);
-        std::string masked = UtilsBasic::MaskSection(token_str, 20, token_str.size() - 20);
+        std::string masked = UtilsBasic::MaskSection(token_str, 20, token_str.size() - 30);
 
         // Log access token info
         ESP_LOGI(TAG, "Signaling AccessToken %s, Time: %d", masked.c_str(), token_response.time);
@@ -73,6 +73,11 @@ void RealtimeBasic::RealtimeStart(void)
                 if (event && event->valuestring)
                 {
                     ESP_LOGI(TAG, "Signaling Event: %s", event->valuestring);
+                    if (event->valuestring == std::string("signaling:connected"))
+                    {
+                        // Call platform connection
+                        PlatformBasic::Instance().PlatformCreatePeer();
+                    }
                 }
 
                 // Delete JSON root
@@ -112,7 +117,7 @@ void RealtimeBasic::RealtimeStart(void)
                 socket->Send(message);
 
                 // Wait for next heartbeat
-                vTaskDelay(pdMS_TO_TICKS(22125));
+                vTaskDelay(pdMS_TO_TICKS(15000));
             }
 
             // Delete task

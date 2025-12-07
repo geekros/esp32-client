@@ -41,6 +41,7 @@ limitations under the License.
 // Include headers
 #include "auth_basic.h"
 #include "signaling_basic.h"
+#include "platform_basic.h"
 #include "system_time.h"
 #include "utils_basic.h"
 
