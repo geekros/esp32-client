@@ -13,11 +13,10 @@
 # limitations under the License.
 
 dependencies:
-    espressif/esp_codec_dev: ~1.5
-    espressif/esp-sr: ~2.1.5
-    78/esp-opus: ^1.0.5
+    espressif/esp_capture: { version: ~0.7, public: true }
+    tempotian/av_render: { version: ~0.9.1, public: true }
+    tempotian/media_lib_sal: ~0.9.0
+    espressif/esp_peer: ~1.2.3
     78/esp-ml307: ~3.3.7
-    espressif/esp_libsrtp: ^1.0.0
-    espressif/media_lib_sal: ^0.9.0
     idf:
         version: ">=5.4.0"

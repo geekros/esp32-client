@@ -24,9 +24,6 @@ limitations under the License.
 #include <esp_log.h>
 #include <esp_err.h>
 
-// Include headers
-#include "audio_codec.h"
-
 // BoardBasic class definition
 class BoardBasic
 {
@@ -36,9 +33,6 @@ public:
 
     // Pure virtual function for board initialization
     virtual void Initialization() = 0;
-
-    // Pure virtual function to get audio codec
-    virtual AudioCodec *GetAudioCodec() = 0;
 };
 
 // Factory function to create a BoardBasic instance

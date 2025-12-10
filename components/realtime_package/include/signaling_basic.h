@@ -33,6 +33,9 @@ limitations under the License.
 // Include configuration and module headers
 #include "client_config.h"
 
+// Include cjson headers
+#include "cJSON.h"
+
 // Include components headers
 #include "network_socket.h"
 #include "system_basic.h"
@@ -83,6 +86,9 @@ public:
 
     // Set signaling callbacks
     void SetCallbacks(SignalingCallbacks &cb);
+
+    // Send signaling message
+    void Send(const std::string &event, const std::string &data_json);
 };
 
 #endif

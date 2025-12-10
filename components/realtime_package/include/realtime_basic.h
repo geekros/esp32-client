@@ -40,10 +40,15 @@ limitations under the License.
 
 // Include headers
 #include "auth_basic.h"
+#include "webrtc_basic.h"
 #include "signaling_basic.h"
-#include "platform_basic.h"
 #include "system_time.h"
 #include "utils_basic.h"
+
+// Define event group bits
+#define REALTIME_EVENT_SIGNALING_CONNECTED (1 << 0)
+#define REALTIME_EVENT_SIGNALING_ANSWER (1 << 1)
+#define REALTIME_EVENT_SIGNALING_CANDIDATE (1 << 2)
 
 // Realtime basic class
 class RealtimeBasic

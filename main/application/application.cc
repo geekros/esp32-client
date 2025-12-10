@@ -26,6 +26,7 @@ Application::Application()
     // Create event group
     event_group = xEventGroupCreate();
 
+    // Define clock timer arguments
     esp_timer_create_args_t clock_timer_args = {
         .callback = [](void *arg)
         {
@@ -37,6 +38,8 @@ Application::Application()
         .name = "application_clock_timer",
         .skip_unhandled_events = true,
     };
+
+    // Create clock timer
     esp_timer_create(&clock_timer_args, &clock_timer_handle);
 }
 
@@ -56,11 +59,6 @@ Application::~Application()
         vEventGroupDelete(event_group);
         event_group = NULL;
     }
-}
-
-// Initialize audio service
-void Application::InitializeAudioService()
-{
 }
 
 // Main application entry point
@@ -85,9 +83,6 @@ void Application::Main()
     // Initialize locale and language components
     LanguageBasic::Instance().Init();
 
-    // Load language configuration
-    srmodel_list_t *models = ModelBasic::Instance().Load();
-
     // Initialize board-specific components
     BoardBasic *board = CreateBoard();
     board->Initialization();
@@ -97,40 +92,11 @@ void Application::Main()
 
     // Set WiFi board callbacks
     WifiCallbacks wifi_board_callbacks;
-    wifi_board_callbacks.on_access_point = [this, board, models]()
+    wifi_board_callbacks.on_access_point = [this, board]()
     {
-        // Initialize and start audio service
-        auto codec = board->GetAudioCodec();
-        audio_service.Initialize(codec);
-
-        // Set loaded models to audio service
-        audio_service.SetModelsList(models);
-
-        // Define audio callbacks
-        AudioCallbacks audio_callbacks;
-        audio_callbacks.on_send_queue_available = [this]()
-        {
-            xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
-        };
-        audio_callbacks.on_vad_change = [this](bool speaking)
-        {
-            xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
-        };
-        audio_service.SetCallbacks(audio_callbacks);
-
-        // Start audio service
-        audio_service.Start();
-
-        // Play WiFi configuration sound
-        audio_service.PlaySound(Lang::Sounds::OGG_WIFI_CONFIG);
-
-        // Wait until audio service is idle
-        while (!audio_service.IsIdle())
-        {
-            vTaskDelay(pdMS_TO_TICKS(50));
-        }
+        ESP_LOGI(TAG, "Entered Access Point Mode");
     };
-    wifi_board_callbacks.on_station = [this, board, models]()
+    wifi_board_callbacks.on_station = [this, board]()
     {
         // Check network status
         NetworkBasic::Instance().CheckNetwork();
@@ -138,36 +104,7 @@ void Application::Main()
         // Start realtime service
         RealtimeBasic::Instance().RealtimeStart();
 
-        // Initialize and start audio service
-        auto codec = board->GetAudioCodec();
-        audio_service.Initialize(codec);
-
-        // Set loaded models to audio service
-        audio_service.SetModelsList(models);
-
-        // Define audio callbacks
-        AudioCallbacks audio_callbacks;
-        audio_callbacks.on_send_queue_available = [this]()
-        {
-            xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
-        };
-        audio_callbacks.on_vad_change = [this](bool speaking)
-        {
-            xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
-        };
-        audio_service.SetCallbacks(audio_callbacks);
-
-        // Start audio service
-        audio_service.Start();
-
-        // Play WiFi success sound
-        audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
-
-        // Wait until audio service is idle
-        while (!audio_service.IsIdle())
-        {
-            vTaskDelay(pdMS_TO_TICKS(50));
-        }
+        Loop();
     };
     wifi_board.SetCallbacks(wifi_board_callbacks);
 
@@ -194,31 +131,14 @@ void Application::Loop()
     // Main application loop
     while (true)
     {
-        // Wait for send audio or VAD change events
-        auto bits = xEventGroupWaitBits(event_group, MAIN_EVENT_SEND_AUDIO | MAIN_EVENT_VAD_CHANGE | MAIN_EVENT_CLOCK_TICK, pdTRUE, pdFALSE, portMAX_DELAY);
-
-        // Handle send audio event
-        if (bits & MAIN_EVENT_SEND_AUDIO)
-        {
-            auto packet = audio_service.PopPacketFromSendQueue();
-            if (packet)
-            {
-                // TODO：Send audio packet to server
-            }
-        }
-
-        // Handle VAD change event
-        if (bits & MAIN_EVENT_VAD_CHANGE)
-        {
-            // Get current VAD state
-            bool speaking = audio_service.IsVoiceDetected();
-            ESP_LOGI(TAG, "VAD State: %s", speaking ? "Speaking" : "Silent");
-        }
+        // Wait for clock tick event
+        auto bits = xEventGroupWaitBits(event_group, MAIN_EVENT_CLOCK_TICK, pdTRUE, pdFALSE, portMAX_DELAY);
 
         // Handle clock tick event
         if (bits & MAIN_EVENT_CLOCK_TICK)
         {
             // TODO: Handle clock tick event
+            // ESP_LOGI(TAG, "Clock Tick Event");
         }
 
         // Small delay to prevent tight loop

@@ -58,4 +58,8 @@ void RuntimeBasic::Init(void)
     esp_log_level_set("esp-tls-mbedtls", ESP_LOG_NONE);
     esp_log_level_set("EspSsl", ESP_LOG_NONE);
     esp_log_level_set("Dynamic Impl", ESP_LOG_NONE);
+    esp_log_level_set("AGENT", ESP_LOG_NONE);
+    esp_log_level_set("PEER_DEF", ESP_LOG_NONE);
+    esp_log_level_set("SCTP", ESP_LOG_NONE);
+    esp_log_level_set("DTLS", ESP_LOG_NONE);
 }

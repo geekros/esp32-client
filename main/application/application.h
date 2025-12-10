@@ -39,8 +39,6 @@ limitations under the License.
 #include "system_time.h"
 #include "language_basic.h"
 #include "language_sound.h"
-#include "model_basic.h"
-#include "audio_service.h"
 #include "network_basic.h"
 #include "realtime_basic.h"
 #include "wifi_board.h"
@@ -48,9 +46,7 @@ limitations under the License.
 #include "wifi_station.h"
 #include "wifi_access_point.h"
 
-// Define event group bits
-#define MAIN_EVENT_SEND_AUDIO (1 << 1)
-#define MAIN_EVENT_VAD_CHANGE (1 << 3)
+// Define main event group bits
 #define MAIN_EVENT_CLOCK_TICK (1 << 6)
 
 // Application class definition
@@ -65,9 +61,6 @@ private:
 
     // Main event loop task handle
     TaskHandle_t main_event_loop_task_handle = nullptr;
-
-    // Audio service instance
-    AudioService audio_service;
 
 public:
     // Constructor and destructor

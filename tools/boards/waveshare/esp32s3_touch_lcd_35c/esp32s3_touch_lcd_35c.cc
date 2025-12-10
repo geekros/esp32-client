@@ -33,7 +33,6 @@ limitations under the License.
 // Include component headers
 #include "i2c_device.h"
 #include "axp2101_driver.h"
-#include "es8311_basic.h"
 
 // Define log tag
 #define TAG "[client:waveshare:board]"
@@ -119,16 +118,6 @@ public:
 
         // Initialize AXP2101 PMIC
         InitializeAXP2101();
-    }
-
-    // Override GetAudioCodec method
-    virtual AudioCodec *GetAudioCodec() override
-    {
-        // Create ES8311 audio codec instance
-        static ES8311AudioCodec audio_codec(i2c_bus, I2C_NUM_0, BOARD_AUDIO_INPUT_SAMPLE_RATE, BOARD_AUDIO_OUTPUT_SAMPLE_RATE, BOARD_I2S_MCLK_GPIO, BOARD_I2S_BCLK_GPIO, BOARD_I2S_WS_GPIO, BOARD_I2S_DOUT_GPIO, BOARD_I2S_DIN_GPIO, BOARD_AUDIO_CODEC_PA_PIN, BOARD_AUDIO_CODEC_ES8311_ADDR);
-
-        // Return audio codec instance
-        return &audio_codec;
     }
 };
 
