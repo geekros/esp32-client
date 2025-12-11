@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef SYSTEM_REBOOT_H
-#define SYSTEM_REBOOT_H
+#ifndef SYSTEM_TIME_H
+#define SYSTEM_TIME_H
 
 // Include standard headers
 #include <string>

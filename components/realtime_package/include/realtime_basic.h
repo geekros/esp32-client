@@ -40,7 +40,7 @@ limitations under the License.
 
 // Include headers
 #include "auth_basic.h"
-#include "webrtc_basic.h"
+#include "peer_basic.h"
 #include "signaling_basic.h"
 #include "system_time.h"
 #include "utils_basic.h"
@@ -50,7 +50,7 @@ limitations under the License.
 #define REALTIME_EVENT_SIGNALING_ANSWER (1 << 1)
 #define REALTIME_EVENT_SIGNALING_CANDIDATE (1 << 2)
 
-// Realtime callbacks structure
+// Define Realtime callbacks structure
 struct RealtimeCallbacks
 {
     std::function<void(std::string event, std::string data)> on_signaling_calledback;
@@ -91,7 +91,7 @@ public:
     // Realtime stop method
     void RealtimeStop(void);
 
-    // Set Realtime basic callbacks
+    // Set realtime callbacks
     void SetCallbacks(RealtimeCallbacks &cb);
 };
 

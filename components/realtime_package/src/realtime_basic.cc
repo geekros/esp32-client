@@ -55,8 +55,31 @@ void RealtimeBasic::RealtimeConnect(void)
         // Set system time
         SystemTime::Instance().SetTimeSec(token_response.time);
 
+        // Get PeerBasic instance
+        auto &peer_instance = PeerBasic::Instance();
+
         // Start signaling connection
-        auto &signaling = SignalingBasic::Instance();
+        auto &signaling_instance = SignalingBasic::Instance();
+
+        // Define peer callbacks
+        PeerCallbacks peer_callbacks;
+
+        // Set offer callback
+        peer_callbacks.on_offer_calledback = [this, &signaling_instance](std::string json_data)
+        {
+            // Send offer via signaling
+            signaling_instance.Send("client:signaling:offer", json_data);
+        };
+
+        // Set candidate callback
+        peer_callbacks.on_candidate_calledback = [this, &signaling_instance](std::string json_data)
+        {
+            // Send candidate via signaling
+            signaling_instance.Send("client:signaling:candidate", json_data);
+        };
+
+        // Assign callbacks to PeerBasic instance
+        peer_instance.SetCallbacks(peer_callbacks);
 
         // Define signaling callbacks
         SignalingCallbacks signaling_callbacks;
@@ -73,9 +96,19 @@ void RealtimeBasic::RealtimeConnect(void)
         };
 
         // Set data callback
-        signaling_callbacks.on_data_callback = [this](const char *data, size_t len, bool binary)
+        signaling_callbacks.on_data_callback = [this, &peer_instance](const char *data, size_t len, bool binary)
         {
-            cJSON *root = cJSON_Parse(data);
+            // Ignore binary messages
+            if (binary)
+            {
+                return;
+            }
+
+            // Convert data to string
+            std::string payload(data, len);
+
+            // Parse JSON payload
+            cJSON *root = cJSON_ParseWithLength(payload.c_str(), payload.size());
             if (root)
             {
                 // Get event item
@@ -87,8 +120,20 @@ void RealtimeBasic::RealtimeConnect(void)
                 // Invoke callback
                 if (callbacks.on_signaling_calledback)
                 {
+                    std::string safe_payload;
+                    char *compact = cJSON_PrintUnformatted(root);
+                    if (compact)
+                    {
+                        safe_payload.assign(compact);
+                        free(compact);
+                    }
+                    else
+                    {
+                        safe_payload = payload;
+                    }
+
                     // Notify signaling disconnected event
-                    callbacks.on_signaling_calledback(event->valuestring, data);
+                    callbacks.on_signaling_calledback(event->valuestring, safe_payload);
                 }
 
                 // Handle signaling connected event
@@ -96,9 +141,6 @@ void RealtimeBasic::RealtimeConnect(void)
                 {
                     // Extract STUN and TURN server info from the message
                     std::vector<std::string> stun_urls;
-                    std::vector<std::string> turn_urls;
-                    std::string turn_username;
-                    std::string turn_credential;
 
                     // Check if data_obj is an object
                     if (cJSON_IsObject(data_obj))
@@ -123,8 +165,8 @@ void RealtimeBasic::RealtimeConnect(void)
                         }
                     }
 
-                    // Notify PeerBasic of signaling connection
-                    WebRTCBasic::Instance().OnSignalingConnected(stun_urls, turn_urls, turn_username, turn_credential);
+                    // Create PeerBasic instance
+                    peer_instance.CreatePeer(stun_urls);
 
                     // Set event group bit for signaling connected
                     if (event_group)
@@ -155,7 +197,7 @@ void RealtimeBasic::RealtimeConnect(void)
                     }
 
                     // Notify PeerBasic of signaling answer
-                    WebRTCBasic::Instance().OnSignalingAnswer(std::string(answer_json));
+                    peer_instance.SetPeerAnswer(std::string(answer_json));
 
                     // Free serialized answer JSON
                     free(answer_json);
@@ -189,7 +231,7 @@ void RealtimeBasic::RealtimeConnect(void)
                     }
 
                     // Notify PeerBasic of signaling candidate
-                    WebRTCBasic::Instance().OnSignalingCandidate(std::string(candidate_json));
+                    peer_instance.SetPeerCandidate(std::string(candidate_json));
 
                     // Free serialized candidate JSON
                     free(candidate_json);
@@ -230,10 +272,10 @@ void RealtimeBasic::RealtimeConnect(void)
         };
 
         // Assign callbacks to signaling instance
-        signaling.SetCallbacks(signaling_callbacks);
+        signaling_instance.SetCallbacks(signaling_callbacks);
 
         // Assign callbacks to signaling instance
-        signaling.Connection(token_str);
+        signaling_instance.Connection(token_str);
 
         // Create heartbeat task
         auto heartbeat = [](void *arg)
@@ -275,28 +317,16 @@ void RealtimeBasic::RealtimeConnect(void)
 // Realtime reconnect method
 void RealtimeBasic::RealtimeReconnect(void)
 {
-    // Stop current realtime connection
-    RealtimeStop();
-
-    // Start a new realtime connection
-    RealtimeConnect();
+    // TODO: Implement Realtime reconnect logic
 }
 
 // Realtime stop method
 void RealtimeBasic::RealtimeStop(void)
 {
-    // Get WebSocket instance
-    auto socket = SignalingBasic::Instance().GetSocket();
-
-    // Check if socket is valid and connected
-    if (socket && socket->IsConnected())
-    {
-        // Close WebSocket connection
-        socket->Close();
-    }
+    // TODO: Implement Realtime stop logic
 }
 
-// Set Realtime basic callbacks
+// Set realtime callbacks
 void RealtimeBasic::SetCallbacks(RealtimeCallbacks &cb)
 {
     // Update callbacks

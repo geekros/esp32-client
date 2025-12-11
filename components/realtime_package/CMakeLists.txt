@@ -15,9 +15,9 @@
 # Define source files directories
 set(SOURCES
     "src/auth_basic.cc"
+    "src/peer_basic.cc"
     "src/realtime_basic.cc"
     "src/signaling_basic.cc"
-    "src/webrtc_basic.cc"
 )
 
 # Define include directories
