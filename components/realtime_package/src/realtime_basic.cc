@@ -33,12 +33,13 @@ RealtimeBasic::~RealtimeBasic()
     // Delete event group
     if (event_group)
     {
+        // Delete event group
         vEventGroupDelete(event_group);
     }
 }
 
-// Realtime start method
-void RealtimeBasic::RealtimeStart(void)
+// Realtime connect method
+void RealtimeBasic::RealtimeConnect(void)
 {
     // Get access token
     response_access_token_t token_response = RealtimeAuthorize::Instance().Request();
@@ -63,7 +64,12 @@ void RealtimeBasic::RealtimeStart(void)
         // Set connected callback
         signaling_callbacks.on_connected_callback = [this]()
         {
-            ESP_LOGI(TAG, "Signaling Connected");
+            // Invoke callback
+            if (callbacks.on_signaling_calledback)
+            {
+                // Notify signaling connected event
+                callbacks.on_signaling_calledback("signaling:connected", "");
+            }
         };
 
         // Set data callback
@@ -75,16 +81,19 @@ void RealtimeBasic::RealtimeStart(void)
                 // Get event item
                 cJSON *event = cJSON_GetObjectItem(root, "event");
 
-                ESP_LOGI(TAG, "Signaling Event: %s", event->valuestring);
-
                 // Get data item
                 cJSON *data_obj = cJSON_GetObjectItem(root, "data");
+
+                // Invoke callback
+                if (callbacks.on_signaling_calledback)
+                {
+                    // Notify signaling disconnected event
+                    callbacks.on_signaling_calledback(event->valuestring, data);
+                }
 
                 // Handle signaling connected event
                 if (strcmp(event->valuestring, "signaling:connected") == 0)
                 {
-                    ESP_LOGI(TAG, "Signaling Connection Established");
-
                     // Extract STUN and TURN server info from the message
                     std::vector<std::string> stun_urls;
                     std::vector<std::string> turn_urls;
@@ -108,47 +117,10 @@ void RealtimeBasic::RealtimeStart(void)
                                     if (cJSON_IsString(item) && item->valuestring)
                                     {
                                         stun_urls.emplace_back(item->valuestring);
-                                        ESP_LOGI(TAG, "STUN URL: %s", item->valuestring);
                                     }
                                 }
                             }
                         }
-
-                        // Extract TURN URLs, username, and credential
-                        // cJSON *turns = cJSON_GetObjectItem(data_obj, "turns");
-                        // if (cJSON_IsObject(turns))
-                        // {
-                        //     // Extract URLs array
-                        //     cJSON *urls = cJSON_GetObjectItem(turns, "urls");
-                        //     if (cJSON_IsArray(urls))
-                        //     {
-                        //         cJSON *item = nullptr;
-                        //         cJSON_ArrayForEach(item, urls)
-                        //         {
-                        //             if (cJSON_IsString(item) && item->valuestring)
-                        //             {
-                        //                 turn_urls.emplace_back(item->valuestring);
-                        //                 ESP_LOGI(TAG, "TURN URL: %s", item->valuestring);
-                        //             }
-                        //         }
-                        //     }
-                        //     cJSON *username = cJSON_GetObjectItem(turns, "username");
-                        //     if (cJSON_IsString(username) && username->valuestring)
-                        //     {
-                        //         turn_username = username->valuestring;
-                        //         ESP_LOGI(TAG, "TURN Username: %s", username->valuestring);
-                        //     }
-                        //     cJSON *credential = cJSON_GetObjectItem(turns, "credential");
-                        //     if (cJSON_IsString(credential) && credential->valuestring)
-                        //     {
-                        //         turn_credential = credential->valuestring;
-                        //         ESP_LOGI(TAG, "TURN Credential: %s", credential->valuestring);
-                        //     }
-                        // }
-                    }
-                    else
-                    {
-                        ESP_LOGW(TAG, "Signaling Connected data is not an object");
                     }
 
                     // Notify PeerBasic of signaling connection
@@ -165,12 +137,10 @@ void RealtimeBasic::RealtimeStart(void)
                 // Handle signaling answer and candidate events
                 if (strcmp(event->valuestring, "signaling:answer") == 0)
                 {
-                    ESP_LOGI(TAG, "Signaling Answer Received");
-
                     // Check if data_obj is an object
                     if (!cJSON_IsObject(data_obj))
                     {
-                        ESP_LOGE(TAG, "signaling:answer 'data' is not object");
+                        // Delete JSON root and return
                         cJSON_Delete(root);
                         return;
                     }
@@ -179,12 +149,10 @@ void RealtimeBasic::RealtimeStart(void)
                     char *answer_json = cJSON_PrintUnformatted(data_obj);
                     if (!answer_json)
                     {
-                        ESP_LOGE(TAG, "Failed to serialize answer json");
+                        // Delete JSON root and return
                         cJSON_Delete(root);
                         return;
                     }
-
-                    ESP_LOGI(TAG, "Remote SDP Answer: %s", answer_json);
 
                     // Notify PeerBasic of signaling answer
                     WebRTCBasic::Instance().OnSignalingAnswer(std::string(answer_json));
@@ -203,12 +171,10 @@ void RealtimeBasic::RealtimeStart(void)
                 // Handle signaling candidate event
                 if (strcmp(event->valuestring, "signaling:candidate") == 0)
                 {
-                    ESP_LOGI(TAG, "Signaling Candidate Received");
-
                     // Check  data_obj is an object
                     if (!cJSON_IsObject(data_obj))
                     {
-                        ESP_LOGE(TAG, "signaling:candidate 'data' is not object");
+                        // Delete JSON root and return
                         cJSON_Delete(root);
                         return;
                     }
@@ -217,12 +183,10 @@ void RealtimeBasic::RealtimeStart(void)
                     char *candidate_json = cJSON_PrintUnformatted(data_obj);
                     if (!candidate_json)
                     {
-                        ESP_LOGE(TAG, "Failed to serialize candidate json");
+                        // Delete JSON root and return
                         cJSON_Delete(root);
                         return;
                     }
-
-                    ESP_LOGI(TAG, "Remote ICE Candidate: %s", candidate_json);
 
                     // Notify PeerBasic of signaling candidate
                     WebRTCBasic::Instance().OnSignalingCandidate(std::string(candidate_json));
@@ -246,13 +210,23 @@ void RealtimeBasic::RealtimeStart(void)
         // Set disconnected and error callbacks
         signaling_callbacks.on_disconnected_callback = [this]()
         {
-            ESP_LOGI(TAG, "Signaling Disconnected");
+            // Invoke callback
+            if (callbacks.on_signaling_calledback)
+            {
+                // Notify signaling disconnected event
+                callbacks.on_signaling_calledback("signaling:disconnected", "");
+            }
         };
 
         // Set error callback
         signaling_callbacks.on_error_callback = [this](int error_code)
         {
-            ESP_LOGE(TAG, "Signaling Error: %d", error_code);
+            // Invoke callback
+            if (callbacks.on_signaling_calledback)
+            {
+                // Notify signaling disconnected event
+                callbacks.on_signaling_calledback("signaling:error", "");
+            }
         };
 
         // Assign callbacks to signaling instance
@@ -270,9 +244,15 @@ void RealtimeBasic::RealtimeStart(void)
             // Heartbeat loop
             while (true)
             {
+                // Check if socket is connected
                 if (!socket->IsConnected())
                 {
-                    ESP_LOGW(TAG, "Signaling WebSocket disconnected, stopping heartbeat");
+                    // Invoke callback
+                    if (RealtimeBasic::Instance().callbacks.on_signaling_calledback)
+                    {
+                        // Notify signaling disconnected event
+                        RealtimeBasic::Instance().callbacks.on_signaling_calledback("signaling:heartbeat:stopped", "");
+                    }
                     break;
                 }
 
@@ -290,4 +270,35 @@ void RealtimeBasic::RealtimeStart(void)
         // Create heartbeat task
         xTaskCreate(heartbeat, "realtime_signaling_heartbeat_task", 4096, NULL, 4, NULL);
     }
+}
+
+// Realtime reconnect method
+void RealtimeBasic::RealtimeReconnect(void)
+{
+    // Stop current realtime connection
+    RealtimeStop();
+
+    // Start a new realtime connection
+    RealtimeConnect();
+}
+
+// Realtime stop method
+void RealtimeBasic::RealtimeStop(void)
+{
+    // Get WebSocket instance
+    auto socket = SignalingBasic::Instance().GetSocket();
+
+    // Check if socket is valid and connected
+    if (socket && socket->IsConnected())
+    {
+        // Close WebSocket connection
+        socket->Close();
+    }
+}
+
+// Set Realtime basic callbacks
+void RealtimeBasic::SetCallbacks(RealtimeCallbacks &cb)
+{
+    // Update callbacks
+    callbacks = cb;
 }

@@ -82,10 +82,10 @@ public:
     void InitializeAudioService();
 
     // Main application entry point
-    void Main();
+    void ApplicationMain();
 
     // Main application loop
-    void Loop();
+    void ApplicationLoop();
 };
 
 #endif

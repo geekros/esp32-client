@@ -62,7 +62,7 @@ Application::~Application()
 }
 
 // Main application entry point
-void Application::Main()
+void Application::ApplicationMain()
 {
     // Log the GeekROS version
     ESP_LOGI(TAG, "Client Version: %s", GEEKROS_VERSION);
@@ -98,20 +98,28 @@ void Application::Main()
     };
     wifi_board_callbacks.on_station = [this, board]()
     {
+        ESP_LOGI(TAG, "Entered Station Mode");
+
         // Check network status
         NetworkBasic::Instance().CheckNetwork();
 
-        // Start realtime service
-        RealtimeBasic::Instance().RealtimeStart();
+        // Set Realtime basic callbacks
+        RealtimeCallbacks realtime_callbacks;
+        realtime_callbacks.on_signaling_calledback = [this](std::string event, std::string data)
+        {
+            ESP_LOGI(TAG, "Realtime Signaling Event: %s %s", event.c_str(), data.c_str());
+        };
+        RealtimeBasic::Instance().SetCallbacks(realtime_callbacks);
 
-        Loop();
+        // Connect realtime service
+        RealtimeBasic::Instance().RealtimeConnect();
     };
     wifi_board.SetCallbacks(wifi_board_callbacks);
 
     // Create main event loop task
     auto application_loop_task = [](void *param)
     {
-        ((Application *)param)->Loop();
+        ((Application *)param)->ApplicationLoop();
         vTaskDelete(nullptr);
     };
 
@@ -126,7 +134,7 @@ void Application::Main()
 }
 
 // Main application loop
-void Application::Loop()
+void Application::ApplicationLoop()
 {
     // Main application loop
     while (true)

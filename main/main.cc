@@ -48,5 +48,5 @@ extern "C" void app_main(void)
 
     // Start the application main function
     auto &application = Application::Instance();
-    application.Main();
+    application.ApplicationMain();
 }

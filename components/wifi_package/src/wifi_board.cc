@@ -104,5 +104,6 @@ void WifiBoard::EnterWifiStation()
 // Set WiFi callbacks
 void WifiBoard::SetCallbacks(WifiCallbacks &cb)
 {
+    // Update callbacks
     callbacks = cb;
 }

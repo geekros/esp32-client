@@ -50,12 +50,21 @@ limitations under the License.
 #define REALTIME_EVENT_SIGNALING_ANSWER (1 << 1)
 #define REALTIME_EVENT_SIGNALING_CANDIDATE (1 << 2)
 
+// Realtime callbacks structure
+struct RealtimeCallbacks
+{
+    std::function<void(std::string event, std::string data)> on_signaling_calledback;
+};
+
 // Realtime basic class
 class RealtimeBasic
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
+
+    // Realtime callbacks
+    RealtimeCallbacks callbacks;
 
 public:
     // Constructor and destructor
@@ -73,8 +82,17 @@ public:
     RealtimeBasic(const RealtimeBasic &) = delete;
     RealtimeBasic &operator=(const RealtimeBasic &) = delete;
 
-    // Realtime start and stop methods
-    void RealtimeStart(void);
+    // Realtime connect method
+    void RealtimeConnect(void);
+
+    // Realtime reconnect method
+    void RealtimeReconnect(void);
+
+    // Realtime stop method
+    void RealtimeStop(void);
+
+    // Set Realtime basic callbacks
+    void SetCallbacks(RealtimeCallbacks &cb);
 };
 
 #endif
