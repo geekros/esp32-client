@@ -14,10 +14,7 @@
 
 # Define source files directories
 set(SOURCES
-    "src/auth_basic.cc"
-    "src/peer_basic.cc"
-    "src/realtime_basic.cc"
-    "src/signaling_basic.cc"
+    "src/black_image.cc"
 )
 
 # Define include directories
@@ -29,5 +26,6 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES utils_package assets_package system_package network_package esp_http_client json espressif__esp_peer
+    REQUIRES driver
 )
+

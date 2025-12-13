@@ -25,11 +25,21 @@ PeerBasic::PeerBasic()
 {
     // Create the event group
     event_group = xEventGroupCreate();
+
+    // Create the send mutex
+    send_mutex = xSemaphoreCreateMutex();
 }
 
 // Destructor
 PeerBasic::~PeerBasic()
 {
+    // Delete the send mutex
+    if (send_mutex != nullptr)
+    {
+        vSemaphoreDelete(send_mutex);
+        send_mutex = nullptr;
+    }
+
     // Delete the event group
     if (event_group != nullptr)
     {
@@ -58,7 +68,13 @@ int PeerBasic::OnStateHandler(esp_peer_state_t state, void *ctx)
         // Start audio sending task if not already running
         if (self->peer_send_audio_task_handle == nullptr)
         {
-            xTaskCreatePinnedToCore(self->PeerSendAudioTask, "peer_send_audio_task", 4096, self, 5, &self->peer_send_audio_task_handle, 0);
+            xTaskCreatePinnedToCore(self->PeerSendAudioTask, "peer_send_audio_task", 4096, self, 5, &self->peer_send_audio_task_handle, 1);
+        }
+
+        // Start video sending task if not already running
+        if (self->peer_send_video_task_handle == nullptr && self->enable_camera)
+        {
+            xTaskCreatePinnedToCore(self->PeerSendVideoTask, "peer_send_video_task", 4096, self, 5, &self->peer_send_video_task_handle, 1);
         }
 
         // Update peer connected state
@@ -320,7 +336,11 @@ void PeerBasic::PeerSendAudioTask(void *param)
         }
 
         // Send audio frame
-        esp_peer_send_audio(self->client_peer, &frame);
+        if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
+        {
+            esp_peer_send_audio(self->client_peer, &frame);
+            xSemaphoreGive(self->send_mutex);
+        }
 
         // Delay for a short period
         vTaskDelay(pdMS_TO_TICKS(20));
@@ -355,8 +375,8 @@ void PeerBasic::PeerSendVideoTask(void *param)
 
     // Define video frame
     esp_peer_video_frame_t frame = {};
-    frame.data = nullptr;
-    frame.size = 0;
+    frame.data = (uint8_t *)AssetBlackImage::Data();
+    frame.size = AssetBlackImage::Length();
 
     // Peer send video task loop
     while (self->peer_send_video_task_running)
@@ -368,11 +388,15 @@ void PeerBasic::PeerSendVideoTask(void *param)
             break;
         }
 
-        // Send video frame (nullptr for testing)
-        esp_peer_send_video(self->client_peer, &frame);
+        // Send video frame
+        if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
+        {
+            esp_peer_send_video(self->client_peer, &frame);
+            xSemaphoreGive(self->send_mutex);
+        }
 
         // Delay for a short period
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(1000 / CONFIG_GEEKROS_CAMERA_FPS));
     }
 
     // Set peer send video task running flag to false
@@ -402,8 +426,9 @@ esp_err_t PeerBasic::CreatePeer(const std::vector<std::string> &stun_urls)
     peer_extra_config.data_ch_cfg.recv_cache_size = 1536;
     peer_extra_config.data_ch_cfg.send_cache_size = 1536;
     peer_extra_config.rtp_cfg.audio_recv_jitter.cache_size = 1024;
-    peer_extra_config.rtp_cfg.send_pool_size = 1024;
-    peer_extra_config.rtp_cfg.send_queue_num = 10;
+    peer_extra_config.rtp_cfg.video_recv_jitter.cache_size = 1024;
+    peer_extra_config.rtp_cfg.send_pool_size = 4096;
+    peer_extra_config.rtp_cfg.send_queue_num = 20;
 
     // Define peer configuration
     esp_peer_cfg_t peer_config = {};
@@ -413,6 +438,42 @@ esp_err_t PeerBasic::CreatePeer(const std::vector<std::string> &stun_urls)
     peer_config.audio_info.codec = ESP_PEER_AUDIO_CODEC_OPUS;
     peer_config.audio_info.sample_rate = 16000;
     peer_config.audio_info.channel = 1;
+
+#ifdef CONFIG_GEEKROS_CAMERA_RESOLUTION_320x240
+    // Enable camera flag
+    enable_camera = true;
+
+    // Set peer video configuration
+    peer_config.video_dir = ESP_PEER_MEDIA_DIR_SEND_RECV;
+    peer_config.video_info.codec = ESP_PEER_VIDEO_CODEC_MJPEG;
+    peer_config.video_info.width = 320;
+    peer_config.video_info.height = 240;
+    peer_config.video_info.fps = CONFIG_GEEKROS_CAMERA_FPS;
+#endif
+
+#ifdef CONFIG_GEEKROS_CAMERA_RESOLUTION_640x480
+    // Enable camera flag
+    enable_camera = true;
+
+    // Set peer video configuration
+    peer_config.video_dir = ESP_PEER_MEDIA_DIR_SEND_RECV;
+    peer_config.video_info.codec = ESP_PEER_VIDEO_CODEC_MJPEG;
+    peer_config.video_info.width = 640;
+    peer_config.video_info.height = 480;
+    peer_config.video_info.fps = CONFIG_GEEKROS_CAMERA_FPS;
+#endif
+
+#ifdef CONFIG_GEEKROS_CAMERA_RESOLUTION_1280x720
+    // Enable camera flag
+    enable_camera = true;
+
+    // Set peer video configuration
+    peer_config.video_dir = ESP_PEER_MEDIA_DIR_SEND_RECV;
+    peer_config.video_info.codec = ESP_PEER_VIDEO_CODEC_MJPEG;
+    peer_config.video_info.width = 1280;
+    peer_config.video_info.height = 720;
+    peer_config.video_info.fps = CONFIG_GEEKROS_CAMERA_FPS;
+#endif
 
     // Set peer data channel configuration
     peer_config.enable_data_channel = true;

@@ -29,6 +29,7 @@ limitations under the License.
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "freertos/event_groups.h"
 
 // Include cJSON headers
@@ -37,6 +38,9 @@ limitations under the License.
 // Include ESP Peer headers
 #include "esp_peer.h"
 #include "esp_peer_default.h"
+
+// Include headers
+#include "black_image.h"
 
 // Define peer callbacks structure
 struct PeerCallbacks
@@ -52,6 +56,9 @@ private:
     // Event group handle
     EventGroupHandle_t event_group;
 
+    // Send mutex
+    SemaphoreHandle_t send_mutex = nullptr;
+
     // Peer callbacks
     PeerCallbacks callbacks;
 
@@ -60,6 +67,11 @@ private:
 
     // Peer connected flag
     bool peer_connected = false;
+
+    // Enable camera flag
+    bool enable_camera = false;
+    // Camera FPS
+    uint8_t camera_fps = 15;
 
     // Peer state handler
     static int OnStateHandler(esp_peer_state_t state, void *ctx);
