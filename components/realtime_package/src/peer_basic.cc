@@ -494,7 +494,7 @@ void PeerBasic::PeerSendAudioTask(void *param)
         if (xQueueReceive(self->audio_tx_queue, &frame, pdMS_TO_TICKS(10)) == pdTRUE)
         {
             // Validate frame data
-            if (frame.data || frame.size > 0)
+            if (frame.data && frame.size > 0)
             {
                 // Send audio frame
                 if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)

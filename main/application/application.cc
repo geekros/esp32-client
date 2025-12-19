@@ -133,18 +133,6 @@ void Application::ApplicationMain()
         // Check network status
         NetworkBasic::Instance().CheckNetwork();
 
-        // Start audio service
-        audio_service.Start();
-
-        // Play WiFi success sound
-        audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
-
-        // Wait until audio service is idle
-        while (!audio_service.IsIdle())
-        {
-            vTaskDelay(pdMS_TO_TICKS(50));
-        }
-
         // Set Realtime basic callbacks
         RealtimeCallbacks realtime_callbacks;
         realtime_callbacks.on_signaling_calledback = [this](std::string event, std::string data)
@@ -158,6 +146,21 @@ void Application::ApplicationMain()
             ESP_LOGI(TAG, "Realtime Peer Event: event=%s", event.c_str());
             ESP_LOGI(TAG, "Realtime Peer Event: data=%s", data.c_str());
             ESP_LOGI(TAG, "Realtime Peer Event: %s", "-----------------");
+
+            if (event == "peer:datachannel:open" && label == "event")
+            {
+                // Start audio service
+                audio_service.Start();
+
+                // Play WiFi configuration sound
+                audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
+
+                // Wait until audio service is idle
+                while (!audio_service.IsIdle())
+                {
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+            }
         };
         realtime_callbacks.on_peer_audio_info_calledback = [this](std::string label, std::string event, esp_peer_audio_stream_info_t *info)
         {
