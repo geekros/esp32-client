@@ -56,30 +56,85 @@ void RealtimeBasic::RealtimeConnect(void)
         SystemTime::Instance().SetTimeSec(token_response.time);
 
         // Get PeerBasic instance
-        auto &peer_instance = PeerBasic::Instance();
+        peer_instance = &PeerBasic::Instance();
 
         // Start signaling connection
-        auto &signaling_instance = SignalingBasic::Instance();
+        signaling_instance = &SignalingBasic::Instance();
 
         // Define peer callbacks
         PeerCallbacks peer_callbacks;
 
         // Set offer callback
-        peer_callbacks.on_offer_calledback = [this, &signaling_instance](std::string json_data)
+        peer_callbacks.on_offer_calledback = [this](std::string json_data)
         {
             // Send offer via signaling
-            signaling_instance.Send("client:signaling:offer", json_data);
+            signaling_instance->Send("client:signaling:offer", json_data);
         };
 
         // Set candidate callback
-        peer_callbacks.on_candidate_calledback = [this, &signaling_instance](std::string json_data)
+        peer_callbacks.on_candidate_calledback = [this](std::string json_data)
         {
             // Send candidate via signaling
-            signaling_instance.Send("client:signaling:candidate", json_data);
+            signaling_instance->Send("client:signaling:candidate", json_data);
+        };
+
+        // Set data channel callback
+        peer_callbacks.on_datachannel_calledback = [this](std::string label, std::string event, std::string data)
+        {
+            // Invoke callback
+            if (callbacks.on_peer_calledback)
+            {
+                // Notify peer data channel event
+                callbacks.on_peer_calledback(label, event, data);
+            }
+        };
+
+        // Set audio info callback
+        peer_callbacks.on_audio_info_calledback = [this](std::string label, std::string event, esp_peer_audio_stream_info_t *info)
+        {
+            // Invoke callback
+            if (callbacks.on_peer_audio_info_calledback)
+            {
+                // Notify audio info event
+                callbacks.on_peer_audio_info_calledback(label, event, info);
+            }
+        };
+
+        // Set video info callback
+        peer_callbacks.on_video_info_calledback = [this](std::string label, std::string event, esp_peer_video_stream_info_t *info)
+        {
+            // Invoke callback
+            if (callbacks.on_peer_video_info_calledback)
+            {
+                // Notify video info event
+                callbacks.on_peer_video_info_calledback(label, event, info);
+            }
+        };
+
+        // Set audio frame received callback
+        peer_callbacks.on_audio_frame_received = [this](std::string label, std::string event, const esp_peer_audio_frame_t *frame)
+        {
+            // Invoke callback
+            if (callbacks.on_peer_audio_calledback)
+            {
+                // Notify audio frame received event
+                callbacks.on_peer_audio_calledback(label, event, frame);
+            }
+        };
+
+        // Set video frame received callback
+        peer_callbacks.on_video_frame_received = [this](std::string label, std::string event, const esp_peer_video_frame_t *frame)
+        {
+            // Invoke callback
+            if (callbacks.on_peer_video_calledback)
+            {
+                // Notify video frame received event
+                callbacks.on_peer_video_calledback(label, event, frame);
+            }
         };
 
         // Assign callbacks to PeerBasic instance
-        peer_instance.SetCallbacks(peer_callbacks);
+        peer_instance->SetCallbacks(peer_callbacks);
 
         // Define signaling callbacks
         SignalingCallbacks signaling_callbacks;
@@ -91,12 +146,12 @@ void RealtimeBasic::RealtimeConnect(void)
             if (callbacks.on_signaling_calledback)
             {
                 // Notify signaling connected event
-                callbacks.on_signaling_calledback("signaling:connected", "");
+                callbacks.on_signaling_calledback("signaling:connected", "signaling connected");
             }
         };
 
         // Set data callback
-        signaling_callbacks.on_data_callback = [this, &peer_instance](const char *data, size_t len, bool binary)
+        signaling_callbacks.on_data_callback = [this](const char *data, size_t len, bool binary)
         {
             // Ignore binary messages
             if (binary)
@@ -166,7 +221,7 @@ void RealtimeBasic::RealtimeConnect(void)
                     }
 
                     // Create PeerBasic instance
-                    peer_instance.CreatePeer(stun_urls);
+                    peer_instance->CreatePeer(stun_urls);
 
                     // Set event group bit for signaling connected
                     if (event_group)
@@ -197,7 +252,7 @@ void RealtimeBasic::RealtimeConnect(void)
                     }
 
                     // Notify PeerBasic of signaling answer
-                    peer_instance.SetPeerAnswer(std::string(answer_json));
+                    peer_instance->SetPeerAnswer(std::string(answer_json));
 
                     // Free serialized answer JSON
                     free(answer_json);
@@ -231,7 +286,7 @@ void RealtimeBasic::RealtimeConnect(void)
                     }
 
                     // Notify PeerBasic of signaling candidate
-                    peer_instance.SetPeerCandidate(std::string(candidate_json));
+                    peer_instance->SetPeerCandidate(std::string(candidate_json));
 
                     // Free serialized candidate JSON
                     free(candidate_json);
@@ -272,10 +327,10 @@ void RealtimeBasic::RealtimeConnect(void)
         };
 
         // Assign callbacks to signaling instance
-        signaling_instance.SetCallbacks(signaling_callbacks);
+        signaling_instance->SetCallbacks(signaling_callbacks);
 
         // Assign callbacks to signaling instance
-        signaling_instance.Connection(token_str);
+        signaling_instance->Connection(token_str);
 
         // Create heartbeat task
         auto heartbeat = [](void *arg)
@@ -314,21 +369,23 @@ void RealtimeBasic::RealtimeConnect(void)
     }
 }
 
-// Realtime reconnect method
-void RealtimeBasic::RealtimeReconnect(void)
-{
-    // TODO: Implement Realtime reconnect logic
-}
-
-// Realtime stop method
-void RealtimeBasic::RealtimeStop(void)
-{
-    // TODO: Implement Realtime stop logic
-}
-
 // Set realtime callbacks
 void RealtimeBasic::SetCallbacks(RealtimeCallbacks &cb)
 {
     // Update callbacks
     callbacks = cb;
+}
+
+// Get peer instance
+PeerBasic *RealtimeBasic::GetPeerInstance(void)
+{
+    // Return PeerBasic instance
+    return peer_instance;
+}
+
+// Get signaling instance
+SignalingBasic *RealtimeBasic::GetSignalingInstance(void)
+{
+    // Return SignalingBasic instance
+    return signaling_instance;
 }

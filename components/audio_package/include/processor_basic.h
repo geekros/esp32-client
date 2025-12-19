@@ -14,11 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef BOARD_BASIC_H
-#define BOARD_BASIC_H
+#ifndef AUDIO_PROCESSOR_H
+#define AUDIO_PROCESSOR_H
 
 // Include standard headers
 #include <string>
+#include <vector>
+#include <functional>
 
 // Include ESP headers
 #include <esp_log.h>
@@ -29,28 +31,32 @@ limitations under the License.
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include codec basic header
+// Include headers
+#include "model_basic.h"
 #include "codec_basic.h"
 
-// BoardBasic class definition
-class BoardBasic
+// AudioProcessor class definition
+class AudioProcessor
 {
-private:
+protected:
     // Event group handle
     EventGroupHandle_t event_group;
 
 public:
-    // Virtual destructor
-    virtual ~BoardBasic() = default;
+    // Constructor and destructor
+    AudioProcessor();
+    virtual ~AudioProcessor();
 
-    // Pure virtual function for board initialization
-    virtual void Initialization() = 0;
-
-    // Pure virtual function to get the audio codec
-    virtual AudioCodec *GetAudioCodec() = 0;
+    // Define public methods
+    virtual void Initialize(AudioCodec *codec, int frame_duration_ms) = 0;
+    virtual void Feed(std::vector<int16_t> &&data) = 0;
+    virtual void Start() = 0;
+    virtual void Stop() = 0;
+    virtual bool IsRunning() = 0;
+    virtual void OnOutput(std::function<void(std::vector<int16_t> &&data)> callback) = 0;
+    virtual void OnVadStateChange(std::function<void(bool speaking)> callback) = 0;
+    virtual size_t GetFeedSize() = 0;
+    virtual void EnableDeviceAec(bool enable) = 0;
 };
-
-// Factory function to create a BoardBasic instance
-extern BoardBasic *CreateBoard();
 
 #endif

@@ -70,7 +70,7 @@ void Application::ApplicationMain()
     // Check if GeekROS service GRK and project token are configured
     if (GEEKROS_SERVICE_GRK == NULL || strlen(GEEKROS_SERVICE_GRK) == 0 || GEEKROS_SERVICE_PROJECT_TOKEN == NULL || strlen(GEEKROS_SERVICE_PROJECT_TOKEN) == 0)
     {
-        ESP_LOGE(TAG, "Please configure GEEKROS_SERVICE_GRK and GEEKROS_SERVICE_PROJECT_TOKEN in menuconfig");
+        ESP_LOGW(TAG, "Please configure GEEKROS_SERVICE_GRK and GEEKROS_SERVICE_PROJECT_TOKEN in menuconfig");
         return;
     }
 
@@ -90,24 +90,106 @@ void Application::ApplicationMain()
     // Initialize WiFi board
     auto &wifi_board = WifiBoard::Instance();
 
+    // Get audio codec from board
+    auto *audio_codec = board->GetAudioCodec();
+
+    // Initialize audio service
+    audio_service.Initialize(audio_codec);
+
+    // Define audio callbacks
+    AudioServiceCallbacks audio_service_callbacks;
+    audio_service_callbacks.on_send_queue_available = [this]()
+    {
+        xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
+    };
+    audio_service_callbacks.on_vad_change = [this](bool speaking)
+    {
+        xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
+    };
+    audio_service.SetCallbacks(audio_service_callbacks);
+
     // Set WiFi board callbacks
     WifiCallbacks wifi_board_callbacks;
-    wifi_board_callbacks.on_access_point = [this, board]()
+    wifi_board_callbacks.on_access_point = [this, board, audio_codec]()
     {
         ESP_LOGI(TAG, "Entered Access Point Mode");
+
+        // Start audio service
+        audio_service.Start();
+
+        // Play WiFi configuration sound
+        audio_service.PlaySound(Lang::Sounds::OGG_WIFI_CONFIG);
+
+        // Wait until audio service is idle
+        while (!audio_service.IsIdle())
+        {
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
     };
-    wifi_board_callbacks.on_station = [this, board]()
+    wifi_board_callbacks.on_station = [this, board, audio_codec]()
     {
         ESP_LOGI(TAG, "Entered Station Mode");
 
         // Check network status
         NetworkBasic::Instance().CheckNetwork();
 
+        // Start audio service
+        audio_service.Start();
+
+        // Play WiFi success sound
+        audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
+
+        // Wait until audio service is idle
+        while (!audio_service.IsIdle())
+        {
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+
         // Set Realtime basic callbacks
         RealtimeCallbacks realtime_callbacks;
         realtime_callbacks.on_signaling_calledback = [this](std::string event, std::string data)
         {
             ESP_LOGI(TAG, "Realtime Signaling Event: %s %s", event.c_str(), data.c_str());
+        };
+        realtime_callbacks.on_peer_calledback = [this](std::string label, std::string event, std::string data)
+        {
+            ESP_LOGI(TAG, "Realtime Peer Event: %s", "-----------------");
+            ESP_LOGI(TAG, "Realtime Peer Event: label=%s", label.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Event: event=%s", event.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Event: data=%s", data.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Event: %s", "-----------------");
+        };
+        realtime_callbacks.on_peer_audio_info_calledback = [this](std::string label, std::string event, esp_peer_audio_stream_info_t *info)
+        {
+            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: %s", "-----------------");
+            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: label=%s", label.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: event=%s", event.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: codec=%d, sample_rate=%d, channel=%d", info->codec, info->sample_rate, info->channel);
+            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: %s", "-----------------");
+        };
+        realtime_callbacks.on_peer_video_info_calledback = [this](std::string label, std::string event, esp_peer_video_stream_info_t *info)
+        {
+            ESP_LOGI(TAG, "Realtime Peer Video Info Event: %s", "-----------------");
+            ESP_LOGI(TAG, "Realtime Peer Video Info Event: label=%s", label.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Video Info Event: event=%s", event.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Video Info Event: codec=%d, width=%d, height=%d, fps=%d", info->codec, info->width, info->height, info->fps);
+            ESP_LOGI(TAG, "Realtime Peer Video Info Event: %s", "-----------------");
+        };
+        realtime_callbacks.on_peer_audio_calledback = [this](std::string label, std::string event, const esp_peer_audio_frame_t *frame)
+        {
+            ESP_LOGI(TAG, "Realtime Peer Audio Event: %s", "-----------------");
+            ESP_LOGI(TAG, "Realtime Peer Audio Event: label=%s", label.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Audio Event: event=%s", event.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Audio Event: frame pts=%u, size=%d", frame->pts, frame->size);
+            ESP_LOGI(TAG, "Realtime Peer Audio Event: %s", "-----------------");
+        };
+        realtime_callbacks.on_peer_video_calledback = [this](std::string label, std::string event, const esp_peer_video_frame_t *frame)
+        {
+            ESP_LOGI(TAG, "Realtime Peer Video Event: %s", "-----------------");
+            ESP_LOGI(TAG, "Realtime Peer Video Event: label=%s", label.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Video Event: event=%s", event.c_str());
+            ESP_LOGI(TAG, "Realtime Peer Video Event: frame pts=%u, size=%d", frame->pts, frame->size);
+            ESP_LOGI(TAG, "Realtime Peer Video Event: %s", "-----------------");
         };
         RealtimeBasic::Instance().SetCallbacks(realtime_callbacks);
 
@@ -123,14 +205,14 @@ void Application::ApplicationMain()
         vTaskDelete(nullptr);
     };
 
+    // Start network
+    wifi_board.StartNetwork();
+
     // Create the task with a larger stack size
     xTaskCreate(application_loop_task, "application_loop", 4096, this, 3, &main_event_loop_task_handle);
 
     // Start clock timer with 1 second period
     esp_timer_start_periodic(clock_timer_handle, 1000000);
-
-    // Start network
-    wifi_board.StartNetwork();
 }
 
 // Main application loop

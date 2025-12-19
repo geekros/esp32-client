@@ -143,10 +143,76 @@ add_custom_target(copy_static_assets_language ALL
     DEPENDS create_assets_language_dir
 )
 
+# ==========================================================================================
+# GEEKROS: ESP-SR model packer (calling movemodel.py from esp-sr component)
+# ==========================================================================================
+idf_build_get_property(build_components BUILD_COMPONENTS)
+
+function(find_component_by_pattern PATTERN COMPONENT_VAR PATH_VAR)
+    foreach(COMPONENT ${build_components})
+        if(COMPONENT MATCHES "${PATTERN}")
+            set(${COMPONENT_VAR} ${COMPONENT} PARENT_SCOPE)
+            idf_component_get_property(COMPONENT_PATH ${COMPONENT} COMPONENT_DIR)
+            set(${PATH_VAR} "${COMPONENT_PATH}" PARENT_SCOPE)
+            break()
+        endif()
+    endforeach()
+endfunction()
+
+find_component_by_pattern("espressif__esp-sr" ESP_SR_COMPONENT ESP_SR_COMPONENT_PATH)
+if(ESP_SR_COMPONENT_PATH)
+    message(STATUS "GEEKROS: ESP-SR found at ${ESP_SR_COMPONENT_PATH}")
+
+    set(ESP_SR_MODEL_PATH "${ESP_SR_COMPONENT_PATH}/model")
+    set(MOVEMODEL_SCRIPT "${ESP_SR_MODEL_PATH}/movemodel.py")
+
+    set(SDKCONFIG_PATH "${PROJECT_DIR}/sdkconfig")
+
+    set(SR_BUILD_DIR "${CMAKE_BINARY_DIR}/srmodels")
+    set(SR_MODELS_BIN "${SR_BUILD_DIR}/srmodels.bin")
+
+    add_custom_target(create_srmodels_dir
+        COMMAND ${CMAKE_COMMAND} -E echo "GEEKROS: Creating build/srmodels directory..."
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${SR_BUILD_DIR}
+        COMMENT "Creating build/srmodels directory..."
+    )
+
+    add_custom_command(
+        OUTPUT ${SR_MODELS_BIN}
+        COMMAND ${CMAKE_COMMAND} -E echo "GEEKROS: Packing SR models via movemodel.py..."
+        COMMAND ${Python3_EXECUTABLE} ${MOVEMODEL_SCRIPT}
+                -d1 ${SDKCONFIG_PATH}
+                -d2 ${ESP_SR_COMPONENT_PATH}
+                -d3 ${CMAKE_BINARY_DIR}
+        DEPENDS ${SDKCONFIG_PATH} create_srmodels_dir
+        VERBATIM
+    )
+
+    add_custom_target(gen_srmodels ALL DEPENDS ${SR_MODELS_BIN})
+
+    set(MODEL_BUILD_DIR ${CMAKE_BINARY_DIR}/assets/model)
+
+    add_custom_target(create_assets_model_dir
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${MODEL_BUILD_DIR}
+        COMMENT "Creating build/assets/model directory..."
+    )
+
+    add_custom_target(copy_static_assets_model ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying model bin to build/assets/model..."
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${SR_MODELS_BIN}
+                ${MODEL_BUILD_DIR}/srmodels.bin
+        DEPENDS create_assets_model_dir gen_srmodels
+        COMMENT "Copying model assets: srmodels.bin"
+    )
+else()
+    message(WARNING "GEEKROS: ESP-SR component not found. Skipping model packing.")
+endif()
+
 # ----------------------------------------------------------------------
 # Create SPIFFS partition image from the assets directory
 # ----------------------------------------------------------------------
 spiffs_create_partition_image(assets ${CMAKE_BINARY_DIR}/assets
     FLASH_IN_PROJECT
-    DEPENDS copy_static_assets_html copy_static_assets_language
+    DEPENDS copy_static_assets_html copy_static_assets_language copy_static_assets_model
 )

@@ -12,11 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-dependencies:
-    espressif/esp_codec_dev: ~1.5
-    espressif/esp_peer: ~1.2.3
-    espressif/esp-sr: ~2.1.5
-    78/esp-ml307: ~3.3.7
-    78/esp-opus: ^1.0.5
-    idf:
-        version: ">=5.4.0"
+# Define source files directories
+set(SOURCES
+    "src/opus_decoder.cc"
+    "src/opus_encoder.cc"
+    "src/opus_resampler.cc"
+)
+
+# Define include directories
+set(INCLUDE_DIRS
+    "include"
+)
+
+# Register the main component
+idf_component_register(
+    SRCS ${SOURCES}
+    INCLUDE_DIRS ${INCLUDE_DIRS}
+    REQUIRES driver 78__esp-opus
+)

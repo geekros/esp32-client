@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef BOARD_BASIC_H
-#define BOARD_BASIC_H
+#ifndef SRMODEL_LOAD_H
+#define SRMODEL_LOAD_H
 
 // Include standard headers
 #include <string>
@@ -23,34 +23,43 @@ limitations under the License.
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
+#include <esp_heap_caps.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include codec basic header
-#include "codec_basic.h"
+// Include project-specific headers
+#include "client_config.h"
 
-// BoardBasic class definition
-class BoardBasic
+// Include headers
+#include "model_path.h"
+
+class ModelBasic
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
 public:
-    // Virtual destructor
-    virtual ~BoardBasic() = default;
+    // Constructor and destructor
+    ModelBasic();
+    ~ModelBasic();
 
-    // Pure virtual function for board initialization
-    virtual void Initialization() = 0;
+    // Get the singleton instance of the ModelBasic class
+    static ModelBasic &Instance()
+    {
+        static ModelBasic instance;
+        return instance;
+    }
 
-    // Pure virtual function to get the audio codec
-    virtual AudioCodec *GetAudioCodec() = 0;
+    // Delete copy constructor and assignment operator
+    ModelBasic(const ModelBasic &) = delete;
+    ModelBasic &operator=(const ModelBasic &) = delete;
+
+    // Load model
+    srmodel_list_t *Load(void);
 };
-
-// Factory function to create a BoardBasic instance
-extern BoardBasic *CreateBoard();
 
 #endif

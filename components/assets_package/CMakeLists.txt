@@ -15,6 +15,7 @@
 # Define source files directories
 set(SOURCES
     "src/black_image.cc"
+    "src/model_basic.cc"
 )
 
 # Define include directories
@@ -26,6 +27,6 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES driver
+    REQUIRES driver espressif__esp-sr
 )
 

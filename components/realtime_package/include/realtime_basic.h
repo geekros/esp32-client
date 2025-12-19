@@ -38,6 +38,10 @@ limitations under the License.
 // Include configuration and module headers
 #include "client_config.h"
 
+// Include ESP Peer headers
+#include "esp_peer.h"
+#include "esp_peer_default.h"
+
 // Include headers
 #include "auth_basic.h"
 #include "peer_basic.h"
@@ -54,6 +58,11 @@ limitations under the License.
 struct RealtimeCallbacks
 {
     std::function<void(std::string event, std::string data)> on_signaling_calledback;
+    std::function<void(std::string label, std::string event, std::string data)> on_peer_calledback;
+    std::function<void(std::string label, std::string event, esp_peer_audio_stream_info_t *info)> on_peer_audio_info_calledback;
+    std::function<void(std::string label, std::string event, esp_peer_video_stream_info_t *info)> on_peer_video_info_calledback;
+    std::function<void(std::string label, std::string event, const esp_peer_audio_frame_t *frame)> on_peer_audio_calledback;
+    std::function<void(std::string label, std::string event, const esp_peer_video_frame_t *frame)> on_peer_video_calledback;
 };
 
 // Realtime basic class
@@ -65,6 +74,12 @@ private:
 
     // Realtime callbacks
     RealtimeCallbacks callbacks;
+
+    // PeerBasic instance
+    PeerBasic *peer_instance;
+
+    // SignalingBasic instance
+    SignalingBasic *signaling_instance;
 
 public:
     // Constructor and destructor
@@ -85,14 +100,14 @@ public:
     // Realtime connect method
     void RealtimeConnect(void);
 
-    // Realtime reconnect method
-    void RealtimeReconnect(void);
-
-    // Realtime stop method
-    void RealtimeStop(void);
-
     // Set realtime callbacks
     void SetCallbacks(RealtimeCallbacks &cb);
+
+    // Get peer instance
+    PeerBasic *GetPeerInstance(void);
+
+    // Get signaling instance
+    SignalingBasic *GetSignalingInstance(void);
 };
 
 #endif

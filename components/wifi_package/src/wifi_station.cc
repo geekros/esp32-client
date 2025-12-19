@@ -257,6 +257,9 @@ void WifiStation::StartConnect()
         wifi_config.sta.bssid_set = true;
     }
 
+    // Set scan threshold to WPA2_PSK
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+
     // Set WiFi configuration
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 

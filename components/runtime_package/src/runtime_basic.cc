@@ -39,27 +39,23 @@ RuntimeBasic::~RuntimeBasic()
 // Initialize basic runtime components
 void RuntimeBasic::Init(void)
 {
-    // Disable WiFi logging
-    esp_log_level_set("AFE_CONFIG", ESP_LOG_NONE);
-    esp_log_level_set("pp", ESP_LOG_NONE);
-    esp_log_level_set("wifi", ESP_LOG_NONE);
-    esp_log_level_set("net80211", ESP_LOG_NONE);
-    esp_log_level_set("wifi_init", ESP_LOG_NONE);
-    esp_log_level_set("phy_init", ESP_LOG_NONE);
-    esp_log_level_set("esp_netif_lwip", ESP_LOG_NONE);
-    esp_log_level_set("esp_netif_handlers", ESP_LOG_NONE);
-    esp_log_level_set("I2S_IF", ESP_LOG_NONE);
-    esp_log_level_set("ES8311", ESP_LOG_NONE);
-    esp_log_level_set("Adev_Codec", ESP_LOG_NONE);
-    esp_log_level_set("MODEL_LOADER", ESP_LOG_NONE);
-    esp_log_level_set("AFE", ESP_LOG_NONE);
-    esp_log_level_set("ping_sock", ESP_LOG_NONE);
-    esp_log_level_set("esp-x509-crt-bundle", ESP_LOG_NONE);
+// Disable WiFi logging
+#ifdef CONFIG_GEEKROS_DISABLE_DEBUG_LOGGING
+    esp_log_level_set("pp", ESP_LOG_WARN);
+    esp_log_level_set("net80211", ESP_LOG_WARN);
+    esp_log_level_set("wifi", ESP_LOG_WARN);
+    esp_log_level_set("wifi_init", ESP_LOG_WARN);
+    esp_log_level_set("phy_init", ESP_LOG_WARN);
+    esp_log_level_set("esp_netif_lwip", ESP_LOG_WARN);
+    esp_log_level_set("esp_netif_handlers", ESP_LOG_WARN);
+    esp_log_level_set("esp-x509-crt-bundle", ESP_LOG_WARN);
     esp_log_level_set("esp-tls-mbedtls", ESP_LOG_NONE);
     esp_log_level_set("EspSsl", ESP_LOG_NONE);
-    esp_log_level_set("Dynamic Impl", ESP_LOG_NONE);
+    esp_log_level_set("DTLS", ESP_LOG_WARN);
+    esp_log_level_set("PEER_DEF", ESP_LOG_ERROR);
     esp_log_level_set("AGENT", ESP_LOG_NONE);
-    esp_log_level_set("PEER_DEF", ESP_LOG_NONE);
-    esp_log_level_set("SCTP", ESP_LOG_NONE);
-    esp_log_level_set("DTLS", ESP_LOG_NONE);
+    esp_log_level_set("SCTP", ESP_LOG_WARN);
+    esp_log_level_set("ES8311", ESP_LOG_WARN);
+    esp_log_level_set("main_task", ESP_LOG_WARN);
+#endif
 }

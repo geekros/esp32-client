@@ -33,6 +33,7 @@ limitations under the License.
 // Include component headers
 #include "i2c_device.h"
 #include "axp2101_driver.h"
+#include "es8311_audio_codec.h"
 
 // Define log tag
 #define TAG "[client:waveshare:board]"
@@ -98,12 +99,14 @@ private:
             },
         };
 
+        // Create I2C master bus
         ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_cfg, &i2c_bus));
     }
 
     // Private method to initialize AXP2101 PMIC
     void InitializeAXP2101()
     {
+        // Create AXP2101 PMIC instance
         pmic = new Pmic(i2c_bus, 0x34);
     }
 
@@ -111,7 +114,7 @@ public:
     // Override Initialization method
     void Initialization() override
     {
-        ESP_LOGI(TAG, BOARD_NAME);
+        ESP_LOGI(TAG, "%s %s", BOARD_NAME, CONFIG_IDF_TARGET);
 
         // Initialize I2C
         InitializeI2C();
@@ -119,11 +122,24 @@ public:
         // Initialize AXP2101 PMIC
         InitializeAXP2101();
     }
+
+    // Override GetAudioCodec method
+    virtual AudioCodec *GetAudioCodec() override
+    {
+        // Create ES8311 audio codec instance
+        static ES8311AudioCodec audio_codec(i2c_bus, I2C_NUM_0, BOARD_AUDIO_INPUT_SAMPLE_RATE, BOARD_AUDIO_OUTPUT_SAMPLE_RATE, BOARD_I2S_MCLK_GPIO, BOARD_I2S_BCLK_GPIO, BOARD_I2S_WS_GPIO, BOARD_I2S_DOUT_GPIO, BOARD_I2S_DIN_GPIO, BOARD_AUDIO_CODEC_PA_PIN, BOARD_AUDIO_CODEC_ES8311_ADDR);
+
+        // Return audio codec instance
+        return &audio_codec;
+    }
 };
 
 // Factory function to create a BoardBasic instance
 BoardBasic *CreateBoard()
 {
+    // Return a static CustomBoard instance
     static CustomBoard instance;
+
+    // Return the instance
     return &instance;
 }

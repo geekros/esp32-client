@@ -124,6 +124,16 @@ menu "GEEKROS Client Configuration"
         endchoice
     endmenu
 
+    # Debug Configuration
+    menu "Debug Configuration"
+        # Enable Debug Logging
+        config GEEKROS_DISABLE_DEBUG_LOGGING
+            bool "Disable Debug Logging"
+            default y
+            help
+                Disable debug logging to reduce firmware size. Enable this option for production builds.
+    endmenu
+
     # Development Board Configuration
     menu "Development board configuration"
         # Include auto-generated board configuration

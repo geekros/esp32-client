@@ -209,6 +209,21 @@ int PeerBasic::OnMessageHandler(esp_peer_msg_t *msg, void *ctx)
 // Video info handler
 int PeerBasic::OnVideoInfoHandler(esp_peer_video_stream_info_t *info, void *ctx)
 {
+    // Cast context to PeerBasic instance
+    PeerBasic *self = static_cast<PeerBasic *>(ctx);
+    if (!self || !info)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Invoke video info callback
+    if (self->callbacks.on_video_info_calledback)
+    {
+        // Invoke video info callback
+        self->callbacks.on_video_info_calledback("video", "peer:video:info", info);
+    }
+
     // Return success
     return ESP_OK;
 }
@@ -216,6 +231,21 @@ int PeerBasic::OnVideoInfoHandler(esp_peer_video_stream_info_t *info, void *ctx)
 // Video data handler
 int PeerBasic::OnVideoDataHandler(esp_peer_video_frame_t *frame, void *ctx)
 {
+    // Cast context to PeerBasic instance
+    PeerBasic *self = static_cast<PeerBasic *>(ctx);
+    if (!self || !frame)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Invoke video frame received callback
+    if (self->callbacks.on_video_frame_received)
+    {
+        // Invoke video frame received callback
+        self->callbacks.on_video_frame_received("video", "peer:video:frame", frame);
+    }
+
     // Return success
     return ESP_OK;
 }
@@ -223,6 +253,21 @@ int PeerBasic::OnVideoDataHandler(esp_peer_video_frame_t *frame, void *ctx)
 // Audio info handler
 int PeerBasic::OnAudioInfoHandler(esp_peer_audio_stream_info_t *info, void *ctx)
 {
+    // Cast context to PeerBasic instance
+    PeerBasic *self = static_cast<PeerBasic *>(ctx);
+    if (!self || !info)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Invoke audio info callback
+    if (self->callbacks.on_audio_info_calledback)
+    {
+        // Invoke audio info callback
+        self->callbacks.on_audio_info_calledback("audio", "peer:audio:info", info);
+    }
+
     // Return success
     return ESP_OK;
 }
@@ -230,6 +275,21 @@ int PeerBasic::OnAudioInfoHandler(esp_peer_audio_stream_info_t *info, void *ctx)
 // Audio data handler
 int PeerBasic::OnAudioDataHandler(esp_peer_audio_frame_t *frame, void *ctx)
 {
+    // Cast context to PeerBasic instance
+    PeerBasic *self = static_cast<PeerBasic *>(ctx);
+    if (!self || !frame)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Invoke audio frame received callback
+    if (self->callbacks.on_audio_frame_received)
+    {
+        // Invoke audio frame received callback
+        self->callbacks.on_audio_frame_received("audio", "peer:audio:frame", frame);
+    }
+
     // Return success
     return ESP_OK;
 }
@@ -237,6 +297,30 @@ int PeerBasic::OnAudioDataHandler(esp_peer_audio_frame_t *frame, void *ctx)
 // Data channel open handler
 int PeerBasic::OnDataChannelOpenHandler(esp_peer_data_channel_info_t *ch, void *ctx)
 {
+    // Cast context to PeerBasic instance
+    PeerBasic *self = static_cast<PeerBasic *>(ctx);
+    if (!self || !ch)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Update data channels map
+    {
+        std::lock_guard<std::mutex> lock(self->data_channels_mutex);
+        self->data_channels[ch->stream_id] = {
+            .stream_id = ch->stream_id,
+            .label = std::string(ch->label),
+        };
+    }
+
+    // Invoke data channel opened callback
+    if (self->callbacks.on_datachannel_calledback)
+    {
+        // Invoke data channel opened callback
+        self->callbacks.on_datachannel_calledback(std::string(ch->label), "peer:datachannel:open", "");
+    }
+
     // Return success
     return ESP_OK;
 }
@@ -244,6 +328,47 @@ int PeerBasic::OnDataChannelOpenHandler(esp_peer_data_channel_info_t *ch, void *
 // Data channel data handler
 int PeerBasic::OnDataChannelHandler(esp_peer_data_frame_t *frame, void *ctx)
 {
+    // Cast context to PeerBasic instance
+    PeerBasic *self = static_cast<PeerBasic *>(ctx);
+    if (!self || !frame)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    PeerDataChannelMeta meta;
+    bool found = false;
+
+    // Retrieve data channel meta
+    {
+        std::lock_guard<std::mutex> lock(self->data_channels_mutex);
+        auto it = self->data_channels.find(frame->stream_id);
+        if (it != self->data_channels.end())
+        {
+            meta = it->second;
+            found = true;
+        }
+        else
+        {
+            // Unknown data channel, return
+            return ESP_OK;
+        }
+    }
+
+    // Invoke data channel data callback
+    if (self->callbacks.on_datachannel_calledback && found)
+    {
+        // Create data string from frame data
+        std::string data_str;
+        if (frame->size > 0 && frame->data != nullptr)
+        {
+            data_str.assign(reinterpret_cast<char *>(frame->data), frame->size);
+        }
+
+        // Invoke data channel data callback
+        self->callbacks.on_datachannel_calledback(meta.label, "peer:datachannel:data", data_str);
+    }
+
     // Return success
     return ESP_OK;
 }
@@ -251,6 +376,27 @@ int PeerBasic::OnDataChannelHandler(esp_peer_data_frame_t *frame, void *ctx)
 // Data channel close handler
 int PeerBasic::OnDataChannelCloseHandler(esp_peer_data_channel_info_t *ch, void *ctx)
 {
+    // Cast context to PeerBasic instance
+    PeerBasic *self = static_cast<PeerBasic *>(ctx);
+    if (!self || !ch)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Update data channels map
+    {
+        std::lock_guard<std::mutex> lock(self->data_channels_mutex);
+        self->data_channels.erase(ch->stream_id);
+    }
+
+    // Invoke data channel closed callback
+    if (self->callbacks.on_datachannel_calledback)
+    {
+        // Invoke data channel closed callback
+        self->callbacks.on_datachannel_calledback(std::string(ch->label), "peer:datachannel:close", "");
+    }
+
     // Return success
     return ESP_OK;
 }
@@ -319,11 +465,18 @@ void PeerBasic::PeerSendAudioTask(void *param)
     // Set peer send audio task running flag to true
     self->peer_send_audio_task_running = true;
 
-    // Define a simple Opus silence frame
-    static const uint8_t opus_silence_frame[3] = {0xF8, 0xFF, 0xFE};
+    // Define audio frame
     esp_peer_audio_frame_t frame = {};
-    frame.data = (uint8_t *)opus_silence_frame;
-    frame.size = 3;
+
+    // Opus silence frame (RFC-compliant)
+    static const uint8_t opus_silence_frame[3] = {0xF8, 0xFF, 0xFE};
+    esp_peer_audio_frame_t silence = {};
+    silence.data = (uint8_t *)opus_silence_frame;
+    silence.size = sizeof(opus_silence_frame);
+    silence.pts = 0;
+
+    const TickType_t silence_interval = pdMS_TO_TICKS(20); // 20ms is safe for Opus
+    TickType_t last_send_tick = xTaskGetTickCount();
 
     // Peer send audio task loop
     while (self->peer_send_audio_task_running)
@@ -331,19 +484,50 @@ void PeerBasic::PeerSendAudioTask(void *param)
         // Check if peer task is running and peer handle is valid
         if (!self->peer_task_running || self->client_peer == nullptr)
         {
-            ESP_LOGW(TAG, "Peer task not running or peer handle invalid, exiting audio send task");
             break;
         }
 
-        // Send audio frame
-        if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
+        // Send silence frame if no audio frame is available
+        bool sent = false;
+
+        // Receive audio frame from queue
+        if (xQueueReceive(self->audio_tx_queue, &frame, pdMS_TO_TICKS(10)) == pdTRUE)
         {
-            esp_peer_send_audio(self->client_peer, &frame);
-            xSemaphoreGive(self->send_mutex);
+            // Validate frame data
+            if (frame.data || frame.size > 0)
+            {
+                // Send audio frame
+                if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
+                {
+                    // Send audio frame
+                    esp_peer_send_audio(self->client_peer, &frame);
+
+                    // Release mutex
+                    xSemaphoreGive(self->send_mutex);
+
+                    // Mark as sent
+                    sent = true;
+                }
+            }
         }
 
-        // Delay for a short period
-        vTaskDelay(pdMS_TO_TICKS(20));
+        // Send silence frame if no frame was sent
+        TickType_t now = xTaskGetTickCount();
+        if (!sent && (now - last_send_tick) >= silence_interval)
+        {
+            // Send silence frame
+            if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
+            {
+                // Send silence frame
+                esp_peer_send_audio(self->client_peer, &silence);
+
+                // Release mutex
+                xSemaphoreGive(self->send_mutex);
+
+                // Update last send tick
+                last_send_tick = now;
+            }
+        }
     }
 
     // Set peer send audio task running flag to false
@@ -384,19 +568,28 @@ void PeerBasic::PeerSendVideoTask(void *param)
         // Check if peer task is running and peer handle is valid
         if (!self->peer_task_running || self->client_peer == nullptr)
         {
-            ESP_LOGW(TAG, "Peer task not running or peer handle invalid, exiting video send task");
             break;
         }
 
-        // Send video frame
-        if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
+        // Receive audio frame from queue
+        if (xQueueReceive(self->video_tx_queue, &frame, pdMS_TO_TICKS(100)) == pdTRUE)
         {
-            esp_peer_send_video(self->client_peer, &frame);
-            xSemaphoreGive(self->send_mutex);
-        }
+            // Validate frame data
+            if (frame.data == nullptr || frame.size <= 0)
+            {
+                continue;
+            }
 
-        // Delay for a short period
-        vTaskDelay(pdMS_TO_TICKS(1000 / CONFIG_GEEKROS_CAMERA_FPS));
+            // Send video frame
+            if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
+            {
+                esp_peer_send_video(self->client_peer, &frame);
+                xSemaphoreGive(self->send_mutex);
+            }
+
+            // Delay for a short period
+            vTaskDelay(pdMS_TO_TICKS(1000 / CONFIG_GEEKROS_CAMERA_FPS));
+        }
     }
 
     // Set peer send video task running flag to false
@@ -417,6 +610,10 @@ esp_err_t PeerBasic::CreatePeer(const std::vector<std::string> &stun_urls)
         // Return success
         return ESP_OK;
     }
+
+    // Create audio and video transmit queues
+    audio_tx_queue = xQueueCreate(8, sizeof(esp_peer_audio_frame_t));
+    video_tx_queue = xQueueCreate(8, sizeof(esp_peer_video_frame_t));
 
     // Define peer extra configuration
     esp_peer_default_cfg_t peer_extra_config = {0};
@@ -787,6 +984,80 @@ void PeerBasic::UpdatePeerConnectedState(bool connected)
 {
     // Update peer connected flag
     peer_connected = connected;
+}
+
+// end video frame method
+esp_err_t PeerBasic::SendVideoFrame(const esp_peer_video_frame_t *frame)
+{
+    // Check if peer is initialized
+    if (client_peer == nullptr)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Validate frame
+    if (!frame || !frame->data || frame->size <= 0)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Check if video transmit queue is valid
+    if (!video_tx_queue)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Copy frame to avoid issues with pointer validity
+    esp_peer_video_frame_t copy = *frame;
+
+    if (xQueueSend(video_tx_queue, &copy, 0) != pdTRUE)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Return success
+    return ESP_OK;
+}
+
+// end audio frame method
+esp_err_t PeerBasic::SendAudioFrame(const esp_peer_audio_frame_t *frame)
+{
+    // Check if peer is initialized
+    if (client_peer == nullptr)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Validate frame
+    if (!frame || !frame->data || frame->size <= 0)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Check if audio transmit queue is valid
+    if (!audio_tx_queue)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Copy frame to avoid issues with pointer validity
+    esp_peer_audio_frame_t copy = *frame;
+
+    if (xQueueSend(audio_tx_queue, &copy, 0) != pdTRUE)
+    {
+        // Return success
+        return ESP_OK;
+    }
+
+    // Return success
+    return ESP_OK;
 }
 
 // Set peer callbacks

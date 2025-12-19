@@ -20,6 +20,8 @@ limitations under the License.
 // Include standard headers
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <mutex>
 #include <functional>
 
 // Include ESP headers
@@ -42,11 +44,23 @@ limitations under the License.
 // Include headers
 #include "black_image.h"
 
+// Define peer data channel meta structure
+struct PeerDataChannelMeta
+{
+    uint16_t stream_id;
+    std::string label;
+};
+
 // Define peer callbacks structure
 struct PeerCallbacks
 {
     std::function<void(std::string json_data)> on_offer_calledback;
     std::function<void(std::string json_data)> on_candidate_calledback;
+    std::function<void(std::string label, std::string event, std::string data)> on_datachannel_calledback;
+    std::function<void(std::string label, std::string event, esp_peer_audio_stream_info_t *info)> on_audio_info_calledback;
+    std::function<void(std::string label, std::string event, esp_peer_video_stream_info_t *info)> on_video_info_calledback;
+    std::function<void(std::string label, std::string event, const esp_peer_audio_frame_t *frame)> on_audio_frame_received;
+    std::function<void(std::string label, std::string event, const esp_peer_video_frame_t *frame)> on_video_frame_received;
 };
 
 // PeerBasic class definition
@@ -56,6 +70,10 @@ private:
     // Event group handle
     EventGroupHandle_t event_group;
 
+    // Audio and Video transmit queue
+    QueueHandle_t audio_tx_queue;
+    QueueHandle_t video_tx_queue;
+
     // Send mutex
     SemaphoreHandle_t send_mutex = nullptr;
 
@@ -64,6 +82,10 @@ private:
 
     // Peer handle
     esp_peer_handle_t client_peer = nullptr;
+
+    // Data channels map
+    std::unordered_map<uint16_t, PeerDataChannelMeta> data_channels;
+    std::mutex data_channels_mutex;
 
     // Peer connected flag
     bool peer_connected = false;
@@ -132,6 +154,12 @@ public:
 
     // Update peer connected state
     void UpdatePeerConnectedState(bool connected);
+
+    // Send video frame method
+    esp_err_t SendVideoFrame(const esp_peer_video_frame_t *frame);
+
+    // Send audio frame method
+    esp_err_t SendAudioFrame(const esp_peer_audio_frame_t *frame);
 
     // Set peer callbacks
     void SetCallbacks(PeerCallbacks &cb);
