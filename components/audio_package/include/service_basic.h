@@ -142,9 +142,6 @@ private:
     bool service_stopped = true;
     bool audio_input_need_warmup = false;
 
-    std::vector<int16_t> last_playback_pcm;
-    std::mutex playback_pcm_mutex;
-
     // Audio power management
     esp_timer_handle_t audio_service_power_timer = nullptr;
     std::chrono::steady_clock::time_point last_input_time;
