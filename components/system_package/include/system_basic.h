@@ -60,8 +60,8 @@ public:
     // Get system chip ID
     static std::string GetChipID();
 
-    // Print heap statistics
-    static void PrintHeaps();
+    // Perform health check and log system status
+    static void HealthCheck();
 };
 
 #endif

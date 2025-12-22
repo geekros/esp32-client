@@ -31,7 +31,6 @@ ES8311AudioCodec::ES8311AudioCodec(void *i2c_master_handle, i2c_port_t i2c_port,
     output_sample_rate = output_sample_rate_;
     pa_pin = pa_pin_;
     pa_inverted = pa_inverted_;
-    input_gain = 30;
 
     // Create duplex I2S channels
     CreateDuplexChannels(mclk, bclk, ws, dout, din);
@@ -169,11 +168,6 @@ void ES8311AudioCodec::UpdateDeviceState()
         ESP_ERROR_CHECK(esp_codec_dev_open(dev, &fs));
         ESP_ERROR_CHECK(esp_codec_dev_set_in_gain(dev, input_gain));
         ESP_ERROR_CHECK(esp_codec_dev_set_out_vol(dev, output_volume));
-    }
-    else if (!input_enabled && !output_enabled && dev != nullptr)
-    {
-        esp_codec_dev_close(dev);
-        dev = nullptr;
     }
 
     // Configure PA pin

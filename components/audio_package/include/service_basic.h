@@ -48,9 +48,9 @@ limitations under the License.
 #include "afe_audio_processor.h"
 
 // Define audio processor running event bit
-#define OPUS_FRAME_DURATION_MS 60
+#define OPUS_FRAME_DURATION_MS 20
 #define MAX_ENCODE_TASKS_IN_QUEUE 2
-#define MAX_PLAYBACK_TASKS_IN_QUEUE 2
+#define MAX_PLAYBACK_TASKS_IN_QUEUE 8
 
 // Define maximum packets in queue based on 2400ms buffer
 #define MAX_DECODE_PACKETS_IN_QUEUE (2400 / OPUS_FRAME_DURATION_MS)
@@ -141,6 +141,9 @@ private:
     bool voice_detected = false;
     bool service_stopped = true;
     bool audio_input_need_warmup = false;
+
+    std::vector<int16_t> last_playback_pcm;
+    std::mutex playback_pcm_mutex;
 
     // Audio power management
     esp_timer_handle_t audio_service_power_timer = nullptr;

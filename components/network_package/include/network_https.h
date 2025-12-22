@@ -35,7 +35,6 @@ limitations under the License.
 
 // Include headers
 #include "http.h"
-#include "network_interface.h"
 #include "network_basic.h"
 #include "system_basic.h"
 #include "system_time.h"

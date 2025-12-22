@@ -15,7 +15,7 @@
 dependencies:
     espressif/esp_codec_dev: ~1.5
     espressif/esp_peer: ~1.2.3
-    espressif/esp-sr: ~2.1.5
+    espressif/esp-sr: ~2.3.0
     78/esp-ml307: ~3.3.7
     78/esp-opus: ^1.0.5
     idf:

@@ -68,6 +68,9 @@ private:
     // Audio service instance
     AudioService audio_service;
 
+    // Health check clock counter
+    int health_check_clock = 0;
+
 public:
     // Constructor and destructor
     Application();

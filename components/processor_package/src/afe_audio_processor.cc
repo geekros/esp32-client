@@ -120,7 +120,7 @@ void AfeAudioProcessor::Initialize(AudioCodec *codec_data, int frame_duration_ms
 #endif
 
     // Create AFE interface and data
-    afe_iface = esp_afe_handle_from_config(afe_config);
+    afe_iface = const_cast<esp_afe_sr_iface_t *>(esp_afe_handle_from_config(afe_config));
     afe_data = afe_iface->create_from_config(afe_config);
 
     // Create audio processing task
@@ -286,8 +286,8 @@ void AfeAudioProcessor::EnableDeviceAec(bool enable)
     if (enable)
     {
 #ifdef CONFIG_USE_DEVICE_AEC
-        afe_iface_->disable_vad(afe_data_);
-        afe_iface_->enable_aec(afe_data_);
+        afe_iface_->disable_vad(afe_data);
+        afe_iface_->enable_aec(afe_data);
 #endif
     }
     else

@@ -82,10 +82,10 @@ void RealtimeBasic::RealtimeConnect(void)
         peer_callbacks.on_datachannel_calledback = [this](std::string label, std::string event, std::string data)
         {
             // Invoke callback
-            if (callbacks.on_peer_calledback)
+            if (callbacks.on_peer_datachannel_calledback)
             {
                 // Notify peer data channel event
-                callbacks.on_peer_calledback(label, event, data);
+                callbacks.on_peer_datachannel_calledback(label, event, data);
             }
         };
 

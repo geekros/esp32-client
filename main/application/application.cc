@@ -93,29 +93,11 @@ void Application::ApplicationMain()
     // Get audio codec from board
     auto *audio_codec = board->GetAudioCodec();
 
-    // Initialize audio service
-    audio_service.Initialize(audio_codec);
-
-    // Define audio callbacks
-    AudioServiceCallbacks audio_service_callbacks;
-    audio_service_callbacks.on_send_queue_available = [this]()
-    {
-        xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
-    };
-    audio_service_callbacks.on_vad_change = [this](bool speaking)
-    {
-        xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
-    };
-    audio_service.SetCallbacks(audio_service_callbacks);
-
     // Set WiFi board callbacks
     WifiCallbacks wifi_board_callbacks;
     wifi_board_callbacks.on_access_point = [this, board, audio_codec]()
     {
         ESP_LOGI(TAG, "Entered Access Point Mode");
-
-        // Start audio service
-        audio_service.Start();
 
         // Play WiFi configuration sound
         audio_service.PlaySound(Lang::Sounds::OGG_WIFI_CONFIG);
@@ -139,18 +121,14 @@ void Application::ApplicationMain()
         {
             ESP_LOGI(TAG, "Realtime Signaling Event: %s %s", event.c_str(), data.c_str());
         };
-        realtime_callbacks.on_peer_calledback = [this](std::string label, std::string event, std::string data)
+        realtime_callbacks.on_peer_datachannel_calledback = [this](std::string label, std::string event, std::string data)
         {
-            ESP_LOGI(TAG, "Realtime Peer Event: %s", "-----------------");
-            ESP_LOGI(TAG, "Realtime Peer Event: label=%s", label.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Event: event=%s", event.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Event: data=%s", data.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Event: %s", "-----------------");
+            // ESP_LOGI(TAG, "Realtime Peer Data Channel Event: %s label=%s data=%s", event.c_str(), label.c_str(), data.c_str());
 
             if (event == "peer:datachannel:open" && label == "event")
             {
-                // Start audio service
-                audio_service.Start();
+                // Enable voice processing
+                audio_service.EnableVoiceProcessing(true);
 
                 // Play WiFi configuration sound
                 audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);
@@ -164,35 +142,37 @@ void Application::ApplicationMain()
         };
         realtime_callbacks.on_peer_audio_info_calledback = [this](std::string label, std::string event, esp_peer_audio_stream_info_t *info)
         {
-            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: %s", "-----------------");
-            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: label=%s", label.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: event=%s", event.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: codec=%d, sample_rate=%d, channel=%d", info->codec, info->sample_rate, info->channel);
-            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: %s", "-----------------");
+            ESP_LOGI(TAG, "Realtime Peer Audio Info Event: %s label=%s codec=%d, sample_rate=%d, channel=%d", event.c_str(), label.c_str(), info->codec, info->sample_rate, info->channel);
         };
         realtime_callbacks.on_peer_video_info_calledback = [this](std::string label, std::string event, esp_peer_video_stream_info_t *info)
         {
-            ESP_LOGI(TAG, "Realtime Peer Video Info Event: %s", "-----------------");
-            ESP_LOGI(TAG, "Realtime Peer Video Info Event: label=%s", label.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Video Info Event: event=%s", event.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Video Info Event: codec=%d, width=%d, height=%d, fps=%d", info->codec, info->width, info->height, info->fps);
-            ESP_LOGI(TAG, "Realtime Peer Video Info Event: %s", "-----------------");
+            ESP_LOGI(TAG, "Realtime Peer Video Info Event: %s label=%s codec=%d, width=%d, height=%d, fps=%d", event.c_str(), label.c_str(), info->codec, info->width, info->height, info->fps);
         };
         realtime_callbacks.on_peer_audio_calledback = [this](std::string label, std::string event, const esp_peer_audio_frame_t *frame)
         {
-            ESP_LOGI(TAG, "Realtime Peer Audio Event: %s", "-----------------");
-            ESP_LOGI(TAG, "Realtime Peer Audio Event: label=%s", label.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Audio Event: event=%s", event.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Audio Event: frame pts=%u, size=%d", frame->pts, frame->size);
-            ESP_LOGI(TAG, "Realtime Peer Audio Event: %s", "-----------------");
+            // ESP_LOGI(TAG, "Realtime Peer Audio Data Event: %s label=%s pts=%u, size=%d", event.c_str(), label.c_str(), frame->pts, frame->size);
+
+            // Check event and frame validity
+            if (event != "peer:audio:frame" || !frame || frame->size == 0)
+            {
+                return;
+            }
+
+            // Create audio service stream packet
+            auto packet = std::make_unique<AudioServiceStreamPacket>();
+            packet->payload.assign(frame->data, frame->data + frame->size);
+
+            // Set sample rate and timestamp
+            packet->sample_rate = 16000;
+            packet->frame_duration = OPUS_FRAME_DURATION_MS;
+            packet->timestamp = frame->pts;
+
+            // Push packet to decode queue without waiting
+            audio_service.PushPacketToDecodeQueue(std::move(packet));
         };
         realtime_callbacks.on_peer_video_calledback = [this](std::string label, std::string event, const esp_peer_video_frame_t *frame)
         {
-            ESP_LOGI(TAG, "Realtime Peer Video Event: %s", "-----------------");
-            ESP_LOGI(TAG, "Realtime Peer Video Event: label=%s", label.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Video Event: event=%s", event.c_str());
-            ESP_LOGI(TAG, "Realtime Peer Video Event: frame pts=%u, size=%d", frame->pts, frame->size);
-            ESP_LOGI(TAG, "Realtime Peer Video Event: %s", "-----------------");
+            ESP_LOGI(TAG, "Realtime Peer Video Data Event: %s label=%s pts=%u, size=%d", event.c_str(), label.c_str(), frame->pts, frame->size);
         };
         RealtimeBasic::Instance().SetCallbacks(realtime_callbacks);
 
@@ -201,15 +181,36 @@ void Application::ApplicationMain()
     };
     wifi_board.SetCallbacks(wifi_board_callbacks);
 
+    // Start network
+    wifi_board.StartNetwork();
+
+    // Initialize audio service
+    audio_service.Initialize(audio_codec);
+
+    // Start audio service
+    audio_service.Start();
+
+    // Disable voice processing initially
+    audio_service.EnableVoiceProcessing(false);
+
+    // Define audio callbacks
+    AudioServiceCallbacks audio_service_callbacks;
+    audio_service_callbacks.on_send_queue_available = [this]()
+    {
+        xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
+    };
+    audio_service_callbacks.on_vad_change = [this](bool speaking)
+    {
+        xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
+    };
+    audio_service.SetCallbacks(audio_service_callbacks);
+
     // Create main event loop task
     auto application_loop_task = [](void *param)
     {
         ((Application *)param)->ApplicationLoop();
         vTaskDelete(nullptr);
     };
-
-    // Start network
-    wifi_board.StartNetwork();
 
     // Create the task with a larger stack size
     xTaskCreate(application_loop_task, "application_loop", 4096, this, 3, &main_event_loop_task_handle);
@@ -225,13 +226,51 @@ void Application::ApplicationLoop()
     while (true)
     {
         // Wait for clock tick event
-        auto bits = xEventGroupWaitBits(event_group, MAIN_EVENT_CLOCK_TICK, pdTRUE, pdFALSE, portMAX_DELAY);
+        auto bits = xEventGroupWaitBits(event_group, MAIN_EVENT_CLOCK_TICK | MAIN_EVENT_SEND_AUDIO | MAIN_EVENT_VAD_CHANGE, pdTRUE, pdFALSE, portMAX_DELAY);
+
+        if (bits & MAIN_EVENT_SEND_AUDIO)
+        {
+            auto *peer = RealtimeBasic::Instance().GetPeerInstance();
+            if (peer)
+            {
+                // Send audio frames from audio service send queue
+                while (auto packet = audio_service.PopPacketFromSendQueue())
+                {
+                    // Prepare esp_peer_audio_frame_t
+                    esp_peer_audio_frame_t frame = {};
+                    frame.data = packet->payload.data();
+                    frame.size = packet->payload.size();
+                    frame.pts = packet->timestamp;
+
+                    // Send audio frame via peer
+                    if (!peer->SendAudioFrame(&frame))
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Handle VAD change event
+        if (bits & MAIN_EVENT_VAD_CHANGE)
+        {
+            // Get current VAD state
+            // bool speaking = audio_service.IsVoiceDetected();
+            // ESP_LOGI(TAG, "VAD State: %s", speaking ? "Speaking" : "Silent");
+        }
 
         // Handle clock tick event
         if (bits & MAIN_EVENT_CLOCK_TICK)
         {
-            // TODO: Handle clock tick event
-            // ESP_LOGI(TAG, "Clock Tick Event");
+            // Increment health check clock
+            health_check_clock++;
+
+            // Check if it's time for health check
+            if (health_check_clock % 60 == 0)
+            {
+                // Perform system health check every 30 seconds
+                SystemBasic::HealthCheck();
+            }
         }
 
         // Small delay to prevent tight loop

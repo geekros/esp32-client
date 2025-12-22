@@ -448,92 +448,39 @@ void PeerBasic::PeerTask(void *param)
 // Peer send audio task
 void PeerBasic::PeerSendAudioTask(void *param)
 {
-    // Cast parameter to PeerBasic instance
     PeerBasic *self = static_cast<PeerBasic *>(param);
-    if (self == nullptr)
+    if (!self)
     {
-        // Delete task
         vTaskDelete(nullptr);
-
-        // Set peer task running flag to false
-        self->peer_send_audio_task_running = false;
-
-        // Return
         return;
     }
 
-    // Set peer send audio task running flag to true
     self->peer_send_audio_task_running = true;
 
-    // Define audio frame
     esp_peer_audio_frame_t frame = {};
 
-    // Opus silence frame (RFC-compliant)
-    static const uint8_t opus_silence_frame[3] = {0xF8, 0xFF, 0xFE};
-    esp_peer_audio_frame_t silence = {};
-    silence.data = (uint8_t *)opus_silence_frame;
-    silence.size = sizeof(opus_silence_frame);
-    silence.pts = 0;
-
-    const TickType_t silence_interval = pdMS_TO_TICKS(20); // 20ms is safe for Opus
-    TickType_t last_send_tick = xTaskGetTickCount();
-
-    // Peer send audio task loop
     while (self->peer_send_audio_task_running)
     {
-        // Check if peer task is running and peer handle is valid
         if (!self->peer_task_running || self->client_peer == nullptr)
         {
             break;
         }
 
-        // Send silence frame if no audio frame is available
-        bool sent = false;
-
-        // Receive audio frame from queue
-        if (xQueueReceive(self->audio_tx_queue, &frame, pdMS_TO_TICKS(10)) == pdTRUE)
+        if (xQueueReceive(self->audio_tx_queue, &frame, portMAX_DELAY) == pdTRUE)
         {
-            // Validate frame data
             if (frame.data && frame.size > 0)
             {
-                // Send audio frame
                 if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
                 {
-                    // Send audio frame
                     esp_peer_send_audio(self->client_peer, &frame);
-
-                    // Release mutex
                     xSemaphoreGive(self->send_mutex);
-
-                    // Mark as sent
-                    sent = true;
                 }
-            }
-        }
-
-        // Send silence frame if no frame was sent
-        TickType_t now = xTaskGetTickCount();
-        if (!sent && (now - last_send_tick) >= silence_interval)
-        {
-            // Send silence frame
-            if (xSemaphoreTake(self->send_mutex, pdMS_TO_TICKS(50)) == pdTRUE)
-            {
-                // Send silence frame
-                esp_peer_send_audio(self->client_peer, &silence);
-
-                // Release mutex
-                xSemaphoreGive(self->send_mutex);
-
-                // Update last send tick
-                last_send_tick = now;
+                free(frame.data);
             }
         }
     }
 
-    // Set peer send audio task running flag to false
     self->peer_send_audio_task_running = false;
-
-    // Delete task
     vTaskDelete(nullptr);
 }
 
@@ -1026,37 +973,27 @@ esp_err_t PeerBasic::SendVideoFrame(const esp_peer_video_frame_t *frame)
 // end audio frame method
 esp_err_t PeerBasic::SendAudioFrame(const esp_peer_audio_frame_t *frame)
 {
-    // Check if peer is initialized
-    if (client_peer == nullptr)
+    if (!client_peer || !frame || !frame->data || frame->size <= 0 || !audio_tx_queue)
     {
-        // Return success
-        return ESP_OK;
+        return ESP_FAIL;
     }
 
-    // Validate frame
-    if (!frame || !frame->data || frame->size <= 0)
-    {
-        // Return success
-        return ESP_OK;
-    }
-
-    // Check if audio transmit queue is valid
-    if (!audio_tx_queue)
-    {
-        // Return success
-        return ESP_OK;
-    }
-
-    // Copy frame to avoid issues with pointer validity
     esp_peer_audio_frame_t copy = *frame;
+
+    uint8_t *buf = (uint8_t *)malloc(copy.size);
+    if (!buf)
+    {
+        return ESP_FAIL;
+    }
+    memcpy(buf, copy.data, copy.size);
+    copy.data = buf;
 
     if (xQueueSend(audio_tx_queue, &copy, 0) != pdTRUE)
     {
-        // Return success
-        return ESP_OK;
+        free(buf);
+        return ESP_FAIL;
     }
 
-    // Return success
     return ESP_OK;
 }
 

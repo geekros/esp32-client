@@ -675,13 +675,9 @@ void AudioService::PlaySound(const std::string_view &ogg)
 
                     if (pkt_len >= 12)
                     {
-                        // uint8_t version = pkt_ptr[8];
-                        // uint8_t channel_count = pkt_ptr[9];
-
                         if (pkt_len >= 16)
                         {
                             sample_rate = pkt_ptr[12] | (pkt_ptr[13] << 8) | (pkt_ptr[14] << 16) | (pkt_ptr[15] << 24);
-                            // ESP_LOGI(TAG, "version=%d, channels=%d, sample_rate=%d", version, channel_count, sample_rate);
                         }
                     }
                 }

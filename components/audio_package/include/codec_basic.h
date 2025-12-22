@@ -64,8 +64,8 @@ protected:
     int output_sample_rate = 0;
     int input_channels = 1;
     int output_channels = 1;
-    int output_volume = 85;
-    float input_gain = 0.0;
+    int output_volume = 100;
+    float input_gain = 30.00;
 
     // Pure virtual methods for reading and writing audio data
     virtual int Read(int16_t *dest, int samples) = 0;

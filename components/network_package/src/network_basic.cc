@@ -78,8 +78,12 @@ void NetworkBasic::CheckNetwork(uint32_t timeout_ms)
     // Wait until network is ready
     while (!IsNetworkReady(timeout_ms))
     {
-        vTaskDelay(800 / portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
+
+    vTaskDelay(pdMS_TO_TICKS(3000));
+
+    ESP_LOGI(TAG, "Network is ready");
 }
 
 // Get the network interface

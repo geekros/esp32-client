@@ -58,7 +58,7 @@ limitations under the License.
 struct RealtimeCallbacks
 {
     std::function<void(std::string event, std::string data)> on_signaling_calledback;
-    std::function<void(std::string label, std::string event, std::string data)> on_peer_calledback;
+    std::function<void(std::string label, std::string event, std::string data)> on_peer_datachannel_calledback;
     std::function<void(std::string label, std::string event, esp_peer_audio_stream_info_t *info)> on_peer_audio_info_calledback;
     std::function<void(std::string label, std::string event, esp_peer_video_stream_info_t *info)> on_peer_video_info_calledback;
     std::function<void(std::string label, std::string event, const esp_peer_audio_frame_t *frame)> on_peer_audio_calledback;

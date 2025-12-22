@@ -67,8 +67,8 @@ std::string SystemBasic::GetChipID()
     return std::string(chip_id);
 }
 
-// Print heap statistics
-void SystemBasic::PrintHeaps()
+// Perform health check and log system status
+void SystemBasic::HealthCheck()
 {
     int free_sram = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     int min_free_sram = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL);

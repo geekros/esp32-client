@@ -57,5 +57,8 @@ void RuntimeBasic::Init(void)
     esp_log_level_set("SCTP", ESP_LOG_WARN);
     esp_log_level_set("ES8311", ESP_LOG_WARN);
     esp_log_level_set("main_task", ESP_LOG_WARN);
+    esp_log_level_set("I2S_IF", ESP_LOG_WARN);
+    esp_log_level_set("Adev_Codec", ESP_LOG_WARN);
+    esp_log_level_set("AFE", ESP_LOG_WARN);
 #endif
 }
