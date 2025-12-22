@@ -50,7 +50,7 @@ limitations under the License.
 // Define audio processor running event bit
 #define OPUS_FRAME_DURATION_MS 20
 #define MAX_ENCODE_TASKS_IN_QUEUE 2
-#define MAX_PLAYBACK_TASKS_IN_QUEUE 8
+#define MAX_PLAYBACK_TASKS_IN_QUEUE 2
 
 // Define maximum packets in queue based on 2400ms buffer
 #define MAX_DECODE_PACKETS_IN_QUEUE (2400 / OPUS_FRAME_DURATION_MS)

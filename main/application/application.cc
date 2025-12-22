@@ -61,6 +61,28 @@ Application::~Application()
     }
 }
 
+// Set chat audio state
+void Application::SetAudioState(AudioState state)
+{
+    if (audio_state_ == state)
+    {
+        return;
+    }
+
+    audio_state_ = state;
+
+    if (state == AudioState::SPEAKING)
+    {
+        ESP_LOGI(TAG, "AudioState -> SPEAKING");
+        audio_service.EnableVoiceProcessing(false);
+    }
+    else
+    {
+        ESP_LOGI(TAG, "AudioState -> LISTENING");
+        audio_service.EnableVoiceProcessing(true);
+    }
+}
+
 // Main application entry point
 void Application::ApplicationMain()
 {
@@ -158,6 +180,11 @@ void Application::ApplicationMain()
                 return;
             }
 
+            mute_uplink_audio_ = true;
+
+            // Update last audio time
+            last_audio_time_us_ = esp_timer_get_time();
+
             // Create audio service stream packet
             auto packet = std::make_unique<AudioServiceStreamPacket>();
             packet->payload.assign(frame->data, frame->data + frame->size);
@@ -230,22 +257,45 @@ void Application::ApplicationLoop()
 
         if (bits & MAIN_EVENT_SEND_AUDIO)
         {
-            auto *peer = RealtimeBasic::Instance().GetPeerInstance();
-            if (peer)
+            if (audio_state_ == AudioState::LISTENING)
             {
-                // Send audio frames from audio service send queue
-                while (auto packet = audio_service.PopPacketFromSendQueue())
+                auto *peer = RealtimeBasic::Instance().GetPeerInstance();
+                if (peer)
                 {
-                    // Prepare esp_peer_audio_frame_t
-                    esp_peer_audio_frame_t frame = {};
-                    frame.data = packet->payload.data();
-                    frame.size = packet->payload.size();
-                    frame.pts = packet->timestamp;
-
-                    // Send audio frame via peer
-                    if (!peer->SendAudioFrame(&frame))
+                    // Send audio frames from audio service send queue
+                    while (auto packet = audio_service.PopPacketFromSendQueue())
                     {
-                        break;
+                        if (mute_uplink_audio_)
+                        {
+                            static std::vector<uint8_t> silence_opus;
+                            silence_opus.assign(packet->payload.size(), 0);
+
+                            // Prepare esp_peer_audio_frame_t
+                            esp_peer_audio_frame_t frame = {};
+                            frame.data = silence_opus.data();
+                            frame.size = silence_opus.size();
+                            frame.pts = packet->timestamp;
+
+                            // Send audio frame via peer
+                            if (!peer->SendAudioFrame(&frame))
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            // Prepare esp_peer_audio_frame_t
+                            esp_peer_audio_frame_t frame = {};
+                            frame.data = packet->payload.data();
+                            frame.size = packet->payload.size();
+                            frame.pts = packet->timestamp;
+
+                            // Send audio frame via peer
+                            if (!peer->SendAudioFrame(&frame))
+                            {
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -256,7 +306,6 @@ void Application::ApplicationLoop()
         {
             // Get current VAD state
             // bool speaking = audio_service.IsVoiceDetected();
-            // ESP_LOGI(TAG, "VAD State: %s", speaking ? "Speaking" : "Silent");
         }
 
         // Handle clock tick event
@@ -270,6 +319,22 @@ void Application::ApplicationLoop()
             {
                 // Perform system health check every 30 seconds
                 SystemBasic::HealthCheck();
+            }
+        }
+
+        if (mute_uplink_audio_)
+        {
+            // Check if we should unmute uplink audio
+            int64_t now = esp_timer_get_time();
+
+            // If no audio received for more than 200ms, unmute uplink audio
+            if (audio_service.IsIdle() && (now - last_audio_time_us_) > 200 * 1000)
+            {
+                // Reset decoder to clear any buffered audio
+                audio_service.ResetDecoder();
+
+                // Unmute uplink audio
+                mute_uplink_audio_ = false;
             }
         }
 

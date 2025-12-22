@@ -47,6 +47,13 @@ limitations under the License.
 #include "wifi_access_point.h"
 #include "service_basic.h"
 
+// Define audio state enum
+enum class AudioState
+{
+    LISTENING,
+    SPEAKING,
+};
+
 // Define main event group bits
 #define MAIN_EVENT_SEND_AUDIO (1 << 0)
 #define MAIN_EVENT_VAD_CHANGE (1 << 1)
@@ -71,6 +78,14 @@ private:
     // Health check clock counter
     int health_check_clock = 0;
 
+    // Current audio state
+    AudioState audio_state_ = AudioState::LISTENING;
+
+    // Last audio time for speaking state
+    int64_t last_audio_time_us_ = 0;
+
+    bool mute_uplink_audio_ = false;
+
 public:
     // Constructor and destructor
     Application();
@@ -87,8 +102,8 @@ public:
     Application(const Application &) = delete;
     Application &operator=(const Application &) = delete;
 
-    // Initialize audio service
-    void InitializeAudioService();
+    // Set chat audio state
+    void SetAudioState(AudioState state);
 
     // Main application entry point
     void ApplicationMain();
