@@ -32,10 +32,15 @@ limitations under the License.
 // Include project-specific headers
 #include "client_config.h"
 
+// Include board configuration
+#include "board_config.h"
+
 // Include components headers
 #include "runtime_basic.h"
 #include "board_basic.h"
+#include "button_basic.h"
 #include "system_basic.h"
+#include "system_settings.h"
 #include "system_time.h"
 #include "language_basic.h"
 #include "language_sound.h"
@@ -46,13 +51,6 @@ limitations under the License.
 #include "wifi_station.h"
 #include "wifi_access_point.h"
 #include "service_basic.h"
-
-// Define audio state enum
-enum class AudioState
-{
-    LISTENING,
-    SPEAKING,
-};
 
 // Define main event group bits
 #define MAIN_EVENT_SEND_AUDIO (1 << 0)
@@ -78,13 +76,11 @@ private:
     // Health check clock counter
     int health_check_clock = 0;
 
-    // Current audio state
-    AudioState audio_state_ = AudioState::LISTENING;
-
     // Last audio time for speaking state
-    int64_t last_audio_time_us_ = 0;
+    int64_t last_audio_time_us = 0;
 
-    bool mute_uplink_audio_ = false;
+    // mute uplink audio flag
+    bool mute_uplink_audio = false;
 
 public:
     // Constructor and destructor
@@ -101,9 +97,6 @@ public:
     // Delete copy constructor and assignment operator
     Application(const Application &) = delete;
     Application &operator=(const Application &) = delete;
-
-    // Set chat audio state
-    void SetAudioState(AudioState state);
 
     // Main application entry point
     void ApplicationMain();

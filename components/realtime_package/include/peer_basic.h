@@ -92,6 +92,7 @@ private:
 
     // Enable camera flag
     bool enable_camera = false;
+
     // Camera FPS
     uint8_t camera_fps = 15;
 
@@ -160,6 +161,9 @@ public:
 
     // Send audio frame method
     esp_err_t SendAudioFrame(const esp_peer_audio_frame_t *frame);
+
+    // Send data channel message method
+    esp_err_t SendDataChannelMessage(esp_peer_data_channel_type_t type, std::string label, const uint8_t *data, int size);
 
     // Set peer callbacks
     void SetCallbacks(PeerCallbacks &cb);

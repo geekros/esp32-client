@@ -32,6 +32,9 @@ limitations under the License.
 // Include client configuration header
 #include "client_config.h"
 
+// Include system settings header
+#include "system_settings.h"
+
 // Include headers
 #include "wifi_manager.h"
 #include "wifi_station.h"

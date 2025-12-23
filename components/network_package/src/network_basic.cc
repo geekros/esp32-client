@@ -75,13 +75,15 @@ bool NetworkBasic::IsNetworkReady(uint32_t timeout_ms)
 // Network ready notification method
 void NetworkBasic::CheckNetwork(uint32_t timeout_ms)
 {
+    ESP_LOGI(TAG, "Checking network readiness...");
+
     // Wait until network is ready
     while (!IsNetworkReady(timeout_ms))
     {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
-    vTaskDelay(pdMS_TO_TICKS(3000));
+    vTaskDelay(pdMS_TO_TICKS(5000));
 
     ESP_LOGI(TAG, "Network is ready");
 }

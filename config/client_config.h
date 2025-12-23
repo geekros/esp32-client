@@ -30,6 +30,9 @@ limitations under the License.
 #define GEEKROS_NVS_NAMESPACE "geekros"
 #define GEEKROS_NVS_HOSTNAME "hostname"
 
+#define GEEKROS_SYS_SETTINGS_NS "system"
+#define GEEKROS_SYS_SETTINGS_KEY "settings"
+
 #define GEEKROS_WIFI_NVS_NAMESPACE "wifi"
 #define GEEKROS_WIFI_AP_PASSWORD "geekros.com"
 #define GEEKROS_WIFI_AP_CHANNEL 5

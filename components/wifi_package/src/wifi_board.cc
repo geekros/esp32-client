@@ -51,6 +51,19 @@ void WifiBoard::StartNetwork()
     }
     else
     {
+        // Check if Access Point mode is forced in system settings
+        if (SystemSettings::Instance().IsWifiAccessPointMode())
+        {
+            // Clear the Access Point mode flag after exiting
+            SystemSettings::Instance().SetWifiAccessPointMode(false);
+
+            // Enter Access Point mode if configured in system settings
+            EnterWifiAccessPoint();
+
+            // Should not reach here, but just in case
+            return;
+        }
+
         // SSIDs configured, enter WiFi Station mode
         EnterWifiStation();
     }
@@ -68,6 +81,7 @@ void WifiBoard::EnterWifiAccessPoint()
     // Call the callback if set
     if (callbacks.on_access_point)
     {
+        // Invoke the access point mode callback
         callbacks.on_access_point();
     }
 
@@ -97,6 +111,7 @@ void WifiBoard::EnterWifiStation()
     // Call the callback if set
     if (callbacks.on_station)
     {
+        // Invoke the station mode callback
         callbacks.on_station();
     }
 }

@@ -19,6 +19,7 @@ limitations under the License.
 
 // Include standard headers
 #include <string>
+#include <functional>
 
 // Include ESP headers
 #include <esp_log.h>

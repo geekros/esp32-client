@@ -997,6 +997,77 @@ esp_err_t PeerBasic::SendAudioFrame(const esp_peer_audio_frame_t *frame)
     return ESP_OK;
 }
 
+// Send data channel message method
+esp_err_t PeerBasic::SendDataChannelMessage(esp_peer_data_channel_type_t type, std::string label, const uint8_t *data, int size)
+{
+    // Check if peer is initialized
+    if (!client_peer)
+    {
+        ESP_LOGE(TAG, "Peer is not initialized");
+        return ESP_FAIL;
+    }
+
+    // Validate data
+    if (!data || size <= 0)
+    {
+        ESP_LOGE(TAG, "Invalid data for data channel message");
+        return ESP_FAIL;
+    }
+
+    // Allocate buffer for data
+    uint8_t *buf = (uint8_t *)malloc(size);
+    if (!buf)
+    {
+        ESP_LOGE(TAG, "Failed to allocate memory for data channel message");
+        return ESP_FAIL;
+    }
+    memcpy(buf, data, size);
+
+    // Find stream ID for the given label
+    uint16_t stream_id = 0;
+    {
+        std::lock_guard<std::mutex> lock(data_channels_mutex);
+        for (const auto &pair : data_channels)
+        {
+            if (pair.second.label == label)
+            {
+                stream_id = pair.second.stream_id;
+                break;
+            }
+        }
+    }
+
+    // Check if stream ID was found
+    if (stream_id == 0)
+    {
+        ESP_LOGE(TAG, "Data channel with label '%s' not found", label.c_str());
+        free(buf);
+        return ESP_FAIL;
+    }
+
+    // Create data frame
+    esp_peer_data_frame_t frame = {};
+    frame.type = type;
+    frame.stream_id = stream_id;
+    frame.data = buf;
+    frame.size = size;
+
+    // Send data frame
+    int ret = esp_peer_send_data(client_peer, &frame);
+    if (ret != ESP_PEER_ERR_NONE)
+    {
+        ESP_LOGE(TAG, "Failed to send data channel message, ret=%d", ret);
+        free(buf);
+        return ESP_FAIL;
+    }
+
+    // Free buffer
+    free(buf);
+
+    // Return success
+    return ESP_OK;
+}
+
 // Set peer callbacks
 void PeerBasic::SetCallbacks(PeerCallbacks &cb)
 {

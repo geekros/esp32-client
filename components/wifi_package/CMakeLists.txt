@@ -31,5 +31,5 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES driver json nvs_flash esp_wifi esp_event esp_http_server system_package utils_package language_package
+    REQUIRES driver json nvs_flash esp_wifi esp_event esp_http_server button_package system_package utils_package language_package
 )

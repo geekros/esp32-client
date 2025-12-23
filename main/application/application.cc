@@ -61,28 +61,6 @@ Application::~Application()
     }
 }
 
-// Set chat audio state
-void Application::SetAudioState(AudioState state)
-{
-    if (audio_state_ == state)
-    {
-        return;
-    }
-
-    audio_state_ = state;
-
-    if (state == AudioState::SPEAKING)
-    {
-        ESP_LOGI(TAG, "AudioState -> SPEAKING");
-        audio_service.EnableVoiceProcessing(false);
-    }
-    else
-    {
-        ESP_LOGI(TAG, "AudioState -> LISTENING");
-        audio_service.EnableVoiceProcessing(true);
-    }
-}
-
 // Main application entry point
 void Application::ApplicationMain()
 {
@@ -102,6 +80,9 @@ void Application::ApplicationMain()
     // Initialize system components
     SystemBasic::Instance().Init(GEEKROS_SPIFFS_BASE_PATH, GEEKROS_SPIFFS_LABEL, GEEKROS_SPIFFS_MAX_FILE);
 
+    // Initialize system settings
+    SystemSettings::Instance().Initialize();
+
     // Initialize locale and language components
     LanguageBasic::Instance().Init();
 
@@ -114,6 +95,27 @@ void Application::ApplicationMain()
 
     // Get audio codec from board
     auto *audio_codec = board->GetAudioCodec();
+
+    // Initialize audio service
+    audio_service.Initialize(audio_codec);
+
+    // Start audio service
+    audio_service.Start();
+
+    // Disable voice processing initially
+    audio_service.EnableVoiceProcessing(false);
+
+    // Define audio callbacks
+    AudioServiceCallbacks audio_service_callbacks;
+    audio_service_callbacks.on_send_queue_available = [this]()
+    {
+        xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
+    };
+    audio_service_callbacks.on_vad_change = [this](bool speaking)
+    {
+        xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
+    };
+    audio_service.SetCallbacks(audio_service_callbacks);
 
     // Set WiFi board callbacks
     WifiCallbacks wifi_board_callbacks;
@@ -160,6 +162,59 @@ void Application::ApplicationMain()
                 {
                     vTaskDelay(pdMS_TO_TICKS(50));
                 }
+
+                // Initialize button components
+                ButtonBasic::Instance().ButtonInitialize(BOARD_BUTTON_GPIO, 0);
+                ButtonCallbacks button_callbacks;
+                button_callbacks.on_button_calledback = [this](std::string event)
+                {
+                    // Handle short press to unmute uplink audio
+                    if (event == "button:short:press")
+                    {
+                        // Unmute uplink audio if muted
+                        if (mute_uplink_audio)
+                        {
+                            // Create send data channel message
+                            std::string message = "{\"event\":\"client:connection:interrupt\"}";
+
+                            RealtimeBasic::Instance().GetPeerInstance()->SendDataChannelMessage(ESP_PEER_DATA_CHANNEL_STRING, "event", (const uint8_t *)message.c_str(), message.length());
+                            // Reset decoder to clear any buffered audio
+                            audio_service.ResetDecoder();
+
+                            // Unmute uplink audio
+                            mute_uplink_audio = false;
+
+                            // Reset last audio time
+                            last_audio_time_us = esp_timer_get_time();
+                        }
+                    }
+
+                    // Handle long press to enter AP mode
+                    if (event == "button:long:press")
+                    {
+                        SystemSettings::Instance().SetWifiAccessPointMode(true);
+                        esp_restart();
+                    }
+                };
+                ButtonBasic::Instance().SetCallbacks(button_callbacks);
+            }
+
+            // Handle wakeup status event
+            if (event == "connection:wakeup:status" && label == "event")
+            {
+                ESP_LOGI(TAG, "Wakeup Status: %s", data.c_str());
+            }
+
+            // Handle speak status event
+            if (event == "connection:speak:status" && label == "event")
+            {
+                ESP_LOGI(TAG, "Speak Status: %s", data.c_str());
+            }
+
+            // Handle wakeup status event
+            if (event == "connection:chat:content" && label == "chat")
+            {
+                // ESP_LOGI(TAG, "Chat Content: %s", data.c_str());
             }
         };
         realtime_callbacks.on_peer_audio_info_calledback = [this](std::string label, std::string event, esp_peer_audio_stream_info_t *info)
@@ -180,10 +235,10 @@ void Application::ApplicationMain()
                 return;
             }
 
-            mute_uplink_audio_ = true;
+            mute_uplink_audio = true;
 
             // Update last audio time
-            last_audio_time_us_ = esp_timer_get_time();
+            last_audio_time_us = esp_timer_get_time();
 
             // Create audio service stream packet
             auto packet = std::make_unique<AudioServiceStreamPacket>();
@@ -211,27 +266,6 @@ void Application::ApplicationMain()
     // Start network
     wifi_board.StartNetwork();
 
-    // Initialize audio service
-    audio_service.Initialize(audio_codec);
-
-    // Start audio service
-    audio_service.Start();
-
-    // Disable voice processing initially
-    audio_service.EnableVoiceProcessing(false);
-
-    // Define audio callbacks
-    AudioServiceCallbacks audio_service_callbacks;
-    audio_service_callbacks.on_send_queue_available = [this]()
-    {
-        xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
-    };
-    audio_service_callbacks.on_vad_change = [this](bool speaking)
-    {
-        xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
-    };
-    audio_service.SetCallbacks(audio_service_callbacks);
-
     // Create main event loop task
     auto application_loop_task = [](void *param)
     {
@@ -255,46 +289,46 @@ void Application::ApplicationLoop()
         // Wait for clock tick event
         auto bits = xEventGroupWaitBits(event_group, MAIN_EVENT_CLOCK_TICK | MAIN_EVENT_SEND_AUDIO | MAIN_EVENT_VAD_CHANGE, pdTRUE, pdFALSE, portMAX_DELAY);
 
+        // Handle send audio event
         if (bits & MAIN_EVENT_SEND_AUDIO)
         {
-            if (audio_state_ == AudioState::LISTENING)
+            // Get peer instance
+            auto *peer = RealtimeBasic::Instance().GetPeerInstance();
+            if (peer)
             {
-                auto *peer = RealtimeBasic::Instance().GetPeerInstance();
-                if (peer)
+                // Send audio frames from audio service send queue
+                while (auto packet = audio_service.PopPacketFromSendQueue())
                 {
-                    // Send audio frames from audio service send queue
-                    while (auto packet = audio_service.PopPacketFromSendQueue())
+                    // Check if we need to send silence
+                    if (mute_uplink_audio)
                     {
-                        if (mute_uplink_audio_)
+                        static std::vector<uint8_t> silence_opus;
+                        silence_opus.assign(packet->payload.size(), 0);
+
+                        // Prepare esp_peer_audio_frame_t
+                        esp_peer_audio_frame_t frame = {};
+                        frame.data = silence_opus.data();
+                        frame.size = silence_opus.size();
+                        frame.pts = packet->timestamp;
+
+                        // Send audio frame via peer
+                        if (!peer->SendAudioFrame(&frame))
                         {
-                            static std::vector<uint8_t> silence_opus;
-                            silence_opus.assign(packet->payload.size(), 0);
-
-                            // Prepare esp_peer_audio_frame_t
-                            esp_peer_audio_frame_t frame = {};
-                            frame.data = silence_opus.data();
-                            frame.size = silence_opus.size();
-                            frame.pts = packet->timestamp;
-
-                            // Send audio frame via peer
-                            if (!peer->SendAudioFrame(&frame))
-                            {
-                                break;
-                            }
+                            break;
                         }
-                        else
-                        {
-                            // Prepare esp_peer_audio_frame_t
-                            esp_peer_audio_frame_t frame = {};
-                            frame.data = packet->payload.data();
-                            frame.size = packet->payload.size();
-                            frame.pts = packet->timestamp;
+                    }
+                    else
+                    {
+                        // Prepare esp_peer_audio_frame_t
+                        esp_peer_audio_frame_t frame = {};
+                        frame.data = packet->payload.data();
+                        frame.size = packet->payload.size();
+                        frame.pts = packet->timestamp;
 
-                            // Send audio frame via peer
-                            if (!peer->SendAudioFrame(&frame))
-                            {
-                                break;
-                            }
+                        // Send audio frame via peer
+                        if (!peer->SendAudioFrame(&frame))
+                        {
+                            break;
                         }
                     }
                 }
@@ -322,19 +356,20 @@ void Application::ApplicationLoop()
             }
         }
 
-        if (mute_uplink_audio_)
+        // Handle uplink audio muting
+        if (mute_uplink_audio)
         {
             // Check if we should unmute uplink audio
             int64_t now = esp_timer_get_time();
 
             // If no audio received for more than 200ms, unmute uplink audio
-            if (audio_service.IsIdle() && (now - last_audio_time_us_) > 200 * 1000)
+            if (audio_service.IsIdle() && (now - last_audio_time_us) > 200 * 1000)
             {
                 // Reset decoder to clear any buffered audio
                 audio_service.ResetDecoder();
 
                 // Unmute uplink audio
-                mute_uplink_audio_ = false;
+                mute_uplink_audio = false;
             }
         }
 
