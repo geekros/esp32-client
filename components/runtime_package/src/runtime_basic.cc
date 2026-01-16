@@ -60,5 +60,6 @@ void RuntimeBasic::Init(void)
     esp_log_level_set("I2S_IF", ESP_LOG_WARN);
     esp_log_level_set("Adev_Codec", ESP_LOG_WARN);
     esp_log_level_set("AFE", ESP_LOG_WARN);
+    esp_log_level_set("BUF_MNGR", ESP_LOG_WARN);
 #endif
 }

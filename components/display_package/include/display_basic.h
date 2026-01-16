@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef ASSETS_BLACK_IMAGE_H
-#define ASSETS_BLACK_IMAGE_H
+#ifndef DISPLAY_BASIC_H
+#define DISPLAY_BASIC_H
 
 // Include standard headers
 #include <string>
@@ -29,37 +29,40 @@ limitations under the License.
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// AssetBlackImage class definition
-class AssetBlackImage
+// Include display theme basic header
+#include "display_theme_basic.h"
+
+// Display basic class definition
+class DisplayBasic
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
-    static const uint8_t black_jpeg[];
-    static const size_t black_jpeg_len;
+protected:
+    // Display dimensions
+    int width_ = 0;
+    int height_ = 0;
+
+    // Current theme
+    DisplayThemeBasic *current_theme_ = nullptr;
+
+    // Define protected members
+    virtual bool Lock(int timeout_ms = 0) = 0;
+    virtual void Unlock() = 0;
 
 public:
     // Constructor and Destructor
-    AssetBlackImage();
-    ~AssetBlackImage();
+    DisplayBasic() = default;
+    virtual ~DisplayBasic() = default;
 
-    // Get the singleton instance of the AssetBlackImage class
-    static AssetBlackImage &Instance()
-    {
-        static AssetBlackImage instance;
-        return instance;
-    }
+    // Get display width and height
+    virtual int width() const = 0;
+    virtual int height() const = 0;
 
-    // Delete copy constructor and assignment operator
-    AssetBlackImage(const AssetBlackImage &) = delete;
-    AssetBlackImage &operator=(const AssetBlackImage &) = delete;
-
-    // Get black JPEG data methods
-    static const uint8_t *Data();
-
-    // Get black JPEG length method
-    static size_t Length();
+    // Set and get current theme
+    virtual void SetTheme(DisplayThemeBasic *theme);
+    virtual DisplayThemeBasic *GetTheme() { return current_theme_; }
 };
 
 #endif

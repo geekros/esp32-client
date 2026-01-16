@@ -506,8 +506,6 @@ void PeerBasic::PeerSendVideoTask(void *param)
 
     // Define video frame
     esp_peer_video_frame_t frame = {};
-    frame.data = (uint8_t *)AssetBlackImage::Data();
-    frame.size = AssetBlackImage::Length();
 
     // Peer send video task loop
     while (self->peer_send_video_task_running)
@@ -913,9 +911,10 @@ void PeerBasic::CreatePeerDataChannels()
     {
         // Define data channel configuration
         esp_peer_data_channel_cfg_t data_channel_config = {};
-        data_channel_config.type = ESP_PEER_DATA_CHANNEL_RELIABLE; // Reliable (same as browser default)
-        data_channel_config.ordered = true;                        // Ordered true (typical default)
-        data_channel_config.label = (char *)ch_name;               // Channel label
+        data_channel_config.type = ESP_PEER_DATA_CHANNEL_PARTIAL_RELIABLE_RETX; // Reliable (same as browser default)
+        data_channel_config.max_retransmit_count = 0;                           // No limit on retransmissions
+        data_channel_config.ordered = false;                                    // Ordered true (typical default)
+        data_channel_config.label = (char *)ch_name;                            // Channel label
 
         // Create data channel
         int ret = esp_peer_create_data_channel(client_peer, &data_channel_config);

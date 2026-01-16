@@ -41,9 +41,6 @@ limitations under the License.
 #include "esp_peer.h"
 #include "esp_peer_default.h"
 
-// Include headers
-#include "black_image.h"
-
 // Define peer data channel meta structure
 struct PeerDataChannelMeta
 {

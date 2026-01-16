@@ -14,49 +14,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef BOARD_BASIC_H
-#define BOARD_BASIC_H
+#ifndef DISPLAY_LVGL_BASIC_H
+#define DISPLAY_LVGL_BASIC_H
 
 // Include standard headers
 #include <string>
+#include <vector>
 
 // Include ESP headers
 #include <esp_log.h>
 #include <esp_err.h>
+#include <esp_timer.h>
+#include <esp_lvgl_port.h>
 
 // Include FreeRTOS headers
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include codec basic header
-#include "codec_basic.h"
+// Include display basic header
 #include "display_basic.h"
+#include "display_lcd_basic.h"
+#include "lvgl.h"
 
-// BoardBasic class definition
-class BoardBasic
+// LVGL display basic class definition
+class DisplayLvglBasic
 {
 private:
     // Event group handle
     EventGroupHandle_t event_group;
 
 public:
-    // Constructor
-    BoardBasic() = default;
-    // Virtual destructor
-    virtual ~BoardBasic() = default;
+    // Constructor and Destructor
+    DisplayLvglBasic();
+    ~DisplayLvglBasic();
 
-    // Pure virtual function for board initialization
-    virtual void Initialization() = 0;
-
-    // Pure virtual function to get the audio codec
-    virtual AudioCodec *GetAudioCodec() = 0;
-
-    // Pure virtual function to get the display
-    virtual DisplayBasic *GetDisplay() = 0;
+    // Initialize LVGL with the given display
+    void Initialize(DisplayBasic *display);
 };
-
-// Factory function to create a BoardBasic instance
-extern BoardBasic *CreateBoard();
 
 #endif

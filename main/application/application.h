@@ -51,6 +51,7 @@ limitations under the License.
 #include "wifi_station.h"
 #include "wifi_access_point.h"
 #include "service_basic.h"
+#include "display_lvgl_basic.h"
 
 // Define main event group bits
 #define MAIN_EVENT_SEND_AUDIO (1 << 0)

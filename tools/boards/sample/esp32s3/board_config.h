@@ -18,13 +18,15 @@ limitations under the License.
 #define BOARD_CONFIG_H
 
 // Include standard libraries
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
+#include <string>
 
 // Include ESP libraries
 #include <esp_log.h>
 #include <esp_err.h>
+
+// Include driver libraries
+#include <driver/gpio.h>
+#include <driver/spi_master.h>
 
 // Include board basic header
 #include "board_basic.h"
@@ -33,7 +35,10 @@ limitations under the License.
 #define BOARD_NAME "ESP32S3 Sample DevKit"
 
 // Board button GPIO
-#define BOARD_BUTTON_GPIO GPIO_NUM_0
+#define BOARD_BUTTON_GPIO GPIO_NUM_NC
+#define BOARD_BUILTIN_LED_GPIO GPIO_NUM_NC
+#define BOARD_VOLUME_UP_BUTTON_GPIO GPIO_NUM_NC
+#define BOARD_VOLUME_DOWN_BUTTON_GPIO GPIO_NUM_NC
 
 // Board audio sample configuration
 #define BOARD_AUDIO_INPUT_SAMPLE_RATE 24000
@@ -45,5 +50,52 @@ limitations under the License.
 #define BOARD_I2S_WS_GPIO GPIO_NUM_NC
 #define BOARD_I2S_DIN_GPIO GPIO_NUM_NC
 #define BOARD_I2S_DOUT_GPIO GPIO_NUM_NC
+
+// Board audio codec configuration
+#define BOARD_AUDIO_CODEC_PA_PIN GPIO_NUM_NC
+#define BOARD_AUDIO_CODEC_I2C_SDA_PIN GPIO_NUM_NC
+#define BOARD_AUDIO_CODEC_I2C_SCL_PIN GPIO_NUM_NC
+#define BOARD_AUDIO_CODEC_ES8311_ADDR ES8311_CODEC_DEFAULT_ADDR
+
+// Board display configuration
+#define BOARD_DISPLAY_SPI_MODE 0
+#define BOARD_DISPLAY_CS_PIN GPIO_NUM_NC
+#define BOARD_DISPLAY_MOSI_PIN GPIO_NUM_NC
+#define BOARD_DISPLAY_MISO_PIN GPIO_NUM_NC
+#define BOARD_DISPLAY_CLK_PIN GPIO_NUM_NC
+#define BOARD_DISPLAY_DC_PIN GPIO_NUM_NC
+#define BOARD_DISPLAY_RST_PIN GPIO_NUM_NC
+
+#define BOARD_DISPLAY_WIDTH 480
+#define BOARD_DISPLAY_HEIGHT 320
+#define BOARD_DISPLAY_MIRROR_X false
+#define BOARD_DISPLAY_MIRROR_Y false
+#define BOARD_DISPLAY_SWAP_XY true
+#define BOARD_DISPLAY_RGB_ORDER LCD_RGB_ELEMENT_ORDER_BGR
+#define BOARD_DISPLAY_INVERT_COLOR true
+
+#define BOARD_DISPLAY_OFFSET_X 0
+#define BOARD_DISPLAY_OFFSET_Y 0
+
+#define BOARD_DISPLAY_BACKLIGHT_PIN GPIO_NUM_NC
+#define BOARD_DISPLAY_BACKLIGHT_OUTPUT_INVERT false
+
+// Board camera configuration
+#define BOARD_CAMERA_PIN_PWDN GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_RESET GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_VSYNC GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_HREF GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_PCLK GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_XCLK GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_SIOD GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_SIOC GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_D0 GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_D1 GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_D2 GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_D3 GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_D4 GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_D5 GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_D6 GPIO_NUM_NC
+#define BOARD_CAMERA_PIN_D7 GPIO_NUM_NC
 
 #endif

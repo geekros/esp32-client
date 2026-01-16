@@ -54,7 +54,7 @@ private:
     std::string BuildJson() const;
 
     // Settings variables
-    uint8_t audio_volume_{70};
+    uint8_t audio_volume_{80};
     bool wifi_access_point_{false};
 
 public:

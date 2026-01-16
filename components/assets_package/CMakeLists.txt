@@ -14,7 +14,6 @@
 
 # Define source files directories
 set(SOURCES
-    "src/black_image.cc"
     "src/model_basic.cc"
 )
 

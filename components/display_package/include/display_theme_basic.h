@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef BOARD_BASIC_H
-#define BOARD_BASIC_H
+#ifndef DISPLAY_THEME_BASIC_H
+#define DISPLAY_THEME_BASIC_H
 
 // Include standard headers
 #include <string>
@@ -29,34 +29,17 @@ limitations under the License.
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-// Include codec basic header
-#include "codec_basic.h"
-#include "display_basic.h"
-
-// BoardBasic class definition
-class BoardBasic
+// Display theme basic class definition
+class DisplayThemeBasic
 {
 private:
-    // Event group handle
-    EventGroupHandle_t event_group;
+    std::string name_;
 
 public:
-    // Constructor
-    BoardBasic() = default;
-    // Virtual destructor
-    virtual ~BoardBasic() = default;
+    DisplayThemeBasic(const std::string &name) : name_(name) {}
+    virtual ~DisplayThemeBasic() = default;
 
-    // Pure virtual function for board initialization
-    virtual void Initialization() = 0;
-
-    // Pure virtual function to get the audio codec
-    virtual AudioCodec *GetAudioCodec() = 0;
-
-    // Pure virtual function to get the display
-    virtual DisplayBasic *GetDisplay() = 0;
+    inline std::string name() const { return name_; }
 };
-
-// Factory function to create a BoardBasic instance
-extern BoardBasic *CreateBoard();
 
 #endif

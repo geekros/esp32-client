@@ -90,38 +90,33 @@ void Application::ApplicationMain()
     BoardBasic *board = CreateBoard();
     board->Initialization();
 
+    // // Get display from board
+    // DisplayBasic *display = board->GetDisplay();
+
+    // // Initialize LVGL display
+    // DisplayLvglBasic lvgl_display;
+    // lvgl_display.Initialize(display);
+
     // Initialize WiFi board
     auto &wifi_board = WifiBoard::Instance();
 
     // Get audio codec from board
     auto *audio_codec = board->GetAudioCodec();
 
-    // Initialize audio service
-    audio_service.Initialize(audio_codec);
-
-    // Start audio service
-    audio_service.Start();
-
-    // Disable voice processing initially
-    audio_service.EnableVoiceProcessing(false);
-
-    // Define audio callbacks
-    AudioServiceCallbacks audio_service_callbacks;
-    audio_service_callbacks.on_send_queue_available = [this]()
-    {
-        xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
-    };
-    audio_service_callbacks.on_vad_change = [this](bool speaking)
-    {
-        xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
-    };
-    audio_service.SetCallbacks(audio_service_callbacks);
-
     // Set WiFi board callbacks
     WifiCallbacks wifi_board_callbacks;
     wifi_board_callbacks.on_access_point = [this, board, audio_codec]()
     {
         ESP_LOGI(TAG, "Entered Access Point Mode");
+
+        // Initialize audio service
+        audio_service.Initialize(audio_codec);
+
+        // Start audio service
+        audio_service.Start();
+
+        // Disable voice processing initially
+        audio_service.EnableVoiceProcessing(false);
 
         // Play WiFi configuration sound
         audio_service.PlaySound(Lang::Sounds::OGG_WIFI_CONFIG);
@@ -145,14 +140,32 @@ void Application::ApplicationMain()
         {
             ESP_LOGI(TAG, "Realtime Signaling Event: %s %s", event.c_str(), data.c_str());
         };
-        realtime_callbacks.on_peer_datachannel_calledback = [this](std::string label, std::string event, std::string data)
+        realtime_callbacks.on_peer_datachannel_calledback = [this, audio_codec](std::string label, std::string event, std::string data)
         {
             // ESP_LOGI(TAG, "Realtime Peer Data Channel Event: %s label=%s data=%s", event.c_str(), label.c_str(), data.c_str());
 
             if (event == "peer:datachannel:open" && label == "event")
             {
-                // Enable voice processing
+                // Initialize audio service
+                audio_service.Initialize(audio_codec);
+
+                // Start audio service
+                audio_service.Start();
+
+                // Disable voice processing initially
                 audio_service.EnableVoiceProcessing(true);
+
+                // Define audio callbacks
+                AudioServiceCallbacks audio_service_callbacks;
+                audio_service_callbacks.on_send_queue_available = [this]()
+                {
+                    xEventGroupSetBits(event_group, MAIN_EVENT_SEND_AUDIO);
+                };
+                audio_service_callbacks.on_vad_change = [this](bool speaking)
+                {
+                    xEventGroupSetBits(event_group, MAIN_EVENT_VAD_CHANGE);
+                };
+                audio_service.SetCallbacks(audio_service_callbacks);
 
                 // Play WiFi configuration sound
                 audio_service.PlaySound(Lang::Sounds::OGG_WIFI_SUCCESS);

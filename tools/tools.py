@@ -30,7 +30,6 @@ def read_config(path):
                 lines.append((line.strip(), "", line))
     return lines
 
-
 def merge_configs(base_lines, override_lines):
     """Merge base and override sdkconfig lines."""
     merged = {}
@@ -109,6 +108,7 @@ def main():
     parser.add_argument("--target", required=True, help="Board target, e.g. esp32s3")
     parser.add_argument("--output", default="sdkconfig", help="Output file path")
     parser.add_argument("--project-root", default=".", help="Project root directory")
+    parser.add_argument("--board-dir", help="Selected board directory", default=None)
     args = parser.parse_args()
 
     base_path = os.path.join(args.project_root, "sdkconfig.defaults")

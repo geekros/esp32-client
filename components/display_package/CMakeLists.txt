@@ -14,7 +14,10 @@
 
 # Define source files directories
 set(SOURCES
-    "src/board_basic.cc"
+    "src/display_basic.cc"
+    "src/display_lcd_basic.cc"
+    "src/display_lvgl_basic.cc"
+    "src/display_theme_basic.cc"
 )
 
 # Define include directories
@@ -26,6 +29,6 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES driver audio_package display_package
+    REQUIRES driver esp_lcd lvgl__lvgl espressif__esp_lvgl_port
 )
 

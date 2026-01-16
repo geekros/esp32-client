@@ -14,26 +14,48 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Include standard libraries
+#include <string>
+
+// Include ESP libraries
+#include <esp_log.h>
+#include <esp_err.h>
+
+// Include driver libraries
+#include <driver/gpio.h>
+#include <driver/spi_master.h>
+
 // Include board configuration header
 #include "board_config.h"
 
 // Define log tag
 #define TAG "[client:board]"
 
-// Board initialization function
-static void board_init(void)
+// CustomBoard class definition
+class CustomBoard : public BoardBasic
 {
-    ESP_LOGI(TAG, BOARD_NAME);
-}
+private:
+    // Define private members
+public:
+    // Override Initialization method
+    void Initialization() override
+    {
+        ESP_LOGI(TAG, "%s %s", BOARD_NAME, CONFIG_IDF_TARGET);
+    }
 
-// Define the board interface
-static const board_t board_interface = {
-    .board_init = board_init,
+    // Override GetAudioCodec method
+    virtual AudioCodec *GetAudioCodec() override
+    {
+        return nullptr;
+    }
 };
 
-// Function to get the board interface
-const board_t *board(void)
+// Factory function to create a BoardBasic instance
+BoardBasic *CreateBoard()
 {
-    // Return the board interface
-    return &board_interface;
+    // Return a static CustomBoard instance
+    static CustomBoard instance;
+
+    // Return the instance
+    return &instance;
 }
