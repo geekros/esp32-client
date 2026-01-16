@@ -26,6 +26,6 @@ set(INCLUDE_DIRS
 idf_component_register(
     SRCS ${SOURCES}
     INCLUDE_DIRS ${INCLUDE_DIRS}
-    REQUIRES driver audio_package display_package
+    REQUIRES driver audio_package
 )
 

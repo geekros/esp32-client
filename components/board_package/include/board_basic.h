@@ -31,7 +31,6 @@ limitations under the License.
 
 // Include codec basic header
 #include "codec_basic.h"
-#include "display_basic.h"
 
 // BoardBasic class definition
 class BoardBasic
@@ -51,9 +50,6 @@ public:
 
     // Pure virtual function to get the audio codec
     virtual AudioCodec *GetAudioCodec() = 0;
-
-    // Pure virtual function to get the display
-    virtual DisplayBasic *GetDisplay() = 0;
 };
 
 // Factory function to create a BoardBasic instance

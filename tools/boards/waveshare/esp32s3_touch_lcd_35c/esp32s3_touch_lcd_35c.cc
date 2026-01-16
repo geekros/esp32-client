@@ -43,7 +43,6 @@ limitations under the License.
 #include "i2c_device.h"
 #include "axp2101_driver.h"
 #include "es8311_audio_codec.h"
-#include "display_lcd_basic.h"
 
 // Define log tag
 #define TAG "[client:waveshare:board]"
@@ -135,8 +134,6 @@ private:
     esp_io_expander_handle_t io_expander = nullptr;
 
     PowerBasic *power_timer_instance = nullptr;
-
-    DisplayLcdBasic *display_ = nullptr;
 
     // Private method to initialize power timer
     void InitializePower()
@@ -258,108 +255,11 @@ private:
     // Private method to initialize display (empty for this board)
     void InitializeDisplay()
     {
-        // Define panel IO and panel handles
-        esp_lcd_panel_io_handle_t panel_io = nullptr;
-        esp_lcd_panel_handle_t panel = nullptr;
-
-        // Configure panel IO for SPI
-        esp_lcd_panel_io_spi_config_t io_config = {};
-        io_config.cs_gpio_num = BOARD_DISPLAY_CS_PIN;
-        io_config.dc_gpio_num = BOARD_DISPLAY_DC_PIN;
-        io_config.spi_mode = BOARD_DISPLAY_SPI_MODE;
-        io_config.pclk_hz = 40 * 1000 * 1000;
-        io_config.trans_queue_depth = 10;
-        io_config.lcd_cmd_bits = 8;
-        io_config.lcd_param_bits = 8;
-        ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(SPI3_HOST, &io_config, &panel_io));
-
-        // Configure panel device
-        board_lcd_vendor_config_t st7796_vendor_config = {
-            .init_cmds = st7796_lcd_init_cmds,
-            .init_cmds_size = sizeof(st7796_lcd_init_cmds) / sizeof(board_lcd_init_cmd_t),
-        };
-
-        // Create new ST7789 panel
-        esp_lcd_panel_dev_config_t panel_config = {};
-        panel_config.reset_gpio_num = BOARD_DISPLAY_RST_PIN;
-        panel_config.rgb_ele_order = BOARD_DISPLAY_RGB_ORDER;
-        panel_config.bits_per_pixel = 16;
-        panel_config.vendor_config = &st7796_vendor_config;
-
-        // Create new panel instance
-        ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(panel_io, &panel_config, &panel));
-
-        // Initialize panel
-        esp_lcd_panel_reset(panel);
-
-        // Initialize panel
-        esp_lcd_panel_init(panel);
-        ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel, true));
-        esp_lcd_panel_invert_color(panel, BOARD_DISPLAY_INVERT_COLOR);
-        esp_lcd_panel_swap_xy(panel, BOARD_DISPLAY_SWAP_XY);
-        esp_lcd_panel_mirror(panel, BOARD_DISPLAY_MIRROR_X, BOARD_DISPLAY_MIRROR_Y);
-
-        ESP_LOGI(TAG, "Test draw: white screen");
-
-        std::vector<uint16_t> line(BOARD_DISPLAY_WIDTH, 0xFFFF);
-        for (int y = 0; y < BOARD_DISPLAY_HEIGHT; y++)
-        {
-            esp_lcd_panel_draw_bitmap(panel, 0, y, BOARD_DISPLAY_WIDTH, y + 1, line.data());
-        }
-
-        // Set the display to on
-        ESP_LOGI(TAG, "Turning display on");
-        {
-            esp_err_t __err = esp_lcd_panel_disp_on_off(panel, true);
-            if (__err == ESP_ERR_NOT_SUPPORTED)
-            {
-                ESP_LOGW(TAG, "Panel does not support disp_on_off; assuming ON");
-            }
-            else
-            {
-                ESP_ERROR_CHECK(__err);
-            }
-        }
-
-        // Create DisplayLcdBasic instance
-        display_ = new DisplayLcdBasic(panel_io, panel, BOARD_DISPLAY_WIDTH, BOARD_DISPLAY_HEIGHT);
     }
 
     // Private method to initialize display and touch (empty for this board)
     void InitializeDisplayTouch()
     {
-        // Create touch controller instance
-        esp_lcd_touch_handle_t tp;
-        esp_lcd_touch_config_t tp_cfg = {};
-        tp_cfg.x_max = BOARD_DISPLAY_WIDTH;
-        tp_cfg.y_max = BOARD_DISPLAY_HEIGHT;
-        tp_cfg.rst_gpio_num = GPIO_NUM_NC;
-        tp_cfg.int_gpio_num = GPIO_NUM_NC;
-        tp_cfg.levels.reset = 0;
-        tp_cfg.levels.interrupt = 0;
-        tp_cfg.flags.swap_xy = 1;
-        tp_cfg.flags.mirror_x = 1;
-        tp_cfg.flags.mirror_y = 1;
-
-        // Create I2C panel IO for touch controller
-        esp_lcd_panel_io_handle_t tp_io_handle = NULL;
-        esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
-        tp_io_config.scl_speed_hz = 400 * 1000;
-
-        // Create new panel IO for I2C
-        ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(i2c_bus, &tp_io_config, &tp_io_handle));
-
-        // Create new FT5x06 touch controller instance
-        ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_ft5x06(tp_io_handle, &tp_cfg, &tp));
-
-        // Configure LVGL touch input device
-        const lvgl_port_touch_cfg_t touch_cfg = {
-            .disp = lv_display_get_default(),
-            .handle = tp,
-        };
-
-        // Add touch input device to LVGL
-        lvgl_port_add_touch(&touch_cfg);
     }
 
 public:
@@ -384,7 +284,7 @@ public:
         InitializeSPI();
 
         // Initialize display
-        InitializeDisplay();
+        // InitializeDisplay();
 
         // Initialize display touch
         // InitializeDisplayTouch();
@@ -398,13 +298,6 @@ public:
 
         // Return audio codec instance
         return &audio_codec;
-    }
-
-    // Override GetDisplay method
-    virtual DisplayBasic *GetDisplay() override
-    {
-        // Return display instance
-        return display_;
     }
 };
 
