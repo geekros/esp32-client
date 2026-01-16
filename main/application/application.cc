@@ -90,13 +90,6 @@ void Application::ApplicationMain()
     BoardBasic *board = CreateBoard();
     board->Initialization();
 
-    // // Get display from board
-    // DisplayBasic *display = board->GetDisplay();
-
-    // // Initialize LVGL display
-    // DisplayLvglBasic lvgl_display;
-    // lvgl_display.Initialize(display);
-
     // Initialize WiFi board
     auto &wifi_board = WifiBoard::Instance();
 

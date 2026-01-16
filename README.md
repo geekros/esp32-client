@@ -20,6 +20,10 @@ ESP IDF: 5.5.0+
 
 2、Find the `GEEKROS` configuration option in `menuconfig` and complete the relevant configurations.
 
+## Custom development board
+
+The board-level adaptation resources for development boards are uniformly stored in the `tools/boards` directory, categorized by brand for different development boards.
+
 ## Development Team
 
 GEEKROS https://www.geekros.com

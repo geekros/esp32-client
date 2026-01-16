@@ -19,21 +19,3 @@ limitations under the License.
 
 // Define log tag
 #define TAG "[client:components:display:basic]"
-
-// Constructor
-DisplayBasic::DisplayBasic()
-{
-    // Initialize event group
-    event_group = xEventGroupCreate();
-}
-
-// Destructor
-DisplayBasic::~DisplayBasic()
-{
-    // Delete event group
-    if (event_group)
-    {
-        vEventGroupDelete(event_group);
-        event_group = NULL;
-    }
-}
